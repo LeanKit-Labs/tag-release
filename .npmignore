@@ -1,0 +1,13 @@
+demo/
+tmp/
+node_modules/
+log/
+spec/
+plato/
+coverage/
+.grapplehound.json
+.gitignore
+.editorconfig
+.esformatter
+.jshintrc
+.eslintrc
