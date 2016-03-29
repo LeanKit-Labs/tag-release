@@ -1,7 +1,6 @@
 /* eslint no-console: 0 */
 
 import utils from "./utils";
-import { GitHubApi } from "github4";
 import nodefn from "when/node";
 import semver from "semver";
 
@@ -28,7 +27,7 @@ const sequenceSteps = [
 ];
 
 export function gitFetchUpstreamMaster( [ git, options ] ) {
-	const command = "git fetch upstream master --tags";
+	const command = "git fetch upstream --tags";
 	utils.log.begin( command );
 	return utils.exec( command ).then( () => utils.log.end() );
 }
@@ -223,7 +222,7 @@ export function gitPushUpstreamDevelop( [ git, options ] ) {
 }
 
 export function gitPushOriginMaster( [ git, options ] ) {
-	const command = `git push upstream master`;
+	const command = `git push origin master`;
 	utils.log.begin( command );
 	return nodefn.lift( ::git.push )( "origin", "master" )
 		.then( () => utils.log.end() );

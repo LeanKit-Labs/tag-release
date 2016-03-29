@@ -32,7 +32,7 @@ test( "gitFetchUpstreamMaster calls log.begin", t => {
 
 test( "gitFetchUpstreamMaster calls exec", t => {
 	gitFetchUpstreamMaster( [ git, {} ] );
-	t.ok( utils.exec.calledWith( "git fetch upstream master --tags" ) );
+	t.ok( utils.exec.calledWith( "git fetch upstream --tags" ) );
 } );
 
 test( "gitFetchUpstreamMaster calls log.end", t => {

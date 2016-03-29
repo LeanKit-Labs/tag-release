@@ -27,7 +27,7 @@ test.afterEach( t => {
 
 test( "gitPushOriginMaster calls log.begin", t => {
 	return gitPushOriginMaster( [ git, {} ], () => {
-		t.ok( utils.log.begin.called );
+		t.ok( utils.log.begin.calledWith( "git push origin master" ) );
 	} );
 } );
 
