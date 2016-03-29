@@ -21,8 +21,11 @@
       "test/**/*.js"
     ]
   },
-  "author": "",
+  "author": "LeanKit",
   "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "ava": "^0.13.0",
     "babel-register": "^6.5.2",
