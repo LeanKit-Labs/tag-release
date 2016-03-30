@@ -3,18 +3,19 @@ import sinon from "sinon";
 import nodefn from "when/node";
 import { git } from "../helpers/index.js";
 
-const utils = {
-	log: {
-		begin: sinon.spy(),
-		end: sinon.spy()
-	}
-};
 const lift = sinon.spy( nodefn, "lift" );
 const options = { develop: true };
+let utils = null;
 
 import { gitCheckoutDevelop, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
 test.beforeEach( t => {
+	utils = {
+		log: {
+			begin: sinon.spy(),
+			end: sinon.spy()
+		}
+	};
 	RewireAPI.__Rewire__( "utils", utils );
 	RewireAPI.__Rewire__( "nodefn", { lift } );
 } );
@@ -40,14 +41,20 @@ test( "gitCheckoutDevelop calls git.checkout if develop", t => {
 	} );
 } );
 
+test( "gitCheckoutDevelop doesn't log if not develop", t => {
+	gitCheckoutDevelop( [ git, { develop: false } ] );
+	t.ok( !utils.log.begin.called );
+	t.ok( !utils.log.end.called );
+} );
+
 test( "gitCheckoutDevelop doesn't call git.checkout if not develop", t => {
-	options.develop = false;
 	git.checkout = sinon.spy( ( arg, callback ) => callback( null, "success" ) );
-	gitCheckoutDevelop( [ git, options ] );
+	gitCheckoutDevelop( [ git, { develop: false } ] );
 	t.ok( !git.checkout.called );
 } );
 
 test( "gitCheckoutDevelop calls log.end", t => {
-	gitCheckoutDevelop( [ git, options ] );
-	t.ok( utils.log.end.called );
+	return gitCheckoutDevelop( [ git, options ] ).then( () => {
+		t.ok( utils.log.end.called );
+	} );
 } );

@@ -192,12 +192,11 @@ export function npmPublish( [ git, options ] ) {
 
 export function gitCheckoutDevelop( [ git, options ] ) {
 	const command = `git checkout develop`;
-	utils.log.begin( command );
 	if ( options.develop ) {
+		utils.log.begin( command );
 		return nodefn.lift( ::git.checkout )( "develop" )
 			.then( () => utils.log.end() );
 	}
-	utils.log.end();
 	return null;
 }
 
