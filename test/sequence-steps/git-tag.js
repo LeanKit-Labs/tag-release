@@ -1,50 +1,35 @@
 import test from "ava";
-import sinon from "sinon";
-import { git } from "../helpers/index.js";
-import { gitTag, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
+const utils = {
+	log: {
+		begin: sinon.spy(),
+		end: sinon.spy()
+	}
+};
 const options = {
 	versions: {
 		newVersion: "1.0.1"
 	}
 };
-
-let utils = null;
-
-function getUtils( methods = {} ) {
-	return Object.assign( {}, {
-		log: {
-			begin: sinon.spy(),
-			end: sinon.spy()
-		}
-	}, methods );
-}
-
-test.beforeEach( t => {
-	RewireAPI.__Rewire__( "console", { log: sinon.stub() } );
-	utils = getUtils();
-	RewireAPI.__Rewire__( "utils", utils );
+const sequenceSteps = proxyquire( "../../src/sequence-steps", {
+	"./utils": utils
 } );
-
-test.afterEach( t => {
-	RewireAPI.__ResetDependency__( "console" );
-	RewireAPI.__ResetDependency__( "utils" );
-} );
+const gitTag = sequenceSteps.gitTag;
 
 test( "gitTag calls log.begin", t => {
-	return gitTag( [ git, options ], () => {
+	return gitTag( [ helpers.git, options ], () => {
 		t.ok( utils.log.begin.called );
 	} );
 } );
 
 test( "gitTag calls git.commit", t => {
-	return gitTag( [ git, options ], () => {
+	return gitTag( [ helpers.git, options ], () => {
 		t.ok( git.add.calledWith( "v1.0.1" ) );
 	} );
 } );
 
 test( "gitTag calls log.end", t => {
-	return gitTag( [ git, options ], () => {
+	return gitTag( [ helpers.git, options ], () => {
 		t.ok( utils.log.end.called );
 	} );
 } );

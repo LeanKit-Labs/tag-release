@@ -1,10 +1,10 @@
 #!/usr/bin/env node --harmony
 /* eslint no-console: 0 */
 
-import commander from "commander";
-import inquirer from "inquirer";
-import _ from "lodash";
-import tagRelease from "./tag-release";
+const commander = require( "commander" );
+const inquirer = require( "inquirer" );
+const _ = require( "lodash" );
+const tagRelease = require( "./tag-release" );
 
 const questions = [
 	{

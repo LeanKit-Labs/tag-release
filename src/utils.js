@@ -1,12 +1,12 @@
 
-import fs from "fs";
-import childProcess from "child_process";
-import inquirer from "inquirer";
-import editor from "editor";
-import logUpdate from "log-update";
-import detectIndent from "detect-indent";
+const fs = require( "fs" );
+const childProcess = require( "child_process" );
+const inquirer = require( "inquirer" );
+const editor = require( "editor" );
+const logUpdate = require( "log-update" );
+const detectIndent = require( "detect-indent" );
 
-export default {
+module.exports = {
 	readFile( path ) {
 		try {
 			return fs.readFileSync( path, "utf-8" );

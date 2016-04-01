@@ -1,18 +1,13 @@
 import test from "ava";
-import utils from "../../src/utils";
-import sinon from "sinon";
 
-let logUpdate = null;
+const logUpdate = sinon.stub();
+const utils = proxyquire( "../../src/utils", {
+	"log-update": logUpdate
+} );
+logUpdate.done = sinon.stub();
 
 test.beforeEach( t => {
-	logUpdate = sinon.stub();
-	logUpdate.done = sinon.stub();
-	utils.__Rewire__( "logUpdate", logUpdate );
 	utils.log.begin( "monkey" );
-} );
-
-test.afterEach( t => {
-	utils.__ResetDependency__( "logUpdate" );
 } );
 
 test( "log begin writes to logUpdate", t => {

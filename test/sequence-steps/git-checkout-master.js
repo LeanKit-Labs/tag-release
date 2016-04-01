@@ -1,8 +1,4 @@
 import test from "ava";
-import sinon from "sinon";
-import nodefn from "when/node";
-import { git, isPromise } from "../helpers/index.js";
-
 const utils = {
 	log: {
 		begin: sinon.spy(),
@@ -11,41 +7,33 @@ const utils = {
 	exec: sinon.spy( command => new Promise( () => {} ) )
 };
 const lift = sinon.spy( nodefn, "lift" );
-
-import { gitCheckoutMaster, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
-
-test.beforeEach( t => {
-	RewireAPI.__Rewire__( "utils", utils );
-	RewireAPI.__Rewire__( "nodefn", { lift } );
+const sequenceSteps = proxyquire( "../../src/sequence-steps", {
+	"./utils": utils
 } );
-
-test.afterEach( t => {
-	RewireAPI.__ResetDependency__( "utils" );
-	RewireAPI.__ResetDependency__( "nodefn" );
-} );
+const gitCheckoutMaster = sequenceSteps.gitCheckoutMaster;
 
 test( "gitCheckoutMaster returns a promise", t => {
-	const promise = gitCheckoutMaster( [ git, {} ] );
-	t.ok( isPromise( promise ) );
+	const promise = gitCheckoutMaster( [ helpers.git, {} ] );
+	t.ok( helpers.isPromise( promise ) );
 } );
 
 test( "gitCheckoutMaster calls log.begin", t => {
-	gitCheckoutMaster( [ git, {} ] );
+	gitCheckoutMaster( [ helpers.git, {} ] );
 	t.ok( utils.log.begin.called );
 } );
 
 test( "gitCheckoutMaster calls lift", t => {
-	gitCheckoutMaster( [ git, {} ] );
+	gitCheckoutMaster( [ helpers.git, {} ] );
 	t.ok( lift.called );
 } );
 
 test( "gitCheckoutMaster calls git.checkout", t => {
-	gitCheckoutMaster( [ git, {} ] );
-	t.ok( git.checkout.calledWith( "master" ) );
+	gitCheckoutMaster( [ helpers.git, {} ] );
+	t.ok( helpers.git.checkout.calledWith( "master" ) );
 } );
 
 test( "gitCheckoutMaster calls log.end", t => {
-	return gitCheckoutMaster( [ git, {} ] ).then( () => {
+	return gitCheckoutMaster( [ helpers.git, {} ] ).then( () => {
 		t.ok( utils.log.end.called );
 	} );
 } );
