@@ -1,3 +1,10 @@
+## 3.x
+
+### 3.0.0
+
+* Update to allow babel-register to run in the global npm context
+* Enable Node v0.12.x support as well as Node v5.x
+
 ## 2.x
 
 ### 2.0.0
