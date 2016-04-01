@@ -1,4 +1,7 @@
 import test from "ava";
+import sinon from "sinon";
+import { git, isPromise } from "../helpers/index.js";
+
 const utils = {
 	log: {
 		begin: sinon.spy(),
@@ -6,28 +9,34 @@ const utils = {
 	},
 	exec: sinon.spy( command => new Promise( resolve => resolve() ) )
 };
-const sequenceSteps = proxyquire( "../../src/sequence-steps", {
-	"./utils": utils
+
+import { gitFetchUpstreamMaster, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
+
+test.beforeEach( t => {
+	RewireAPI.__Rewire__( "utils", utils );
 } );
-const gitFetchUpstreamMaster = sequenceSteps.gitFetchUpstreamMaster;
+
+test.afterEach( t => {
+	RewireAPI.__ResetDependency__( "utils" );
+} );
 
 test( "gitFetchUpstreamMaster returns a promise", t => {
-	const promise = gitFetchUpstreamMaster( [ helpers.git, {} ] );
-	t.ok( helpers.isPromise( promise ) );
+	const promise = gitFetchUpstreamMaster( [ git, {} ] );
+	t.ok( isPromise( promise ) );
 } );
 
 test( "gitFetchUpstreamMaster calls log.begin", t => {
-	gitFetchUpstreamMaster( [ helpers.git, {} ] );
+	gitFetchUpstreamMaster( [ git, {} ] );
 	t.ok( utils.log.begin.called );
 } );
 
 test( "gitFetchUpstreamMaster calls exec", t => {
-	gitFetchUpstreamMaster( [ helpers.git, {} ] );
+	gitFetchUpstreamMaster( [ git, {} ] );
 	t.ok( utils.exec.calledWith( "git fetch upstream --tags" ) );
 } );
 
 test( "gitFetchUpstreamMaster calls log.end", t => {
-	return gitFetchUpstreamMaster( [ helpers.git, {} ] ).then( () => {
+	return gitFetchUpstreamMaster( [ git, {} ] ).then( () => {
 		t.ok( utils.log.end.called );
 	} );
 } );

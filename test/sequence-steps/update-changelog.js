@@ -1,18 +1,10 @@
 import test from "ava";
+import sinon from "sinon";
+import { git } from "../helpers/index.js";
+import { updateChangelog, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
-const utils = {
-	log: {
-		begin: sinon.spy(),
-		end: sinon.spy()
-	},
-	readFile: sinon.stub().returns( `## 1.x
 
-### 1.0.0
-
-* update to v1.0.0` ),
-	writeFile: sinon.spy()
-};
 const options = {
 	versions: {
 		newVersion: "1.0.1"
@@ -20,23 +12,46 @@ const options = {
 	log: "* commit message",
 	release: "minor"
 };
-const sequenceSteps = proxyquire( "../../src/sequence-steps", {
-	"./utils": utils
+let utils = null;
+
+function getUtils( methods = {} ) {
+	return Object.assign( {}, {
+		log: {
+			begin: sinon.spy(),
+			end: sinon.spy()
+		},
+		readFile: sinon.stub().returns( `## 1.x
+
+### 1.0.0
+
+* update to v1.0.0` ),
+		writeFile: sinon.spy()
+	}, methods );
+}
+
+test.beforeEach( t => {
+	RewireAPI.__Rewire__( "console", { log: sinon.stub() } );
+	utils = getUtils();
+	RewireAPI.__Rewire__( "utils", utils );
 } );
-const updateChangelog = sequenceSteps.updateChangelog;
+
+test.afterEach( t => {
+	RewireAPI.__ResetDependency__( "console" );
+	RewireAPI.__ResetDependency__( "utils" );
+} );
 
 test( "updateChangelog calls log.begin", t => {
-	updateChangelog( [ helpers.git, options ] );
+	updateChangelog( [ git, options ] );
 	t.ok( utils.log.begin.called );
 } );
 
 test( "updateChangelog should read in the CHANGELOG.md", t => {
-	updateChangelog( [ helpers.git, options ] );
+	updateChangelog( [ git, options ] );
 	t.ok( utils.readFile.calledWith( CHANGELOG_PATH ) );
 } );
 
 test( "updateChangelog should insert h3 header for minor and patch changes", t => {
-	updateChangelog( [ helpers.git, options ] );
+	updateChangelog( [ git, options ] );
 	const contents = `## 1.x
 
 ### 1.0.1
@@ -53,7 +68,7 @@ test( "updateChangelog should add h2 header for major changes", t => {
 	options.release = "major";
 	options.versions.newVersion = "2.0.0";
 
-	updateChangelog( [ helpers.git, options ] );
+	updateChangelog( [ git, options ] );
 	const contents = `## 2.x
 
 ### 2.0.0
@@ -69,6 +84,6 @@ test( "updateChangelog should add h2 header for major changes", t => {
 } );
 
 test( "updateChangelog calls log.end", t => {
-	updateChangelog( [ helpers.git, options ] );
+	updateChangelog( [ git, options ] );
 	t.ok( utils.log.end.called );
 } );

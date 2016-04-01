@@ -1,10 +1,10 @@
 /* eslint no-console: 0 */
 
-const simpleGitFactory = require( "simple-git" );
-const sequence = require( "when/sequence" );
-const sequenceSteps = require( "./sequence-steps" ).sequenceSteps;
+import simpleGitFactory from "simple-git";
+import sequence from "when/sequence";
+import sequenceSteps from "./sequence-steps";
 
-module.exports = options => {
+export default options => {
 	const git = simpleGitFactory( "." );
 
 	console.log( `Tagging a ${ options.release } release ${ options.develop ? "with" : "without" } a develop branch` );
