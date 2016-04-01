@@ -1,44 +1,30 @@
 import test from "ava";
-import sinon from "sinon";
-import { git } from "../helpers/index.js";
-import { gitPushOriginMaster, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
-let utils = null;
-
-function getUtils( methods = {} ) {
-	return Object.assign( {}, {
-		log: {
-			begin: sinon.spy(),
-			end: sinon.spy()
-		}
-	}, methods );
-}
-
-test.beforeEach( t => {
-	RewireAPI.__Rewire__( "console", { log: sinon.stub() } );
-	utils = getUtils();
-	RewireAPI.__Rewire__( "utils", utils );
+const utils = {
+	log: {
+		begin: sinon.spy(),
+		end: sinon.spy()
+	}
+};
+const sequenceSteps = proxyquire( "../../src/sequence-steps", {
+	"./utils": utils
 } );
-
-test.afterEach( t => {
-	RewireAPI.__ResetDependency__( "console" );
-	RewireAPI.__ResetDependency__( "utils" );
-} );
+const gitPushOriginMaster = sequenceSteps.gitPushOriginMaster;
 
 test( "gitPushOriginMaster calls log.begin", t => {
-	return gitPushOriginMaster( [ git, {} ], () => {
+	return gitPushOriginMaster( [ helpers.git, {} ], () => {
 		t.ok( utils.log.begin.calledWith( "git push origin master" ) );
 	} );
 } );
 
 test( "gitPushOriginMaster calls git.push", t => {
-	return gitPushOriginMaster( [ git, {} ], () => {
-		t.ok( git.push.calledWith( "origin", "master" ) );
+	return gitPushOriginMaster( [ helpers.git, {} ], () => {
+		t.ok( helpers.git.push.calledWith( "origin", "master" ) );
 	} );
 } );
 
 test( "gitPushOriginMaster calls log.end", t => {
-	return gitPushOriginMaster( [ git, {} ], () => {
+	return gitPushOriginMaster( [ helpers.git, {} ], () => {
 		t.ok( utils.log.end.called );
 	} );
 } );

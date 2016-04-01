@@ -1,11 +1,7 @@
 import test from "ava";
-import sinon from "sinon";
-import { git } from "../helpers/index.js";
-import { updateLog, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
-let utils = null;
-
-function getUtils( methods = {} ) {
+function getUtils( methods ) {
+	methods = methods || {};
 	return Object.assign( {}, {
 		log: {
 			begin: sinon.spy(),
@@ -15,59 +11,53 @@ function getUtils( methods = {} ) {
 		editor: sinon.spy( command => new Promise( resolve => resolve( " commit " ) ) )
 	}, methods );
 }
-
-test.beforeEach( t => {
-	RewireAPI.__Rewire__( "console", { log: sinon.stub() } );
-	utils = getUtils();
-	RewireAPI.__Rewire__( "utils", utils );
+const utils = getUtils();
+const sequenceSteps = proxyquire( "../../src/sequence-steps", {
+	"./utils": utils
 } );
-
-test.afterEach( t => {
-	RewireAPI.__ResetDependency__( "console" );
-	RewireAPI.__ResetDependency__( "utils" );
-} );
+const updateLog = sequenceSteps.updateLog;
 
 test( "updateLog should prompt the user to edit", t => {
-	return updateLog( [ git, {} ] ).then( () => {
+	return updateLog( [ helpers.git, {} ] ).then( () => {
 		t.ok( utils.prompt.called );
 	} );
 } );
 
 test( "updateLog launches an editor if user wants to edit", t => {
-	return updateLog( [ git, {} ] ).then( () => {
+	return updateLog( [ helpers.git, {} ] ).then( () => {
 		t.ok( utils.editor.called );
 	} );
 } );
 
 test( "updateLog calls log.begin", t => {
-	return updateLog( [ git, {} ] ).then( () => {
+	return updateLog( [ helpers.git, {} ] ).then( () => {
 		t.ok( utils.log.begin.called );
 	} );
 } );
 
 test( "updateLog trims data from the editor", t => {
 	const options = {};
-	return updateLog( [ git, options ] ).then( () => {
+	return updateLog( [ helpers.git, options ] ).then( () => {
 		t.is( options.log, "commit" );
 	} );
 } );
 
-test( "updateShortlog calls log.end", t => {
-	return updateLog( [ git, {} ] ).then( () => {
+test( "updateLog calls log.end", t => {
+	return updateLog( [ helpers.git, {} ] ).then( () => {
 		t.ok( utils.log.end.called );
 	} );
 } );
 
 test( "updateLog does not launch an editor if user declines", t => {
-	RewireAPI.__ResetDependency__( "utils" );
-	utils = getUtils( {
+	const utils = getUtils( {
 		prompt: sinon.spy( command => new Promise( resolve => resolve( { log: false } ) ) ),
 		editor: sinon.spy( command => new Promise( resolve => resolve( " commit " ) ) )
 	} );
-	RewireAPI.__Rewire__( "utils", utils );
-	return updateLog( [ git, {} ] ).then( () => {
-		// HACK - I can't figure out how to reset the editor...
-		const CALL_COUNT = 5;
-		t.is( utils.editor.callCount, CALL_COUNT );
+	const sequenceSteps = proxyquire( "../../src/sequence-steps", {
+		"./utils": utils
+	} );
+	const updateLog = sequenceSteps.updateLog;
+	return updateLog( [ helpers.git, {} ] ).then( () => {
+		t.ok( !utils.editor.called );
 	} );
 } );
