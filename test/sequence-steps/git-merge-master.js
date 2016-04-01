@@ -1,4 +1,7 @@
 import test from "ava";
+import sinon from "sinon";
+import nodefn from "when/node";
+import { git } from "../helpers/index.js";
 
 const utils = {
 	log: {
@@ -8,37 +11,45 @@ const utils = {
 };
 const lift = sinon.spy( nodefn, "lift" );
 const options = { develop: true };
-const sequenceSteps = proxyquire( "../../src/sequence-steps", {
-	"./utils": utils
+
+import { gitMergeMaster, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
+
+test.beforeEach( t => {
+	RewireAPI.__Rewire__( "utils", utils );
+	RewireAPI.__Rewire__( "nodefn", { lift } );
 } );
-const gitMergeMaster = sequenceSteps.gitMergeMaster;
+
+test.afterEach( t => {
+	RewireAPI.__ResetDependency__( "utils" );
+	RewireAPI.__ResetDependency__( "nodefn" );
+} );
 
 test( "gitMergeMaster calls log.begin", t => {
-	gitMergeMaster( [ helpers.git, options ] );
+	gitMergeMaster( [ git, options ] );
 	t.ok( utils.log.begin.called );
 } );
 
 test( "gitMergeMaster calls lift", t => {
-	gitMergeMaster( [ helpers.git, options ] );
+	gitMergeMaster( [ git, options ] );
 	t.ok( lift.called );
 } );
 
 test( "gitMergeMaster calls git.checkout if develop", t => {
-	return gitMergeMaster( [ helpers.git, options ], () => {
-		t.ok( helpers.git.merge.calledWith( [ "--ff-only", "master" ] ) );
+	return gitMergeMaster( [ git, options ], () => {
+		t.ok( git.merge.calledWith( [ "--ff-only", "master" ] ) );
 	} );
 } );
 
 test( "gitMergeMaster doesn't call git.checkout if not develop", t => {
 	options.develop = false;
-	helpers.git.merge = sinon.spy( ( arg, callback ) => callback( null, "success" ) );
-	gitMergeMaster( [ helpers.git, options ] );
-	t.ok( !helpers.git.checkout.called );
+	git.merge = sinon.spy( ( arg, callback ) => callback( null, "success" ) );
+	gitMergeMaster( [ git, options ] );
+	t.ok( !git.checkout.called );
 } );
 
 test( "gitMergeMaster calls log.end", t => {
 	options.develop = true;
-	return gitMergeMaster( [ helpers.git, options ] ).then( () => {
+	return gitMergeMaster( [ git, options ] ).then( () => {
 		t.ok( utils.log.end.called );
 	} );
 } );

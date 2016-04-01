@@ -1,4 +1,6 @@
 import test from "ava";
+import sinon from "sinon";
+import { git } from "../helpers/index.js";
 
 const utils = {
 	log: {
@@ -15,14 +17,21 @@ const utils = {
 ` ),
 	writeFile: sinon.spy()
 };
-const sequenceSteps = proxyquire( "../../src/sequence-steps", {
-	"./utils": utils
+
+import { gitLog, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
+
+test.beforeEach( t => {
+	utils.exec.reset();
+	RewireAPI.__Rewire__( "utils", utils );
 } );
-const gitLog = sequenceSteps.gitLog;
+
+test.afterEach( t => {
+	RewireAPI.__ResetDependency__( "utils" );
+} );
 
 test( "gitLog removes and formats a Next message", t => {
 	const options = {};
-	gitLog( [ helpers.git, options ] );
+	gitLog( [ git, options ] );
 	t.ok( options.log, `* one
 * two
 * three` );
@@ -30,7 +39,7 @@ test( "gitLog removes and formats a Next message", t => {
 
 test.cb( "gitLog calls log.begin when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
-	gitLog( [ helpers.git, {} ] ).then( () => {
+	gitLog( [ git, {} ] ).then( () => {
 		t.ok( utils.log.begin.called );
 		t.end();
 	} );
@@ -38,7 +47,7 @@ test.cb( "gitLog calls log.begin when no Next", t => {
 
 test.cb( "gitLog gets a list of tag versions when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
-	gitLog( [ helpers.git, {} ] ).then( () => {
+	gitLog( [ git, {} ] ).then( () => {
 		t.ok( utils.exec.calledWith( "git tag --sort=v:refname" ) );
 		t.end();
 	} );
@@ -46,7 +55,7 @@ test.cb( "gitLog gets a list of tag versions when no Next", t => {
 
 test.cb( "gitLog gets a log with the latest release when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
-	gitLog( [ helpers.git, {} ] ).then( () => {
+	gitLog( [ git, {} ] ).then( () => {
 		t.ok( utils.exec.calledWith( "git --no-pager log --no-merges --date-order --pretty=format:'%s' 1.1.." ) );
 		t.end();
 	} );
@@ -54,8 +63,9 @@ test.cb( "gitLog gets a log with the latest release when no Next", t => {
 
 test.cb( "gitLog calls log.end when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
-	gitLog( [ helpers.git, {} ] ).then( () => {
+	gitLog( [ git, {} ] ).then( () => {
 		t.ok( utils.log.end.called );
 		t.end();
 	} );
 } );
+

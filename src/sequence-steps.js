@@ -1,10 +1,8 @@
 /* eslint no-console: 0 */
 
-"use strict";
-
-const utils = require( "./utils" );
-const nodefn = require( "when/node" );
-const semver = require( "semver" );
+import utils from "./utils";
+import nodefn from "when/node";
+import semver from "semver";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const sequenceSteps = [
@@ -28,61 +26,46 @@ const sequenceSteps = [
 	gitPushOriginMaster
 ];
 
-function gitFetchUpstreamMaster() {
+export function gitFetchUpstreamMaster( [ git, options ] ) {
 	const command = "git fetch upstream --tags";
-
 	utils.log.begin( command );
-
 	return utils.exec( command ).then( () => utils.log.end() );
 }
 
-function gitCheckoutMaster( args ) {
-	const git = args[ 0 ];
+export function gitCheckoutMaster( [ git, options ] ) {
 	const command = "git checkout master";
-
 	utils.log.begin( command );
-
-	return nodefn.lift( git.checkout.bind( git ) )( "master" )
+	return nodefn.lift( ::git.checkout )( "master" )
 		.then( () => utils.log.end() );
 }
 
-function gitMergeUpstreamMaster( args ) {
-	const git = args[ 0 ];
+export function gitMergeUpstreamMaster( [ git, options ] ) {
 	const command = "git merge --ff-only upstream/master";
-
 	utils.log.begin( command );
-
-	return nodefn.lift( git.merge.bind( git ) )( [ "--ff-only", "upstream/master" ] )
+	return nodefn.lift( ::git.merge )( [ "--ff-only", "upstream/master" ] )
 		.then( () => utils.log.end() );
 }
 
-function gitMergeUpstreamDevelop( args ) {
-	const git = args[ 0 ];
-	const options = args[ 1 ];
+export function gitMergeUpstreamDevelop( [ git, options ] ) {
 	const command = "git merge upstream/develop";
-
 	if ( options.develop ) {
 		utils.log.begin( command );
-		return nodefn.lift( git.merge.bind( git ) )( [ "upstream/develop" ] )
+		return nodefn.lift( ::git.merge )( [ "upstream/develop" ] )
 			.then( () => utils.log.end() );
 	}
-
 	return null;
 }
 
-function updateVersion( args ) {
-	const options = args[ 1 ];
+export function updateVersion( [ git, options ] ) {
 	const packageJson = utils.readJSONFile( "./package.json" );
 	const oldVersion = packageJson.version;
 	const newVersion = packageJson.version = semver.inc( oldVersion, options.release );
-
 	utils.writeJSONFile( "./package.json", packageJson );
 	options.versions = { oldVersion, newVersion };
 	console.log( `Updated package.json from ${ oldVersion } to ${ newVersion }` );
 }
 
-function gitLog( args ) {
-	let options = args[ 1 ];
+export function gitLog( [ git, options ] ) {
 	let contents = utils.readFile( CHANGELOG_PATH );
 
 	if ( ~contents.indexOf( "### Next" ) ) {
@@ -106,12 +89,9 @@ function gitLog( args ) {
 	}
 }
 
-function updateLog( args ) {
-	const options = args[ 1 ];
+export function updateLog( [ git, options ] ) {
 	const command = "log preview";
-
 	console.log( `Here is a preview of your log: \n${ options.log }` );
-
 	return utils.prompt( [ {
 		type: "confirm",
 		name: "log",
@@ -129,12 +109,10 @@ function updateLog( args ) {
 	} );
 }
 
-function updateChangelog( args ) {
-	const options = args[ 1 ];
+export function updateChangelog( [ git, options ] ) {
 	const version = `### ${ options.versions.newVersion }`;
 	const update = `${ version }\n\n${ options.log }`;
 	const command = "update changelog";
-
 	utils.log.begin( command );
 	let contents = utils.readFile( CHANGELOG_PATH );
 	if ( options.release === "major" ) {
@@ -147,9 +125,8 @@ function updateChangelog( args ) {
 	utils.log.end();
 }
 
-function gitDiff() {
+export function gitDiff( [ git, options ] ) {
 	const command = "git diff --color CHANGELOG.md package.json";
-
 	return utils.exec( command )
 		.then( data => {
 			console.log( data );
@@ -168,50 +145,37 @@ function gitDiff() {
 		} );
 }
 
-function gitAdd( args ) {
-	const git = args[ 0 ];
+export function gitAdd( [ git, options ] ) {
 	const command = "git add CHANGELOG.md package.json";
-
 	utils.log.begin( command );
-
-	return nodefn.lift( git.add.bind( git ) )( [ "CHANGELOG.md", "package.json" ] )
+	return nodefn.lift( ::git.add )( [ "CHANGELOG.md", "package.json" ] )
 		.then( () => utils.log.end() );
 }
 
-function gitCommit( args ) {
-	const git = args[ 0 ];
-	const options = args[ 1 ];
+export function gitCommit( [ git, options ] ) {
 	const command = `git commit -m "${ options.versions.newVersion }"`;
-
 	utils.log.begin( command );
-
-	return nodefn.lift( git.commit.bind( git ) )( options.versions.newVersion )
+	return nodefn.lift( ::git.commit )( options.versions.newVersion )
 		.then( () => utils.log.end() );
 }
 
-function gitTag( args ) {
-	const git = args[ 0 ];
-	const options = args[ 1 ];
+export function gitTag( [ git, options ] ) {
 	const command = `git tag -a v${ options.versions.newVersion } -m "..."`;
-
 	utils.log.begin( command );
-
-	return nodefn.lift( git.addAnnotatedTag.bind( git ) )( `v${ options.versions.newVersion }`, options.log )
+	return nodefn.lift( ::git.addAnnotatedTag )( `v${ options.versions.newVersion }`, options.log )
 		.then( () => utils.log.end() );
 }
 
-function gitPushUpstreamMaster() {
+export function gitPushUpstreamMaster( [ git, options ] ) {
 	const command = "git push upstream master --tags";
-
 	utils.log.begin( command );
-
 	return utils.exec( command )
 		.then( data => utils.log.end() );
 }
 
-function npmPublish() {
+export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
-
+	// look at `private` and `publishConfig.registry` package.json properties...
 	return utils.prompt( [ {
 		type: "confirm",
 		name: "publish",
@@ -226,77 +190,42 @@ function npmPublish() {
 	} );
 }
 
-function gitCheckoutDevelop( args ) {
-	const git = args[ 0 ];
-	const options = args[ 1 ];
+export function gitCheckoutDevelop( [ git, options ] ) {
 	const command = `git checkout develop`;
-
 	utils.log.begin( command );
 	if ( options.develop ) {
-		return nodefn.lift( git.checkout.bind( git ) )( "develop" )
+		return nodefn.lift( ::git.checkout )( "develop" )
 			.then( () => utils.log.end() );
 	}
 	utils.log.end();
-
 	return null;
 }
 
-function gitMergeMaster( args ) {
-	const git = args[ 0 ];
-	const options = args[ 1 ];
+export function gitMergeMaster( [ git, options ] ) {
 	const command = `git merge --ff-only master`;
-
 	if ( options.develop ) {
 		utils.log.begin( command );
-		return nodefn.lift( git.merge.bind( git ) )( [ "--ff-only", "master" ] )
+		return nodefn.lift( ::git.merge )( [ "--ff-only", "master" ] )
 			.then( () => utils.log.end() );
 	}
-
 	return null;
 }
 
-function gitPushUpstreamDevelop( args ) {
-	const git = args[ 0 ];
-	const options = args[ 1 ];
+export function gitPushUpstreamDevelop( [ git, options ] ) {
 	const command = `git push upstream develop`;
-
 	if ( options.develop ) {
 		utils.log.begin( command );
-		return nodefn.lift( git.push.bind( git ) )( "upstream", "develop" )
+		return nodefn.lift( ::git.push )( "upstream", "develop" )
 			.then( () => utils.log.end() );
 	}
-
 	return null;
 }
 
-function gitPushOriginMaster( args ) {
-	const git = args[ 0 ];
+export function gitPushOriginMaster( [ git, options ] ) {
 	const command = `git push origin master`;
-
 	utils.log.begin( command );
-
-	return nodefn.lift( git.push.bind( git ) )( "origin", "master" )
+	return nodefn.lift( ::git.push )( "origin", "master" )
 		.then( () => utils.log.end() );
 }
 
-module.exports = {
-	sequenceSteps: sequenceSteps,
-	gitFetchUpstreamMaster: gitFetchUpstreamMaster,
-	gitCheckoutMaster: gitCheckoutMaster,
-	gitMergeUpstreamMaster: gitMergeUpstreamMaster,
-	gitMergeUpstreamDevelop: gitMergeUpstreamDevelop,
-	updateVersion: updateVersion,
-	gitLog: gitLog,
-	updateLog: updateLog,
-	updateChangelog: updateChangelog,
-	gitDiff: gitDiff,
-	gitAdd: gitAdd,
-	gitCommit: gitCommit,
-	gitTag: gitTag,
-	gitPushUpstreamMaster: gitPushUpstreamMaster,
-	npmPublish: npmPublish,
-	gitCheckoutDevelop: gitCheckoutDevelop,
-	gitMergeMaster: gitMergeMaster,
-	gitPushUpstreamDevelop: gitPushUpstreamDevelop,
-	gitPushOriginMaster: gitPushOriginMaster
-}
+export default sequenceSteps;

@@ -1,4 +1,7 @@
 import test from "ava";
+import sinon from "sinon";
+import nodefn from "when/node";
+import { git } from "../helpers/index.js";
 
 const utils = {
 	log: {
@@ -8,37 +11,45 @@ const utils = {
 };
 const lift = sinon.spy( nodefn, "lift" );
 const options = { develop: true };
-const sequenceSteps = proxyquire( "../../src/sequence-steps", {
-	"./utils": utils
+
+import { gitPushUpstreamDevelop, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
+
+test.beforeEach( t => {
+	RewireAPI.__Rewire__( "utils", utils );
+	RewireAPI.__Rewire__( "nodefn", { lift } );
 } );
-const gitPushUpstreamDevelop = sequenceSteps.gitPushUpstreamDevelop;
+
+test.afterEach( t => {
+	RewireAPI.__ResetDependency__( "utils" );
+	RewireAPI.__ResetDependency__( "nodefn" );
+} );
 
 test( "gitPushUpstreamDevelop calls log.begin", t => {
-	gitPushUpstreamDevelop( [ helpers.git, options ] );
+	gitPushUpstreamDevelop( [ git, options ] );
 	t.ok( utils.log.begin.called );
 } );
 
 test( "gitPushUpstreamDevelop calls lift", t => {
-	gitPushUpstreamDevelop( [ helpers.git, options ] );
+	gitPushUpstreamDevelop( [ git, options ] );
 	t.ok( lift.called );
 } );
 
 test( "gitPushUpstreamDevelop calls git.push if develop", t => {
-	return gitPushUpstreamDevelop( [ helpers.git, options ], () => {
-		t.ok( helpers.git.push.calledWith( "upstream", "develop" ) );
+	return gitPushUpstreamDevelop( [ git, options ], () => {
+		t.ok( git.push.calledWith( "upstream", "develop" ) );
 	} );
 } );
 
 test( "gitPushUpstreamDevelop doesn't call git.push if not develop", t => {
 	options.develop = false;
-	helpers.git.push = sinon.spy( ( arg, callback ) => callback( null, "success" ) );
-	gitPushUpstreamDevelop( [ helpers.git, options ] );
-	t.ok( !helpers.git.push.called );
+	git.push = sinon.spy( ( arg, callback ) => callback( null, "success" ) );
+	gitPushUpstreamDevelop( [ git, options ] );
+	t.ok( !git.push.called );
 } );
 
 // test( "gitPushUpstreamDevelop calls log.end", t => {
 // 	options.develop = true;
-// 	return gitPushUpstreamDevelop( [ helpers.git, options ] ).then( () => {
+// 	return gitPushUpstreamDevelop( [ git, options ] ).then( () => {
 // 		t.ok( utils.log.end.called );
 // 	} );
 // } );

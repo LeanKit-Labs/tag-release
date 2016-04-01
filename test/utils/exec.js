@@ -1,15 +1,24 @@
 import test from "ava";
+import utils from "../../src/utils";
+import sinon from "sinon";
+import { isPromise } from "../helpers/index.js";
 
-const childProcess = {
-	exec: sinon.spy( ( arg, callback ) => callback( null, "success" ) )
-};
-const utils = proxyquire( "../../src/utils", {
-	"child_process": childProcess
+let childProcess = null;
+
+test.beforeEach( t => {
+	childProcess = {
+		exec: sinon.spy( ( arg, callback ) => callback( null, "success" ) )
+	};
+	utils.__Rewire__( "childProcess", childProcess );
+} );
+
+test.afterEach( t => {
+	utils.__ResetDependency__( "childProcess" );
 } );
 
 test( "exec returns a promise", t => {
 	const promise = utils.exec( "command" );
-	t.ok( helpers.isPromise( promise ) );
+	t.ok( isPromise( promise ) );
 } );
 
 test( "exec calls childProcess.exec", t => {
@@ -24,9 +33,10 @@ test( "exec resolves if childProcess.exec succeeds", t => {
 } );
 
 test( "exec rejects if childProcess.exec fails", t => {
-	const childProcess = {
+	childProcess = {
 		exec: sinon.spy( ( arg, callback ) => callback( "error", null, "fails" ) )
 	};
+	utils.__Rewire__( "childProcess", childProcess );
 	return utils.exec( "command" ).catch( data => {
 		t.is( data, "fails" );
 	} );

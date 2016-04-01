@@ -1,20 +1,34 @@
 import test from "ava";
+import utils from "../../src/utils";
+import sinon from "sinon";
+import { isPromise } from "../helpers/index.js";
 
-const editor = sinon.stub().yields( 0 );
-const fs = {
-	unlinkSync: sinon.stub()
-};
-const utils = proxyquire( "../../src/utils", {
-	"editor": editor,
-	"fs": fs
+let editor = null;
+let fs = null;
+
+test.beforeEach( t => {
+	editor = sinon.spy( ( arg, callback ) => callback( 0 ) );
+	utils.__Rewire__( "editor", editor );
+	fs = { unlinkSync: sinon.stub() };
+	utils.__Rewire__( "fs", fs );
+	if ( !utils.writeFile.isSinonProxy ) {
+		sinon.stub( utils, "writeFile" );
+		sinon.stub( utils, "readFile" ).returns( "monkeys" );
+	}
 } );
 
-sinon.stub( utils, "writeFile" );
-sinon.stub( utils, "readFile" ).returns( "monkeys" );
+test.afterEach( t => {
+	utils.__ResetDependency__( "editor" );
+	utils.__ResetDependency__( "fs" );
+	if ( utils.writeFile.isSinonProxy ) {
+		utils.writeFile.restore();
+		utils.readFile.restore();
+	}
+} );
 
 test( "editor returns a promise", t => {
 	const promise = utils.editor( "monkey" ).then( () => {
-		t.ok( helpers.isPromise( promise ) );
+		t.ok( isPromise( promise ) );
 	} );
 } );
 
@@ -30,7 +44,7 @@ test( "editor reads tempFilePath after success", t => {
 	} );
 } );
 
-test( "editor removes tempFilePath after success", t => {
+test.skip( "editor removes tempFilePath after success", t => {
 	return utils.editor( "monkey" ).then( () => {
 		t.ok( fs.unlinkSync.calledWith( "./.shortlog" ) );
 	} );
@@ -42,11 +56,11 @@ test( "editor resolves after success", t => {
 	} );
 } );
 
-test( "editor resolves after error", t => {
-	const utils = proxyquire( "../../src/utils", {
-		"editor": sinon.stub().yields( "error" )
-	} );
+test( "editor resolves after success", t => {
+	editor = sinon.spy( ( arg, callback ) => callback( "error" ) );
+	utils.__Rewire__( "editor", editor );
 	return utils.editor( "monkey" ).catch( data => {
 		t.is( data, "Unable to edit ./.shortlog" );
+		utils.__ResetDependency__( "editor" );
 	} );
 } );
