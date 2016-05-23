@@ -1,9 +1,7 @@
-#!/usr/bin/env node --harmony
-var path = require( "path" );
-var dir = path.basename( __dirname ); // directory this file is in
+#!/usr/bin/env node
 
 require( "babel-register" )( {
 	ignore: false,
-	only: new RegExp( path.join( dir, "src" ) )
+	only: /src/
 } );
 require( "./src/index.js" );
