@@ -1,5 +1,10 @@
 ## 3.x
 
+### 3.0.1
+
+* Fix windows babel path bug
+* Don't log in gitCheckoutDevelop if there is no develop branch
+
 ### 3.0.0
 
 * Update to allow babel-register to run in the global npm context
