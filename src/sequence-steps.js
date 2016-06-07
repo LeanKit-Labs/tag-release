@@ -76,9 +76,13 @@ export function gitLog( [ git, options ] ) {
 		utils.writeFile( CHANGELOG_PATH, contents );
 	} else {
 		return utils.exec( "git tag --sort=v:refname" ).then( tags => {
-			tags = tags.trim().split( "\n" );
-			const latestRelease = tags[ tags.length - 1 ];
-			const command = `git --no-pager log --no-merges --date-order --pretty=format:'%s' ${ latestRelease }..`;
+			let command = `git --no-pager log --no-merges --date-order --pretty=format:'%s'`;
+			tags = tags.trim();
+			if ( tags.length ) {
+				tags = tags.split( "\n" );
+				const latestRelease = tags[ tags.length - 1 ];
+				command = `${ command } ${ latestRelease }..`;
+			}
 			utils.log.begin( command );
 			return utils.exec( command ).then( data => {
 				data = data.trim().replace( /^(.+)$/gm, "* $1" );
@@ -122,6 +126,7 @@ export function updateChangelog( [ git, options ] ) {
 		contents = contents.replace( /(## .*\n)/, `$1\n${ update }\n` );
 	}
 	utils.writeFile( CHANGELOG_PATH, contents );
+	console.log( CHANGELOG_PATH, contents );
 	utils.log.end();
 }
 
