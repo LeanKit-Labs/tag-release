@@ -3,6 +3,7 @@
 import utils from "./utils";
 import nodefn from "when/node";
 import semver from "semver";
+import { get } from "lodash";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const sequenceSteps = [
@@ -175,19 +176,26 @@ export function gitPushUpstreamMaster( [ git, options ] ) {
 
 export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
-	// look at `private` and `publishConfig.registry` package.json properties...
-	return utils.prompt( [ {
-		type: "confirm",
-		name: "publish",
-		message: "Do you want to publish this package",
-		default: true
-	} ] ).then( answers => {
-		utils.log.begin( command );
-		if ( answers.publish ) {
-			return utils.exec( command ).then( data => utils.log.end() );
-		}
-		utils.log.end();
-	} );
+	const pkg = utils.readJSONFile( "./package.json" );
+
+	if (
+		!get( pkg, "private", false ) &&
+		get( pkg, "publishConfig.registry", null )
+	) {
+		return utils.prompt( [ {
+			type: "confirm",
+			name: "publish",
+			message: "Do you want to publish this package",
+			default: true
+		} ] ).then( answers => {
+			utils.log.begin( command );
+			if ( answers.publish ) {
+				return utils.exec( command ).then( data => utils.log.end() );
+			}
+			utils.log.end();
+		} );
+	}
+	return null;
 }
 
 export function gitCheckoutDevelop( [ git, options ] ) {
