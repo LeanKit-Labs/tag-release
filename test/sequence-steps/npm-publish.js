@@ -16,8 +16,7 @@ const getUtils = () => {
 		prompt: sinon.spy( command => new Promise( resolve => resolve( { publish: true } ) ) ),
 		exec: sinon.spy( command => new Promise( resolve => resolve( "data" ) ) ),
 		readJSONFile: sinon.stub().returns( {
-			private: false,
-			publishConfig: { registry: "test" }
+			private: false
 		} )
 	};
 };
@@ -56,18 +55,7 @@ test( "npmPublish calls log.end", t => {
 
 test( "npmPublish doesn't prompt if package is private", t => {
 	utils.readJSONFile = sinon.stub().returns( {
-		private: true,
-		publishConfig: { registry: "test" }
-	} );
-	utils.prompt = sinon.spy( command => new Promise( resolve => resolve( { publish: true } ) ) );
-	npmPublish( [ git, {} ] );
-	t.ok( !utils.prompt.called );
-} );
-
-test( "npmPublish doesn't prompt if no publishConfig.registry", t => {
-	utils.readJSONFile = sinon.stub().returns( {
-		private: false,
-		publishConfig: null
+		private: true
 	} );
 	utils.prompt = sinon.spy( command => new Promise( resolve => resolve( { publish: true } ) ) );
 	npmPublish( [ git, {} ] );

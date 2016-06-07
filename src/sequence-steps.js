@@ -178,21 +178,17 @@ export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
 	const pkg = utils.readJSONFile( "./package.json" );
 
-	if (
-		!get( pkg, "private", false ) &&
-		get( pkg, "publishConfig.registry", null )
-	) {
+	if ( !get( pkg, "private", false ) ) {
 		return utils.prompt( [ {
 			type: "confirm",
 			name: "publish",
 			message: "Do you want to publish this package",
 			default: true
 		} ] ).then( answers => {
-			utils.log.begin( command );
 			if ( answers.publish ) {
+				utils.log.begin( command );
 				return utils.exec( command ).then( data => utils.log.end() );
 			}
-			utils.log.end();
 		} );
 	}
 	return null;
