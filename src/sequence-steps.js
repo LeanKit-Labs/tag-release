@@ -7,6 +7,7 @@ import semver from "semver";
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const sequenceSteps = [
 	gitFetchUpstreamMaster,
+	gitBranchGrepUpstreamDevelop,
 	gitCheckoutMaster,
 	gitMergeUpstreamMaster,
 	gitMergeUpstreamDevelop,
@@ -30,6 +31,15 @@ export function gitFetchUpstreamMaster( [ git, options ] ) {
 	const command = "git fetch upstream --tags";
 	utils.log.begin( command );
 	return utils.exec( command ).then( () => utils.log.end() );
+}
+
+export function gitBranchGrepUpstreamDevelop( [ git, options ] ) {
+	const command = `git branch -r | grep "upstream/develop"`;
+	return utils.exec( command ).then( data => {
+		options.develop = true;
+	} ).catch( data => {
+		options.develop = false;
+	} );
 }
 
 export function gitCheckoutMaster( [ git, options ] ) {
