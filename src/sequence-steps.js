@@ -175,19 +175,20 @@ export function gitPushUpstreamMaster( [ git, options ] ) {
 
 export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
-	// look at `private` and `publishConfig.registry` package.json properties...
-	return utils.prompt( [ {
-		type: "confirm",
-		name: "publish",
-		message: "Do you want to publish this package",
-		default: true
-	} ] ).then( answers => {
-		utils.log.begin( command );
-		if ( answers.publish ) {
-			return utils.exec( command ).then( data => utils.log.end() );
-		}
-		utils.log.end();
-	} );
+
+	return utils.getPackageRegistry().then( registry => {
+		return utils.prompt( [ {
+			type: "confirm",
+			name: "publish",
+			message: `Do you want to publish this package to ${ registry }`,
+			default: true
+		} ] ).then( answers => {
+			if ( answers.publish ) {
+				utils.log.begin( command );
+				return utils.exec( command ).then( data => utils.log.end() );
+			}
+		} );
+	} ).catch( e => chalk.red( e ) );
 }
 
 export function gitCheckoutDevelop( [ git, options ] ) {
