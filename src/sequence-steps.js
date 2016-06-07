@@ -119,11 +119,13 @@ export function updateChangelog( [ git, options ] ) {
 	const command = "update changelog";
 	utils.log.begin( command );
 	let contents = utils.readFile( CHANGELOG_PATH );
+	const wildcardVersion = options.versions.newVersion.replace( /\.\d+\.\d+/, ".x" );
 	if ( options.release === "major" ) {
-		const wildcardVersion = options.versions.newVersion.replace( ".0.0", ".x" );
 		contents = `## ${ wildcardVersion }\n\n${ update }\n\n${ contents }`;
 	} else {
-		contents = contents.replace( /(## .*\n)/, `$1\n${ update }\n` );
+		contents = contents ?
+			contents.replace( /(## .*\n)/, `$1\n${ update }\n` ) :
+			`## ${ wildcardVersion }\n\n${ update }`;
 	}
 	utils.writeFile( CHANGELOG_PATH, contents );
 	console.log( CHANGELOG_PATH, contents );
