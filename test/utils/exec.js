@@ -18,12 +18,12 @@ test.afterEach( t => {
 
 test( "exec returns a promise", t => {
 	const promise = utils.exec( "command" );
-	t.ok( isPromise( promise ) );
+	t.truthy( isPromise( promise ) );
 } );
 
 test( "exec calls childProcess.exec", t => {
 	utils.exec( "command" );
-	t.ok( childProcess.exec.calledWith( "command" ) );
+	t.truthy( childProcess.exec.calledWith( "command" ) );
 } );
 
 test( "exec resolves if childProcess.exec succeeds", t => {
@@ -34,10 +34,12 @@ test( "exec resolves if childProcess.exec succeeds", t => {
 
 test( "exec rejects if childProcess.exec fails", t => {
 	childProcess = {
-		exec: sinon.spy( ( arg, callback ) => callback( "error", null, "fails" ) )
+		exec: sinon.spy( ( arg, callback ) =>
+			callback( "error", null, "fails" )
+		)
 	};
 	utils.__Rewire__( "childProcess", childProcess );
 	return utils.exec( "command" ).catch( data => {
-		t.is( data, "fails" );
+		t.is( data, "error" );
 	} );
 } );

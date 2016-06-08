@@ -25,15 +25,15 @@ test.afterEach( t => {
 
 test( "writeFileJSON reads the file", t => {
 	utils.writeJSONFile( PATH, INPUT );
-	t.ok( fs.readFileSync.calledWith( PATH, "utf-8" ) );
+	t.truthy( fs.readFileSync.calledWith( PATH, "utf-8" ) );
 } );
 
 test( "writeFileJSON detects the indent in the file", t => {
 	utils.writeJSONFile( PATH, INPUT );
-	t.ok( detectIndent.called );
+	t.truthy( detectIndent.called );
 } );
 
 test( "writeFileJSON writes the file", t => {
 	utils.writeJSONFile( PATH, INPUT );
-	t.ok( utils.writeFile.calledWith( PATH, OUTPUT ) );
+	t.truthy( utils.writeFile.calledWith( PATH, OUTPUT ) );
 } );

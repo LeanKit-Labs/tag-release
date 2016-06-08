@@ -34,7 +34,7 @@ test.serial( "getPackageRegistry reads from local package.json", t => {
 	createReadJSONMock( config );
 
 	return utils.getPackageRegistry().then( () => {
-		t.ok( get.calledWith( {
+		t.truthy( get.calledWith( {
 			name: "@aja/my-special-project"
 		}, "publishConfig.registry" ) );
 	} );
@@ -47,7 +47,7 @@ test.serial( "getPackageRegistry when registry not supplied in package.json read
 	createReadJSONMock( config );
 
 	return utils.getPackageRegistry().then( () => {
-		t.ok( utils.exec.calledWith( "npm get @aja:registry" ) );
+		t.truthy( utils.exec.calledWith( "npm get @aja:registry" ) );
 	} );
 } );
 
@@ -59,7 +59,7 @@ test.serial( "getPackageRegistry successfully gets registry from package.json", 
 	createReadJSONMock( config );
 
 	return utils.getPackageRegistry().then( () => {
-		t.ok( get.calledWith( {
+		t.truthy( get.calledWith( {
 			name: "my-special-project"
 		}, "publishConfig.registry" ) );
 	} );
@@ -72,6 +72,6 @@ test.serial( "getPackageRegistry when registry not supplied in package.json read
 	createReadJSONMock( config );
 
 	return utils.getPackageRegistry().then( () => {
-		t.ok( utils.exec.calledWith( "npm get registry" ) );
+		t.truthy( utils.exec.calledWith( "npm get registry" ) );
 	} );
 } );

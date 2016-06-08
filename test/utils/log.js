@@ -16,15 +16,15 @@ test.afterEach( t => {
 } );
 
 test( "log begin writes to logUpdate", t => {
-	t.ok( logUpdate.calledWith( "monkey ☐" ) );
+	t.truthy( logUpdate.calledWith( "monkey ☐" ) );
 } );
 
 test( "log end updates logUpdate", t => {
 	utils.log.end();
-	t.ok( logUpdate.calledWith( "monkey ☑" ) );
+	t.truthy( logUpdate.calledWith( "monkey ☑" ) );
 } );
 
 test( "log end completes logUpdate", t => {
 	utils.log.end();
-	t.ok( logUpdate.done.called );
+	t.truthy( logUpdate.done.called );
 } );

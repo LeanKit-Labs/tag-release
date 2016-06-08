@@ -19,7 +19,7 @@ test.afterEach( t => {
 
 test.cb( "gitBranchGrepUpstreamDevelop calls git branch command", t => {
 	gitBranchGrepUpstreamDevelop( [ git, {} ] ).then( () => {
-		t.ok( utils.exec.calledWith( `git branch -r | grep "upstream/develop"` ) );
+		t.truthy( utils.exec.calledWith( `git branch -r | grep "upstream/develop"` ) );
 		t.end();
 	} );
 } );
@@ -27,7 +27,7 @@ test.cb( "gitBranchGrepUpstreamDevelop calls git branch command", t => {
 test.cb( "gitBranchGrepUpstreamDevelop sets options.develop=true when upstream/develop exists", t => {
 	const options = { develop: false };
 	gitBranchGrepUpstreamDevelop( [ git, options ] ).then( () => {
-		t.ok( options.develop );
+		t.truthy( options.develop );
 		t.end();
 	} );
 } );
@@ -36,7 +36,7 @@ test.cb( "gitBranchGrepUpstreamDevelop sets options.develop=false when upstream/
 	const options = { develop: true };
 	utils.exec = sinon.spy( command => new Promise( ( resolve, reject ) => reject() ) );
 	gitBranchGrepUpstreamDevelop( [ git, options ] ).then( () => {
-		t.ok( !options.develop );
+		t.truthy( !options.develop );
 		t.end();
 	} );
 } );

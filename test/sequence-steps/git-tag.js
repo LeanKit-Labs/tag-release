@@ -33,18 +33,18 @@ test.afterEach( t => {
 
 test( "gitTag calls log.begin", t => {
 	return gitTag( [ git, options ], () => {
-		t.ok( utils.log.begin.called );
+		t.truthy( utils.log.begin.called );
 	} );
 } );
 
 test( "gitTag calls git.commit", t => {
 	return gitTag( [ git, options ], () => {
-		t.ok( git.add.calledWith( "v1.0.1" ) );
+		t.truthy( git.add.calledWith( "v1.0.1" ) );
 	} );
 } );
 
 test( "gitTag calls log.end", t => {
 	return gitTag( [ git, options ], () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

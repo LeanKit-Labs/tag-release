@@ -26,26 +26,26 @@ test.afterEach( t => {
 
 test( "gitMergeUpstreamMaster returns a promise", t => {
 	const promise = gitMergeUpstreamMaster( [ git, {} ] );
-	t.ok( isPromise( promise ) );
+	t.truthy( isPromise( promise ) );
 } );
 
 test( "gitMergeUpstreamMaster calls log.begin", t => {
 	gitMergeUpstreamMaster( [ git, {} ] );
-	t.ok( utils.log.begin.called );
+	t.truthy( utils.log.begin.called );
 } );
 
 test( "gitMergeUpstreamMaster calls lift", t => {
 	gitMergeUpstreamMaster( [ git, {} ] );
-	t.ok( lift.called );
+	t.truthy( lift.called );
 } );
 
 test( "gitMergeUpstreamMaster calls git.checkout", t => {
 	gitMergeUpstreamMaster( [ git, {} ] );
-	t.ok( git.merge.calledWith( [ "--ff-only", "upstream/master" ] ) );
+	t.truthy( git.merge.calledWith( [ "--ff-only", "upstream/master" ] ) );
 } );
 
 test( "gitMergeUpstreamMaster calls log.end", t => {
 	return gitMergeUpstreamMaster( [ git, {} ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

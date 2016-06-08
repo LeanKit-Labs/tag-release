@@ -27,18 +27,18 @@ test.afterEach( t => {
 
 test( "gitPushOriginMaster calls log.begin", t => {
 	return gitPushOriginMaster( [ git, {} ], () => {
-		t.ok( utils.log.begin.calledWith( "git push origin master" ) );
+		t.truthy( utils.log.begin.calledWith( "git push origin master" ) );
 	} );
 } );
 
 test( "gitPushOriginMaster calls git.push", t => {
 	return gitPushOriginMaster( [ git, {} ], () => {
-		t.ok( git.push.calledWith( "origin", "master" ) );
+		t.truthy( git.push.calledWith( "origin", "master" ) );
 	} );
 } );
 
 test( "gitPushOriginMaster calls log.end", t => {
 	return gitPushOriginMaster( [ git, {} ], () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

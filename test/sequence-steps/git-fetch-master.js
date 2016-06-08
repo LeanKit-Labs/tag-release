@@ -22,21 +22,21 @@ test.afterEach( t => {
 
 test( "gitFetchUpstreamMaster returns a promise", t => {
 	const promise = gitFetchUpstreamMaster( [ git, {} ] );
-	t.ok( isPromise( promise ) );
+	t.truthy( isPromise( promise ) );
 } );
 
 test( "gitFetchUpstreamMaster calls log.begin", t => {
 	gitFetchUpstreamMaster( [ git, {} ] );
-	t.ok( utils.log.begin.called );
+	t.truthy( utils.log.begin.called );
 } );
 
 test( "gitFetchUpstreamMaster calls exec", t => {
 	gitFetchUpstreamMaster( [ git, {} ] );
-	t.ok( utils.exec.calledWith( "git fetch upstream --tags" ) );
+	t.truthy( utils.exec.calledWith( "git fetch upstream --tags" ) );
 } );
 
 test( "gitFetchUpstreamMaster calls log.end", t => {
 	return gitFetchUpstreamMaster( [ git, {} ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

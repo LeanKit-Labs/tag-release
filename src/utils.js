@@ -6,6 +6,9 @@ import editor from "editor";
 import logUpdate from "log-update";
 import detectIndent from "detect-indent";
 import { get } from "lodash";
+import chalk from "chalk";
+
+const GIT_CONFIG_COMMAND = "git config --global";
 
 export default {
 	readFile( path ) {
@@ -34,7 +37,7 @@ export default {
 				if ( error === null ) {
 					resolve( stdout );
 				} else {
-					reject( stderr );
+					reject( error );
 				}
 			} )
 		);
@@ -85,5 +88,39 @@ export default {
 			logUpdate( `${ this.lastLog } ☑` );
 			logUpdate.done();
 		}
+	},
+	getGitConfig( name ) {
+		return new Promise( ( resolve, reject ) => {
+			this.exec( `${ GIT_CONFIG_COMMAND } ${ name }` )
+				.then( value => resolve( value.trim() ) )
+				.catch( error => reject( error ) );
+		} );
+	},
+	setGitConfig( name, value ) {
+		return this.exec( `${ GIT_CONFIG_COMMAND } ${ name } ${ value.trim() }` );
+	},
+	getGitConfigs() {
+		return Promise.all( [
+			this.getGitConfig( "tag-release.username" ),
+			this.getGitConfig( "tag-release.token" )
+		] );
+	},
+	setGitConfigs( username, token ) {
+		return Promise.all( [
+			this.setGitConfig( "tag-release.username", username ),
+			this.setGitConfig( "tag-release.token", token )
+		] ).catch( e => chalk.red( e ) );
+	},
+	escapeCurlPassword( source ) {
+		return source.replace( /([\[\]$"\\])/g, "\\$1" );
+	},
+	createGitHubAuthToken( username, password ) {
+		return new Promise( function( resolve, reject ) { // eslint-disable-line
+			password = this.escapeCurlPassword( password );
+			const curl = `curl https://api.github.com/authorizations -u "${ username }:${ password }" -d '{ "scopes": [ "repo" ], "note": "tag-release-${ new Date().toISOString() }"}'`;
+			this.exec( curl ).then( response => {
+				resolve( JSON.parse( response ).token.trim() );
+			} ).catch( e => reject( e ) );
+		}.bind( this ) );
 	}
 };

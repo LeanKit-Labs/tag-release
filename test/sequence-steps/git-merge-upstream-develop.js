@@ -26,7 +26,7 @@ test.afterEach( t => {
 
 test( "gitMergeUpstreamDevelop returns a promise", t => {
 	const promise = gitMergeUpstreamDevelop( [ git, { develop: true } ] );
-	t.ok( isPromise( promise ) );
+	t.truthy( isPromise( promise ) );
 } );
 
 test( "gitMergeUpstreamDevelop returns null if doesn't have develop branch", t => {
@@ -35,21 +35,21 @@ test( "gitMergeUpstreamDevelop returns null if doesn't have develop branch", t =
 
 test( "gitMergeUpstreamDevelop calls log.begin", t => {
 	gitMergeUpstreamDevelop( [ git, { develop: true } ] );
-	t.ok( utils.log.begin.called );
+	t.truthy( utils.log.begin.called );
 } );
 
 test( "gitMergeUpstreamDevelop calls lift", t => {
 	gitMergeUpstreamDevelop( [ git, { develop: true } ] );
-	t.ok( lift.called );
+	t.truthy( lift.called );
 } );
 
 test( "gitMergeUpstreamDevelop calls git.checkout", t => {
 	gitMergeUpstreamDevelop( [ git, { develop: true } ] );
-	t.ok( git.merge.calledWith( [ "upstream/develop" ] ) );
+	t.truthy( git.merge.calledWith( [ "upstream/develop" ] ) );
 } );
 
 test( "gitMergeUpstreamDevelop calls log.end", t => {
 	return gitMergeUpstreamDevelop( [ git, { develop: true } ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

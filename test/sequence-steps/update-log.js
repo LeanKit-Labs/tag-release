@@ -17,31 +17,31 @@ function getUtils( methods = {} ) {
 }
 
 test.beforeEach( t => {
-	RewireAPI.__Rewire__( "console", { log: sinon.stub() } );
+	RewireAPI.__Rewire__( "logger", { log: sinon.stub() } );
 	utils = getUtils();
 	RewireAPI.__Rewire__( "utils", utils );
 } );
 
 test.afterEach( t => {
-	RewireAPI.__ResetDependency__( "console" );
+	RewireAPI.__ResetDependency__( "logger" );
 	RewireAPI.__ResetDependency__( "utils" );
 } );
 
 test( "updateLog should prompt the user to edit", t => {
 	return updateLog( [ git, {} ] ).then( () => {
-		t.ok( utils.prompt.called );
+		t.truthy( utils.prompt.called );
 	} );
 } );
 
 test( "updateLog launches an editor if user wants to edit", t => {
 	return updateLog( [ git, {} ] ).then( () => {
-		t.ok( utils.editor.called );
+		t.truthy( utils.editor.called );
 	} );
 } );
 
 test( "updateLog calls log.begin", t => {
 	return updateLog( [ git, {} ] ).then( () => {
-		t.ok( utils.log.begin.called );
+		t.truthy( utils.log.begin.called );
 	} );
 } );
 
@@ -54,7 +54,7 @@ test( "updateLog trims data from the editor", t => {
 
 test( "updateShortlog calls log.end", t => {
 	return updateLog( [ git, {} ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );
 

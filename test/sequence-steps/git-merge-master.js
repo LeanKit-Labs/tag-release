@@ -26,17 +26,17 @@ test.afterEach( t => {
 
 test( "gitMergeMaster calls log.begin", t => {
 	gitMergeMaster( [ git, options ] );
-	t.ok( utils.log.begin.called );
+	t.truthy( utils.log.begin.called );
 } );
 
 test( "gitMergeMaster calls lift", t => {
 	gitMergeMaster( [ git, options ] );
-	t.ok( lift.called );
+	t.truthy( lift.called );
 } );
 
 test( "gitMergeMaster calls git.checkout if develop", t => {
 	return gitMergeMaster( [ git, options ], () => {
-		t.ok( git.merge.calledWith( [ "--ff-only", "master" ] ) );
+		t.truthy( git.merge.calledWith( [ "--ff-only", "master" ] ) );
 	} );
 } );
 
@@ -44,12 +44,12 @@ test( "gitMergeMaster doesn't call git.checkout if not develop", t => {
 	options.develop = false;
 	git.merge = sinon.spy( ( arg, callback ) => callback( null, "success" ) );
 	gitMergeMaster( [ git, options ] );
-	t.ok( !git.checkout.called );
+	t.truthy( !git.checkout.called );
 } );
 
 test( "gitMergeMaster calls log.end", t => {
 	options.develop = true;
 	return gitMergeMaster( [ git, options ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );
