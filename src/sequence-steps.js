@@ -175,13 +175,12 @@ export function gitPushUpstreamMaster( [ git, options ] ) {
 
 export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
-	const pkg = utils.readJSONFile( "./package.json" );
 
-	if ( utils.isPublishable( pkg ) ) {
+	return utils.getPackageRegistry().then( registry => {
 		return utils.prompt( [ {
 			type: "confirm",
 			name: "publish",
-			message: "Do you want to publish this package",
+			message: `Do you want to publish this package to ${ registry }`,
 			default: true
 		} ] ).then( answers => {
 			if ( answers.publish ) {
@@ -189,8 +188,7 @@ export function npmPublish( [ git, options ] ) {
 				return utils.exec( command ).then( data => utils.log.end() );
 			}
 		} );
-	}
-	return null;
+	} ).catch( e => chalk.red( e ) );
 }
 
 export function gitCheckoutDevelop( [ git, options ] ) {

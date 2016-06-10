@@ -62,10 +62,18 @@ export default {
 			} );
 		} );
 	},
-	isPublishable( pkg ) {
+	getPackageRegistry() {
+		const pkg = this.readJSONFile( "./package.json" );
 		const registry = get( pkg, "publishConfig.registry" );
 
-		return !get( pkg, "private", false ) || registry;
+		if ( registry ) {
+			return new Promise( resolve => resolve( registry ) );
+		} else {
+			const [ , scope ] = pkg.name.match( /(@.+)\/.+/ ) || [];
+			const command = scope ?
+				`npm get ${ scope }:registry` : `npm get registry`;
+			return this.exec( command );
+		}
 	},
 	log: {
 		lastLog: "",
