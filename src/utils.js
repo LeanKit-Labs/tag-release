@@ -5,6 +5,7 @@ import inquirer from "inquirer";
 import editor from "editor";
 import logUpdate from "log-update";
 import detectIndent from "detect-indent";
+import { get } from "lodash";
 
 export default {
 	readFile( path ) {
@@ -60,6 +61,11 @@ export default {
 				}
 			} );
 		} );
+	},
+	isPublishable( pkg ) {
+		const registry = get( pkg, "publishConfig.registry" );
+
+		return !get( pkg, "private", false ) || registry;
 	},
 	log: {
 		lastLog: "",

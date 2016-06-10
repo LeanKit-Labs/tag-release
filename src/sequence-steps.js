@@ -3,7 +3,6 @@
 import utils from "./utils";
 import nodefn from "when/node";
 import semver from "semver";
-import { get } from "lodash";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const sequenceSteps = [
@@ -178,7 +177,7 @@ export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
 	const pkg = utils.readJSONFile( "./package.json" );
 
-	if ( !get( pkg, "private", false ) ) {
+	if ( utils.isPublishable( pkg ) ) {
 		return utils.prompt( [ {
 			type: "confirm",
 			name: "publish",
