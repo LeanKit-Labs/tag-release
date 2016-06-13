@@ -9,8 +9,8 @@
   "scripts": {
     "lint": "jscs ./ && eslint ./",
     "lint:fix": "jscs ./ --fix && eslint ./ --fix",
-    "test": "ava 'test/**/*.js' --require ./test/helpers/setup.js",
-    "test:match": "ava 'test/**/*.js' --match='log*' --verbose --require ./test/helpers/setup.js",
+    "test": "ava 'test/**/*.js' --match getPackageRegistry* --require ./test/helpers/setup.js",
+    "test:match": "ava 'test/**/*.js' --verbose --require ./test/helpers/setup.js",
     "test:watch": "npm test -- --watch",
     "cover": "nyc --reporter=text --reporter=html npm run test",
     "cover:watch": "onchange 'src/**/*.js' 'test/**/*.js' -- npm run test:cover",
