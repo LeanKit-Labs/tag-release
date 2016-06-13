@@ -68,12 +68,12 @@ export default {
 
 		if ( registry ) {
 			return new Promise( resolve => resolve( registry ) );
-		} else {
-			const [ , scope ] = pkg.name.match( /(@.+)\/.+/ ) || [];
-			const command = scope ?
-				`npm get ${ scope }:registry` : `npm get registry`;
-			return this.exec( command );
 		}
+
+		const [ , scope ] = pkg.name.match( /(@.+)\/.+/ ) || []; // jscs:ignore
+		const command = scope ?
+			`npm get ${ scope }:registry` : `npm get registry`;
+		return this.exec( command );
 	},
 	log: {
 		lastLog: "",

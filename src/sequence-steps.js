@@ -3,6 +3,7 @@
 import utils from "./utils";
 import nodefn from "when/node";
 import semver from "semver";
+import chalk from "chalk";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const sequenceSteps = [
@@ -176,6 +177,7 @@ export function gitPushUpstreamMaster( [ git, options ] ) {
 export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
 
+	console.log( "before utils.getPackageRegistry" );
 	return utils.getPackageRegistry().then( registry => {
 		return utils.prompt( [ {
 			type: "confirm",

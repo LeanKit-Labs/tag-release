@@ -7,10 +7,9 @@
     "tag-release": "./index.js"
   },
   "scripts": {
-    "lint": "jscs ./ && eslint ./",
-    "lint:fix": "jscs ./ --fix && eslint ./ --fix",
+    "lint": "jscs ./ && eslint --ignore-path .gitignore ./",
+    "lint:fix": "jscs ./ --fix && eslint --fix --ignore-path .gitignore ./",
     "test": "ava 'test/**/*.js' --require ./test/helpers/setup.js",
-    "test:match": "ava 'test/**/*.js' --match='npmPublish*' --verbose --require ./test/helpers/setup.js",
     "test:watch": "npm test -- --watch",
     "cover": "nyc --reporter=text --reporter=html npm run test",
     "cover:watch": "onchange 'src/**/*.js' 'test/**/*.js' -- npm run test:cover",
