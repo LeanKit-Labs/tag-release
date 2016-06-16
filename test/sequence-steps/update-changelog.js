@@ -83,6 +83,37 @@ test( "updateChangelog should add h2 header for major changes", t => {
 	t.ok( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
 } );
 
+test( "updateChangelog should create a new CHANGELOG.md for major changes", t => {
+	options.release = "major";
+	options.versions.newVersion = "2.0.0";
+	utils.readFile = sinon.stub().returns( "" );
+
+	updateChangelog( [ git, options ] );
+	const contents = `## 2.x
+
+### 2.0.0
+
+* commit message
+
+`;
+	t.ok( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
+	console.log( utils.writeFile.firstCall.args ); // eslint-disable-line
+} );
+
+test( "updateChangelog should create a new CHANGELOG.md for minor/defect changes", t => {
+	options.release = "minor";
+	options.versions.newVersion = "2.0.1";
+	utils.readFile = sinon.stub().returns( "" );
+
+	updateChangelog( [ git, options ] );
+	const contents = `## 2.x
+
+### 2.0.1
+
+* commit message`;
+	t.ok( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
+} );
+
 test( "updateChangelog calls log.end", t => {
 	updateChangelog( [ git, options ] );
 	t.ok( utils.log.end.called );

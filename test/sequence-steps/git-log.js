@@ -61,6 +61,15 @@ test.cb( "gitLog gets a log with the latest release when no Next", t => {
 	} );
 } );
 
+test.cb( "gitLog gets all logs when there are no tags", t => {
+	utils.readFile = sinon.stub().returns( "" );
+	utils.exec = sinon.spy( command => new Promise( resolve => resolve( "" ) ) );
+	gitLog( [ git, {} ] ).then( () => {
+		t.ok( utils.exec.calledWith( "git --no-pager log --no-merges --date-order --pretty=format:'%s'" ) );
+		t.end();
+	} );
+} );
+
 test.cb( "gitLog calls log.end when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
 	gitLog( [ git, {} ] ).then( () => {
