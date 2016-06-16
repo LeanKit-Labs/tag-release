@@ -1,5 +1,11 @@
 ## 3.x
 
+### 3.2.0
+
+* Auto-detect remote develop branch
+* Write CHANGELOG.md appropriately if there is none
+* Create log correctly when there are no tags
+
 ### 3.1.0
 
 * When asking to publish show where it will published to
