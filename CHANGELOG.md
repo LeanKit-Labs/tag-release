@@ -1,5 +1,9 @@
 ## 3.x
 
+### 3.1.0
+
+* When asking to publish show where it will published to
+
 ### 3.0.1
 
 * Fix windows babel path bug
