@@ -67,7 +67,7 @@ export default {
 		const registry = get( pkg, "publishConfig.registry" );
 
 		if ( registry ) {
-			return new Promise( resolve => resolve( registry ) );
+			return Promise.resolve( registry );
 		}
 
 		const [ , scope ] = pkg.name.match( /(@.+)\/.+/ ) || []; // jscs:ignore

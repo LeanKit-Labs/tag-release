@@ -177,7 +177,6 @@ export function gitPushUpstreamMaster( [ git, options ] ) {
 export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
 
-	console.log( "before utils.getPackageRegistry" );
 	return utils.getPackageRegistry().then( registry => {
 		return utils.prompt( [ {
 			type: "confirm",
