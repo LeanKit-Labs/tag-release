@@ -3,26 +3,30 @@ import sinon from "sinon";
 import nodefn from "when/node";
 import { git } from "../helpers/index.js";
 
-const utils = {
-	log: {
-		begin: sinon.spy(),
-		end: sinon.spy()
-	},
-	prompt: sinon.spy( command => new Promise( resolve => resolve( { publish: true } ) ) ),
-	exec: sinon.spy( command => new Promise( resolve => resolve( "data" ) ) )
-};
-const lift = sinon.spy( nodefn, "lift" );
-
+let utils = {};
+import realUtils from "../../src/utils.js";
 import { npmPublish, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
+const lift = sinon.spy( nodefn, "lift" );
+const getUtils = () => {
+	return {
+		log: {
+			begin: sinon.spy(),
+			end: sinon.spy()
+		},
+		prompt: sinon.spy( command => new Promise( resolve => resolve( { publish: true } ) ) ),
+		exec: sinon.spy( command => new Promise( resolve => resolve( "data" ) ) ),
+		readJSONFile: sinon.stub().returns( {
+			name: "test-project",
+			publishConfig: { registry: "http://my-registry.com" }
+		} ),
+		getPackageRegistry: realUtils.getPackageRegistry
+	};
+};
 
 test.beforeEach( t => {
+	utils = getUtils();
 	RewireAPI.__Rewire__( "utils", utils );
 	RewireAPI.__Rewire__( "nodefn", { lift } );
-} );
-
-test.afterEach( t => {
-	RewireAPI.__ResetDependency__( "utils" );
-	RewireAPI.__ResetDependency__( "nodefn" );
 } );
 
 test( "npmPublish calls log.begin", t => {

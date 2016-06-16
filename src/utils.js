@@ -5,6 +5,7 @@ import inquirer from "inquirer";
 import editor from "editor";
 import logUpdate from "log-update";
 import detectIndent from "detect-indent";
+import { get } from "lodash";
 
 export default {
 	readFile( path ) {
@@ -60,6 +61,19 @@ export default {
 				}
 			} );
 		} );
+	},
+	getPackageRegistry() {
+		const pkg = this.readJSONFile( "./package.json" );
+		const registry = get( pkg, "publishConfig.registry" );
+
+		if ( registry ) {
+			return Promise.resolve( registry );
+		}
+
+		const [ , scope ] = pkg.name.match( /(@.+)\/.+/ ) || []; // jscs:ignore
+		const command = scope ?
+			`npm get ${ scope }:registry` : `npm get registry`;
+		return this.exec( command );
 	},
 	log: {
 		lastLog: "",
