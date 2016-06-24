@@ -16,6 +16,7 @@ const utils = {
 };
 const lift = sinon.spy( nodefn, "lift" );
 const inc = sinon.stub().returns( "1.1.0" );
+const logger = { log: sinon.spy() };
 
 import { updateVersion, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
@@ -23,12 +24,14 @@ test.beforeEach( t => {
 	RewireAPI.__Rewire__( "utils", utils );
 	RewireAPI.__Rewire__( "nodefn", { lift } );
 	RewireAPI.__Rewire__( "semver", { inc } );
+	RewireAPI.__Rewire__( "logger", logger );
 } );
 
 test.afterEach( t => {
 	RewireAPI.__ResetDependency__( "utils" );
 	RewireAPI.__ResetDependency__( "nodefn" );
 	RewireAPI.__ResetDependency__( "semver" );
+	RewireAPI.__ResetDependency__( "logger" );
 } );
 
 test( "updateVersion calls readJSONFile", t => {

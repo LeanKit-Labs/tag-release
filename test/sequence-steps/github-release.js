@@ -1,5 +1,6 @@
 import test from "ava";
 import sinon from "sinon";
+import "sinon-as-promised";
 import nodefn from "when/node";
 import { git } from "../helpers/index.js";
 
@@ -17,35 +18,40 @@ const utils = {
 		begin: sinon.spy(),
 		end: sinon.spy()
 	},
-	prompt: sinon.spy( prompterQuestions => new Promise( resolve => {
-		resolve( {
-			name: "My Special Release"
-		} );
-	} ) ),
+	prompt: sinon.stub().resolves( {
+		name: "My Special Release"
+	} ),
 	readJSONFile: sinon.stub().returns( {
 		name: "my-special-repo"
 	} )
 };
 const lift = sinon.spy( nodefn, "lift" );
 let GitHub = null;
-const getGitHubMocks = ( shouldResolve = true ) => {
-	const getRepo = sinon.stub().returns( {
-		createRelease: sinon.spy( args => new Promise( ( resolve, reject ) => {
-			if ( shouldResolve ) {
-				resolve( {
-					data: {
-						html_url: "http://www.google.com" // eslint-disable-line
-					}
-				} );
-			} else {
-				reject( "error" );
+let createRelease = null;
+let getRepo = null;
+function getCreateRelease( shouldResolve = true ) {
+	const create = sinon.stub();
+	if ( shouldResolve ) {
+		create.resolves( {
+			data: {
+				html_url: "http://www.google.com" // eslint-disable-line
 			}
-		} ) )
-	} );
+		} );
+	} else {
+		create.rejects( "error" );
+	}
+	return create;
+}
+const getGitHubMocks = ( shouldResolve = true ) => {
+	createRelease = getCreateRelease( shouldResolve );
+	getRepo = sinon.spy( () => ( {
+		createRelease
+	} ) );
 
-	return sinon.stub().returns( { getRepo } );
+	return sinon.spy( () => ( { getRepo } ) );
 };
 const logger = { log: sinon.spy() };
+const chalk = { red: sinon.stub() };
 
 import { githubRelease, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
@@ -55,6 +61,7 @@ test.beforeEach( t => {
 	GitHub = getGitHubMocks();
 	RewireAPI.__Rewire__( "GitHub", GitHub );
 	RewireAPI.__Rewire__( "logger", logger );
+	RewireAPI.__Rewire__( "chalk", chalk );
 } );
 
 test.afterEach( t => {
@@ -62,15 +69,16 @@ test.afterEach( t => {
 	RewireAPI.__ResetDependency__( "nodefn" );
 	RewireAPI.__ResetDependency__( "GitHub" );
 	RewireAPI.__ResetDependency__( "logger" );
+	RewireAPI.__ResetDependency__( "chalk" );
 } );
 
-test( "githubRelease auths a GitHub client instance", t => {
+test.serial( "githubRelease auths a GitHub client instance", t => {
 	return githubRelease( [ git, options ] ).then( () => {
 		t.truthy( GitHub.calledWithExactly( { token: "k0234f" } ) );
 	} );
 } );
 
-test( "githubRelease identifies a default tag release name from recent commit", t => {
+test.serial( "githubRelease identifies a default tag release name from recent commit", t => {
 	const questions = [ {
 		type: "input",
 		name: "name",
@@ -83,29 +91,25 @@ test( "githubRelease identifies a default tag release name from recent commit", 
 	} );
 } );
 
-test( "githubRelease begins utils.log with git command", t => {
+test.serial( "githubRelease begins utils.log with git command", t => {
 	return githubRelease( [ git, options ] ).then( () => {
 		t.truthy( utils.log.begin.calledWithExactly( "release to github" ) );
 	} );
 } );
 
-test( "githubRelease reads from local package.json to determine repo name", t => {
+test.serial( "githubRelease reads from local package.json to determine repo name", t => {
 	return githubRelease( [ git, options ] ).then( () => {
 		t.truthy( utils.readJSONFile.calledWithExactly( "./package.json" ) );
 	} );
 } );
 
-test( "githubRelease creates repo object by providing username and package name", t => {
-	const github = new GitHub();
-
+test.serial( "githubRelease creates repo object by providing username and package name", t => {
 	return githubRelease( [ git, options ] ).then( () => {
-		t.truthy( github.getRepo.calledWithExactly( "someUser", "my-special-repo" ) );
+		t.truthy( getRepo.calledWithExactly( "someUser", "my-special-repo" ) );
 	} );
 } );
 
-test( "githubRelease calls to API to create release on GitHub", t => {
-	const github = new GitHub();
-	const repository = github.getRepo();
+test.serial( "githubRelease calls to API to create release on GitHub", t => {
 	const args = {
 		tag_name: "v0.1.1", // eslint-disable-line
 		name: "My Special Release",
@@ -113,21 +117,21 @@ test( "githubRelease calls to API to create release on GitHub", t => {
 	};
 
 	return githubRelease( [ git, options ] ).then( () => {
-		t.truthy( repository.createRelease.calledWithExactly( args ) );
+		t.truthy( createRelease.calledWithExactly( args ) );
 	} );
 } );
 
-test( "githubRelease logger.logs error when createRelease fails", t => {
+test.serial( "githubRelease ends utils.log after creating release", t => {
+	return githubRelease( [ git, options ] ).then( () => {
+		t.truthy( utils.log.end.called );
+	} );
+} );
+
+test.serial( "githubRelease logger.logs error when createRelease fails", t => {
 	GitHub = getGitHubMocks( false );
 	RewireAPI.__Rewire__( "GitHub", GitHub );
 
 	return githubRelease( [ git, options ] ).then( () => {
-		t.truthy( logger.log.called ); // eslint-disable-line
-	} );
-} );
-
-test( "githubRelease ends utils.log after creating release", t => {
-	return githubRelease( [ git, options ], () => {
-		t.truthy( utils.log.end.called );
+		t.truthy( chalk.red.called ); // eslint-disable-line
 	} );
 } );

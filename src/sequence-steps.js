@@ -76,7 +76,7 @@ export function updateVersion( [ git, options ] ) {
 	const newVersion = packageJson.version = semver.inc( oldVersion, options.release );
 	utils.writeJSONFile( "./package.json", packageJson );
 	options.versions = { oldVersion, newVersion };
-	chalk.green( `Updated package.json from ${ oldVersion } to ${ newVersion }` );
+	logger.log( chalk.green( `Updated package.json from ${ oldVersion } to ${ newVersion }` ) );
 }
 
 export function gitLog( [ git, options ] ) {
@@ -126,6 +126,7 @@ ${ chalk.green( options.log ) }` );
 					utils.log.end();
 				} );
 		}
+		return Promise.resolve();
 	} );
 }
 
