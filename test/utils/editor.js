@@ -28,25 +28,25 @@ test.afterEach( t => {
 
 test( "editor returns a promise", t => {
 	const promise = utils.editor( "monkey" ).then( () => {
-		t.ok( isPromise( promise ) );
+		t.truthy( isPromise( promise ) );
 	} );
 } );
 
 test( "editor writes to a tempFilePath", t => {
 	return utils.editor( "monkey" ).then( () => {
-		t.ok( utils.writeFile.calledWith( "./.shortlog", "monkey" ) );
+		t.truthy( utils.writeFile.calledWith( "./.shortlog", "monkey" ) );
 	} );
 } );
 
 test( "editor reads tempFilePath after success", t => {
 	return utils.editor( "monkey" ).then( () => {
-		t.ok( utils.readFile.calledWith( "./.shortlog" ) );
+		t.truthy( utils.readFile.calledWith( "./.shortlog" ) );
 	} );
 } );
 
 test.skip( "editor removes tempFilePath after success", t => {
 	return utils.editor( "monkey" ).then( () => {
-		t.ok( fs.unlinkSync.calledWith( "./.shortlog" ) );
+		t.truthy( fs.unlinkSync.calledWith( "./.shortlog" ) );
 	} );
 } );
 

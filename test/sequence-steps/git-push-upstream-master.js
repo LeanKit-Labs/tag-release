@@ -26,19 +26,19 @@ test.afterEach( t => {
 
 test( "gitPushUpstreamMaster calls log.begin", t => {
 	return gitPushUpstreamMaster( [ git, {} ], () => {
-		t.ok( utils.log.begin.called );
+		t.truthy( utils.log.begin.called );
 	} );
 } );
 
 test( "gitPushUpstreamMaster calls utils.exec with command", t => {
 	const COMMAND = "git push upstream master --tags";
 	return gitPushUpstreamMaster( [ git, {} ], () => {
-		t.ok( utils.exec.calledWith( COMMAND ) );
+		t.truthy( utils.exec.calledWith( COMMAND ) );
 	} );
 } );
 
 test( "gitPushUpstreamMaster calls log.end", t => {
 	return gitPushUpstreamMaster( [ git, {} ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

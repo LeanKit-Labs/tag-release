@@ -26,26 +26,26 @@ test.afterEach( t => {
 
 test( "gitCheckoutMaster returns a promise", t => {
 	const promise = gitCheckoutMaster( [ git, {} ] );
-	t.ok( isPromise( promise ) );
+	t.truthy( isPromise( promise ) );
 } );
 
 test( "gitCheckoutMaster calls log.begin", t => {
 	gitCheckoutMaster( [ git, {} ] );
-	t.ok( utils.log.begin.called );
+	t.truthy( utils.log.begin.called );
 } );
 
 test( "gitCheckoutMaster calls lift", t => {
 	gitCheckoutMaster( [ git, {} ] );
-	t.ok( lift.called );
+	t.truthy( lift.called );
 } );
 
 test( "gitCheckoutMaster calls git.checkout", t => {
 	gitCheckoutMaster( [ git, {} ] );
-	t.ok( git.checkout.calledWith( "master" ) );
+	t.truthy( git.checkout.calledWith( "master" ) );
 } );
 
 test( "gitCheckoutMaster calls log.end", t => {
 	return gitCheckoutMaster( [ git, {} ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

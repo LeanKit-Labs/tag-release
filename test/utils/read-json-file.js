@@ -16,9 +16,9 @@ test.afterEach( t => {
 
 test( "readJSONFile should read a file", t => {
 	utils.readJSONFile( PATH );
-	t.ok( utils.readFile.calledWith( PATH ) );
+	t.truthy( utils.readFile.calledWith( PATH ) );
 } );
 
 test( "readJSONFile parses the file", t => {
-	t.same( utils.readJSONFile( PATH ), OUTPUT );
+	t.deepEqual( utils.readJSONFile( PATH ), OUTPUT );
 } );

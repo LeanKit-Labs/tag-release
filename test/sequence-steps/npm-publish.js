@@ -29,28 +29,28 @@ test.beforeEach( t => {
 	RewireAPI.__Rewire__( "nodefn", { lift } );
 } );
 
-test( "npmPublish calls log.begin", t => {
+test.serial( "npmPublish calls log.begin", t => {
 	return npmPublish( [ git, {} ], () => {
-		t.ok( utils.log.begin.called );
+		t.truthy( utils.log.begin.called );
 	} );
 } );
 
-test( "npmPublish publishes if confirms prompt", t => {
+test.serial( "npmPublish publishes if confirms prompt", t => {
 	const COMMAND = "npm publish";
 	return npmPublish( [ git, {} ], () => {
-		t.ok( utils.exec.calledWith( COMMAND ) );
+		t.truthy( utils.exec.calledWith( COMMAND ) );
 	} );
 } );
 
-test( "npmPublish doesn't publish if denies prompt", t => {
+test.serial( "npmPublish calls log.end", t => {
+	return npmPublish( [ git, {} ] ).then( () => {
+		t.truthy( utils.log.end.called );
+	} );
+} );
+
+test.serial( "npmPublish doesn't publish if denies prompt", t => {
 	utils.prompt = sinon.spy( command => new Promise( resolve => resolve( { publish: false } ) ) );
 	return npmPublish( [ git, {} ], () => {
-		t.ok( !utils.exec.called );
-	} );
-} );
-
-test( "npmPublish calls log.end", t => {
-	return npmPublish( [ git, {} ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( !utils.exec.called );
 	} );
 } );

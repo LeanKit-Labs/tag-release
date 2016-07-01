@@ -42,12 +42,12 @@ test.afterEach( t => {
 
 test( "updateChangelog calls log.begin", t => {
 	updateChangelog( [ git, options ] );
-	t.ok( utils.log.begin.called );
+	t.truthy( utils.log.begin.called );
 } );
 
 test( "updateChangelog should read in the CHANGELOG.md", t => {
 	updateChangelog( [ git, options ] );
-	t.ok( utils.readFile.calledWith( CHANGELOG_PATH ) );
+	t.truthy( utils.readFile.calledWith( CHANGELOG_PATH ) );
 } );
 
 test( "updateChangelog should insert h3 header for minor and patch changes", t => {
@@ -61,7 +61,7 @@ test( "updateChangelog should insert h3 header for minor and patch changes", t =
 ### 1.0.0
 
 * update to v1.0.0`;
-	t.ok( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
+	t.truthy( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
 } );
 
 test( "updateChangelog should add h2 header for major changes", t => {
@@ -80,7 +80,7 @@ test( "updateChangelog should add h2 header for major changes", t => {
 ### 1.0.0
 
 * update to v1.0.0`;
-	t.ok( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
+	t.truthy( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
 } );
 
 test( "updateChangelog should create a new CHANGELOG.md for major changes", t => {
@@ -96,8 +96,7 @@ test( "updateChangelog should create a new CHANGELOG.md for major changes", t =>
 * commit message
 
 `;
-	t.ok( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
-	console.log( utils.writeFile.firstCall.args ); // eslint-disable-line
+	t.truthy( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
 } );
 
 test( "updateChangelog should create a new CHANGELOG.md for minor/defect changes", t => {
@@ -111,10 +110,10 @@ test( "updateChangelog should create a new CHANGELOG.md for minor/defect changes
 ### 2.0.1
 
 * commit message`;
-	t.ok( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
+	t.truthy( utils.writeFile.calledWith( CHANGELOG_PATH, contents ) );
 } );
 
 test( "updateChangelog calls log.end", t => {
 	updateChangelog( [ git, options ] );
-	t.ok( utils.log.end.called );
+	t.truthy( utils.log.end.called );
 } );

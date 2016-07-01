@@ -24,32 +24,32 @@ test.afterEach( t => {
 	RewireAPI.__ResetDependency__( "nodefn" );
 } );
 
-test( "gitPushUpstreamDevelop calls log.begin", t => {
+test.serial( "gitPushUpstreamDevelop calls log.begin", t => {
 	gitPushUpstreamDevelop( [ git, options ] );
-	t.ok( utils.log.begin.called );
+	t.truthy( utils.log.begin.called );
 } );
 
-test( "gitPushUpstreamDevelop calls lift", t => {
+test.serial( "gitPushUpstreamDevelop calls lift", t => {
 	gitPushUpstreamDevelop( [ git, options ] );
-	t.ok( lift.called );
+	t.truthy( lift.called );
 } );
 
-test( "gitPushUpstreamDevelop calls git.push if develop", t => {
+test.serial( "gitPushUpstreamDevelop calls git.push if develop", t => {
 	return gitPushUpstreamDevelop( [ git, options ], () => {
-		t.ok( git.push.calledWith( "upstream", "develop" ) );
+		t.truthy( git.push.calledWith( "upstream", "develop" ) );
 	} );
 } );
 
-test( "gitPushUpstreamDevelop doesn't call git.push if not develop", t => {
+test.serial( "gitPushUpstreamDevelop doesn't call git.push if not develop", t => {
 	options.develop = false;
 	git.push = sinon.spy( ( arg, callback ) => callback( null, "success" ) );
 	gitPushUpstreamDevelop( [ git, options ] );
-	t.ok( !git.push.called );
+	t.truthy( !git.push.called );
 } );
 
 // test( "gitPushUpstreamDevelop calls log.end", t => {
 // 	options.develop = true;
 // 	return gitPushUpstreamDevelop( [ git, options ] ).then( () => {
-// 		t.ok( utils.log.end.called );
+// 		t.truthy( utils.log.end.called );
 // 	} );
 // } );

@@ -27,34 +27,34 @@ test.afterEach( t => {
 
 test( "gitCheckoutDevelop calls log.begin", t => {
 	gitCheckoutDevelop( [ git, options ] );
-	t.ok( utils.log.begin.called );
+	t.truthy( utils.log.begin.called );
 } );
 
 test( "gitCheckoutDevelop calls lift", t => {
 	gitCheckoutDevelop( [ git, options ] );
-	t.ok( lift.called );
+	t.truthy( lift.called );
 } );
 
 test( "gitCheckoutDevelop calls git.checkout if develop", t => {
 	return gitCheckoutDevelop( [ git, options ], () => {
-		t.ok( git.checkout.calledWith( "devlop" ) );
+		t.truthy( git.checkout.calledWith( "devlop" ) );
 	} );
 } );
 
 test( "gitCheckoutDevelop doesn't log if not develop", t => {
 	gitCheckoutDevelop( [ git, { develop: false } ] );
-	t.ok( !utils.log.begin.called );
-	t.ok( !utils.log.end.called );
+	t.truthy( !utils.log.begin.called );
+	t.truthy( !utils.log.end.called );
 } );
 
 test( "gitCheckoutDevelop doesn't call git.checkout if not develop", t => {
 	git.checkout = sinon.spy( ( arg, callback ) => callback( null, "success" ) );
 	gitCheckoutDevelop( [ git, { develop: false } ] );
-	t.ok( !git.checkout.called );
+	t.truthy( !git.checkout.called );
 } );
 
 test( "gitCheckoutDevelop calls log.end", t => {
 	return gitCheckoutDevelop( [ git, options ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

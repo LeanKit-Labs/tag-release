@@ -28,18 +28,18 @@ test.afterEach( t => {
 
 test( "gitAdd calls log.begin", t => {
 	return gitAdd( [ git, {} ], () => {
-		t.ok( utils.log.begin.called );
+		t.truthy( utils.log.begin.called );
 	} );
 } );
 
 test( "gitAdd calls git.add", t => {
 	return gitAdd( [ git, {} ], () => {
-		t.ok( git.add.calledWith( [ "CHANGELOG.md", "package.json" ] ) );
+		t.truthy( git.add.calledWith( [ "CHANGELOG.md", "package.json" ] ) );
 	} );
 } );
 
 test( "gitAdd calls log.end", t => {
 	return gitAdd( [ git, {} ], () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );

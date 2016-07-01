@@ -16,6 +16,7 @@ const utils = {
 };
 const lift = sinon.spy( nodefn, "lift" );
 const inc = sinon.stub().returns( "1.1.0" );
+const logger = { log: sinon.spy() };
 
 import { updateVersion, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
@@ -23,32 +24,34 @@ test.beforeEach( t => {
 	RewireAPI.__Rewire__( "utils", utils );
 	RewireAPI.__Rewire__( "nodefn", { lift } );
 	RewireAPI.__Rewire__( "semver", { inc } );
+	RewireAPI.__Rewire__( "logger", logger );
 } );
 
 test.afterEach( t => {
 	RewireAPI.__ResetDependency__( "utils" );
 	RewireAPI.__ResetDependency__( "nodefn" );
 	RewireAPI.__ResetDependency__( "semver" );
+	RewireAPI.__ResetDependency__( "logger" );
 } );
 
 test( "updateVersion calls readJSONFile", t => {
 	updateVersion( [ git, { release: "minor" } ] );
-	t.ok( utils.readJSONFile.calledWith( "./package.json" ) );
+	t.truthy( utils.readJSONFile.calledWith( "./package.json" ) );
 } );
 
 test( "updateVersion adds versions to options", t => {
 	const options = { release: "minor" };
 	updateVersion( [ git, options ] );
-	t.ok( options.versions, { oldVersion: "1.0.0", newVersion: "1.1.0" } );
+	t.truthy( options.versions, { oldVersion: "1.0.0", newVersion: "1.1.0" } );
 } );
 
 test( "updateVersion passes options.release to semver.inc", t => {
 	const options = { release: "minor" };
 	updateVersion( [ git, options ] );
-	t.ok( inc.calledWith( "1.0.0", options.release ) );
+	t.truthy( inc.calledWith( "1.0.0", options.release ) );
 } );
 
 test( "updateVersion calls writeJSONFile", t => {
 	updateVersion( [ git, { release: "minor" } ] );
-	t.ok( utils.writeJSONFile.calledWith( "./package.json", { version: "1.1.0" } ) );
+	t.truthy( utils.writeJSONFile.calledWith( "./package.json", { version: "1.1.0" } ) );
 } );

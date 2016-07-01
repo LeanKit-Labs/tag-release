@@ -17,7 +17,7 @@ test.afterEach( t => {
 
 test( "readFile should read file contents", t => {
 	utils.readFile( PATH );
-	t.ok( fs.readFileSync.calledWith( PATH, "utf-8" ) );
+	t.truthy( fs.readFileSync.calledWith( PATH, "utf-8" ) );
 } );
 
 test( "readFile should return empty string if file doesn't exist", t => {

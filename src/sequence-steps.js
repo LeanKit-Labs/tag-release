@@ -3,7 +3,9 @@
 import utils from "./utils";
 import nodefn from "when/node";
 import semver from "semver";
+import GitHub from "github-api";
 import chalk from "chalk";
+import logger from "better-console";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const sequenceSteps = [
@@ -25,7 +27,9 @@ const sequenceSteps = [
 	gitCheckoutDevelop,
 	gitMergeMaster,
 	gitPushUpstreamDevelop,
-	gitPushOriginMaster
+	gitPushOriginMaster,
+	githubOwner,
+	githubRelease
 ];
 
 export function gitFetchUpstreamMaster( [ git, options ] ) {
@@ -73,7 +77,7 @@ export function updateVersion( [ git, options ] ) {
 	const newVersion = packageJson.version = semver.inc( oldVersion, options.release );
 	utils.writeJSONFile( "./package.json", packageJson );
 	options.versions = { oldVersion, newVersion };
-	console.log( `Updated package.json from ${ oldVersion } to ${ newVersion }` );
+	logger.log( chalk.green( `Updated package.json from ${ oldVersion } to ${ newVersion }` ) );
 }
 
 export function gitLog( [ git, options ] ) {
@@ -106,7 +110,9 @@ export function gitLog( [ git, options ] ) {
 
 export function updateLog( [ git, options ] ) {
 	const command = "log preview";
-	console.log( `Here is a preview of your log: \n${ options.log }` );
+	const label = "Here is a preview of your log:";
+	logger.log( `${ chalk.bold( label ) }
+${ chalk.green( options.log ) }` );
 	return utils.prompt( [ {
 		type: "confirm",
 		name: "log",
@@ -121,6 +127,7 @@ export function updateLog( [ git, options ] ) {
 					utils.log.end();
 				} );
 		}
+		return Promise.resolve();
 	} );
 }
 
@@ -139,7 +146,6 @@ export function updateChangelog( [ git, options ] ) {
 			`## ${ wildcardVersion }\n\n${ update }`;
 	}
 	utils.writeFile( CHANGELOG_PATH, contents );
-	console.log( CHANGELOG_PATH, contents );
 	utils.log.end();
 }
 
@@ -147,7 +153,7 @@ export function gitDiff( [ git, options ] ) {
 	const command = "git diff --color CHANGELOG.md package.json";
 	return utils.exec( command )
 		.then( data => {
-			console.log( data );
+			logger.log( data );
 			return utils.prompt( [ {
 				type: "confirm",
 				name: "proceed",
@@ -206,7 +212,7 @@ export function npmPublish( [ git, options ] ) {
 				return utils.exec( command ).then( data => utils.log.end() );
 			}
 		} );
-	} ).catch( e => chalk.red( e ) );
+	} ).catch( e => logger.log( chalk.red( e ) ) );
 }
 
 export function gitCheckoutDevelop( [ git, options ] ) {
@@ -244,6 +250,44 @@ export function gitPushOriginMaster( [ git, options ] ) {
 	utils.log.begin( command );
 	return nodefn.lift( ::git.push )( "origin", "master" )
 		.then( () => utils.log.end() );
+}
+
+export function githubOwner( [ git, options ] ) {
+	const command = `git config remote.upstream.url`;
+	return utils.exec( command ).then( data => {
+		const [ , owner ] = data.match( /github.com[:/](.*)\// ) || [];
+		options.githubOwner = owner;
+	} ).catch( error => logger.log( "error", error ) );
+}
+
+export function githubRelease( [ git, options ] ) {
+	const command = `release to github`;
+
+	const tagName = `v${ options.versions.newVersion }`;
+	const github = new GitHub( { token: options.token } );
+	const defaultName = options.log.split( "\n" ).pop().replace( "* ", "" );
+	const questions = [ {
+		type: "input",
+		name: "name",
+		message: "What do you want to name the release?",
+		default: defaultName
+	} ];
+	return utils.prompt( questions ).then( answers => {
+		utils.log.begin( command );
+		const args = {
+			tag_name: tagName, // eslint-disable-line
+			name: answers.name,
+			body: options.log
+		};
+		const pkg = utils.readJSONFile( "./package.json" );
+		const repository = github.getRepo( options.githubOwner, pkg.name );
+		return repository.createRelease( args )
+			.then( response => {
+				utils.log.end();
+				logger.log( chalk.yellow.underline.bold( response.data.html_url ) );
+			} )
+			.catch( e => logger.log( chalk.red( e ) ) );
+	} );
 }
 
 export default sequenceSteps;

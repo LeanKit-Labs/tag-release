@@ -17,48 +17,48 @@ function getUtils( methods = {} ) {
 }
 
 test.beforeEach( t => {
-	RewireAPI.__Rewire__( "console", { log: sinon.stub() } );
+	RewireAPI.__Rewire__( "logger", { log: sinon.stub() } );
 	utils = getUtils();
 	RewireAPI.__Rewire__( "utils", utils );
 } );
 
 test.afterEach( t => {
-	RewireAPI.__ResetDependency__( "console" );
+	RewireAPI.__ResetDependency__( "logger" );
 	RewireAPI.__ResetDependency__( "utils" );
 } );
 
-test( "updateLog should prompt the user to edit", t => {
+test.serial( "updateLog should prompt the user to edit", t => {
 	return updateLog( [ git, {} ] ).then( () => {
-		t.ok( utils.prompt.called );
+		t.truthy( utils.prompt.called );
 	} );
 } );
 
-test( "updateLog launches an editor if user wants to edit", t => {
+test.serial( "updateLog launches an editor if user wants to edit", t => {
 	return updateLog( [ git, {} ] ).then( () => {
-		t.ok( utils.editor.called );
+		t.truthy( utils.editor.called );
 	} );
 } );
 
-test( "updateLog calls log.begin", t => {
+test.serial( "updateLog calls log.begin", t => {
 	return updateLog( [ git, {} ] ).then( () => {
-		t.ok( utils.log.begin.called );
+		t.truthy( utils.log.begin.called );
 	} );
 } );
 
-test( "updateLog trims data from the editor", t => {
+test.serial( "updateLog trims data from the editor", t => {
 	const options = {};
 	return updateLog( [ git, options ] ).then( () => {
 		t.is( options.log, "commit" );
 	} );
 } );
 
-test( "updateShortlog calls log.end", t => {
+test.serial( "updateShortlog calls log.end", t => {
 	return updateLog( [ git, {} ] ).then( () => {
-		t.ok( utils.log.end.called );
+		t.truthy( utils.log.end.called );
 	} );
 } );
 
-test( "updateLog does not launch an editor if user declines", t => {
+test.serial( "updateLog does not launch an editor if user declines", t => {
 	RewireAPI.__ResetDependency__( "utils" );
 	utils = getUtils( {
 		prompt: sinon.spy( command => new Promise( resolve => resolve( { log: false } ) ) ),
@@ -66,8 +66,6 @@ test( "updateLog does not launch an editor if user declines", t => {
 	} );
 	RewireAPI.__Rewire__( "utils", utils );
 	return updateLog( [ git, {} ] ).then( () => {
-		// HACK - I can't figure out how to reset the editor...
-		const CALL_COUNT = 5;
-		t.is( utils.editor.callCount, CALL_COUNT );
+		t.is( utils.editor.callCount, 0 );
 	} );
 } );

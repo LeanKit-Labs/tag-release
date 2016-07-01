@@ -20,12 +20,12 @@ test.afterEach( t => {
 
 test( "prompt returns a promise", t => {
 	const promise = utils.prompt( questions );
-	t.ok( isPromise( promise ) );
+	t.truthy( isPromise( promise ) );
 } );
 
 test( "prompt calls inquirer.prompt", t => {
 	utils.prompt( questions );
-	t.ok( inquirer.prompt.calledWith( questions ) );
+	t.truthy( inquirer.prompt.calledWith( questions ) );
 } );
 
 test( "prompt resolves if inquirer.prompt succeeds", t => {
