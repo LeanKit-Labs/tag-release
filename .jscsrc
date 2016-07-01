@@ -19,10 +19,6 @@
 	"disallowQuotedKeysInObjects": "allButReserved",
 	"disallowSpaceAfterObjectKeys": true,
 	"disallowSpaceAfterPrefixUnaryOperators": true,
-	"disallowSpaceBeforeBinaryOperators": [
-		",",
-		":"
-	],
 	"disallowSpaceBeforePostfixUnaryOperators": true,
 	"disallowSpacesInAnonymousFunctionExpression": {
 		"beforeOpeningRoundBrace": true

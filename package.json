@@ -12,7 +12,7 @@
     "test": "ava 'test/**/*.js' --require ./test/helpers/setup.js",
     "test:nyan": "ava 'test/**/*.js' --require ./test/helpers/setup.js --tap | tap-nyan",
     "test:watch": "npm test -- --watch",
-    "cover": "nyc --reporter=text --reporter=html --check-coverage --statements 100 --branches 95.83 --functions 100 --lines 100 npm run test",
+    "cover": "nyc --reporter=text --reporter=html --check-coverage --statements 100 --branches 95.92 --functions 100 --lines 100 npm run test",
     "cover:watch": "onchange 'src/**/*.js' 'test/**/*.js' -- npm run test:cover",
     "cover:open": "open coverage/index.html",
     "pre-commit": "echo 'Running pre-commit hooks...' && exit 0"
@@ -48,6 +48,7 @@
     "lodash": "^4.0.1",
     "log-update": "^1.0.2",
     "nodegit": "^0.9.0",
+    "request": "^2.72.0",
     "semver": "^5.1.0",
     "shelljs": "^0.5.3",
     "simple-git": "^1.21.0",

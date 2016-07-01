@@ -9,7 +9,7 @@ const options = {
 	versions: {
 		newVersion: "0.1.1"
 	},
-	username: "someUser",
+	githubOwner: "someUser",
 	token: "k0234f"
 
 };

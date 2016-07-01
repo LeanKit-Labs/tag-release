@@ -1,14 +1,30 @@
 import test from "ava";
 import sinon from "sinon";
+import "sinon-as-promised";
 import { isPromise } from "../helpers/index.js";
 import utils from "../../src/utils.js";
 
+let request = {
+	post: sinon.spy( ( arg, callback ) => callback( null, [ {
+		statusCode: 201,
+		headers: {
+			"x-github-otp": "required;"
+		},
+		body: { token: "1234567890" }
+	} ] ) )
+};
+const logger = { log: sinon.stub() };
+
 test.beforeEach( t => {
-	sinon.stub( utils, "exec" ).returns( Promise.resolve( `{ "token": "1234567890" }` ) );
+	sinon.stub( utils, "githubUnauthorized" ).returns( Promise.resolve() );
+	utils.__Rewire__( "request", request );
+	utils.__Rewire__( "logger", logger );
 } );
 
 test.afterEach( t => {
-	utils.exec.restore();
+	utils.githubUnauthorized.restore();
+	utils.__ResetDependency__( "request" );
+	utils.__ResetDependency__( "logger" );
 } );
 
 test.serial( "createGitHubAuthToken returns a promise", t => {
@@ -16,22 +32,41 @@ test.serial( "createGitHubAuthToken returns a promise", t => {
 	t.truthy( isPromise( promise ) );
 } );
 
-test.serial( "createGitHubAuthToken executes a curl command", t => {
+test.serial( "createGitHubAuthToken executes a request.post command", t => {
 	return utils.createGitHubAuthToken( "username", "password" ).then( () => {
-		t.truthy( utils.exec.called );
+		t.truthy( request.post.called );
 	} );
 } );
 
-test.serial( "createGitHubAuthToken grabs the token from the curl response", t => {
+test.serial( "createGitHubAuthToken return token if stateCode 201", t => {
 	return utils.createGitHubAuthToken( "username", "password" ).then( token => {
 		t.is( token, "1234567890" );
 	} );
 } );
 
-test.serial( "createGitHubAuthToken returns an error on rejection", t => {
-	utils.exec.restore();
-	sinon.stub( utils, "exec" ).returns( Promise.reject( "error" ) );
+test.serial( "createGitHubAuthToken calls githubUnauthorized if stateCode 401", t => {
+	request = {
+		post: sinon.spy( ( arg, callback ) => callback( null, [ {
+			statusCode: 401
+		} ] ) )
+	};
+	utils.__Rewire__( "request", request );
+	return utils.createGitHubAuthToken( "username", "password" ).then( token => {
+		t.truthy( utils.githubUnauthorized.called );
+	} );
+} );
+
+test.serial( "createGitHubAuthToken logs message and erros on other statusCodes", t => {
+	request = {
+		post: sinon.spy( ( arg, callback ) => callback( null, [ {
+			statusCode: 422,
+			body: { message: "error" },
+			errors: [ { message: "something bad happened" } ]
+		} ] ) )
+	};
+	utils.__Rewire__( "request", request );
 	return utils.createGitHubAuthToken( "username", "password" ).catch( e => {
-		t.is( e, "error" );
+		t.is( logger.log.calledWith( "error" ) );
+		t.is( logger.log.calledWith( "something bad happened" ) );
 	} );
 } );

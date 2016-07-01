@@ -8,6 +8,9 @@ import detectIndent from "detect-indent";
 import { get } from "lodash";
 import chalk from "chalk";
 import logger from "better-console";
+import request from "request";
+import nodefn from "when/node";
+import { extend } from "lodash";
 
 const GIT_CONFIG_COMMAND = "git config --global";
 
@@ -112,11 +115,45 @@ export default {
 	escapeCurlPassword( source ) {
 		return source.replace( /([\[\]$"\\])/g, "\\$1" );
 	},
-	createGitHubAuthToken( username, password ) {
-		password = this.escapeCurlPassword( password );
-		const curl = `curl https://api.github.com/authorizations -u "${ username }:${ password }" -d '{ "scopes": [ "repo" ], "note": "tag-release-${ new Date().toISOString() }"}'`;
-		return this.exec( curl ).then( response => {
-			return JSON.parse( response ).token.trim();
-		} );
+	createGitHubAuthToken( username, password, headers = {} ) {
+		const CREATED = 201;
+		const UNAUTHORIZED = 401;
+		const url = "https://api.github.com/authorizations";
+		const auth = { user: username, pass: password };
+		const json = {
+			scopes: [ "repo" ],
+			note: `tag-release-${ new Date().toISOString() }`
+		};
+		headers = extend( { "User-Agent": "request" }, headers );
+		return nodefn.lift( request.post )( { url, headers, auth, json } )
+			.then( response => {
+				response = response[ 0 ];
+				const statusCode = response.statusCode;
+				if ( statusCode === CREATED ) {
+					return response.body.token;
+				} else if ( statusCode === UNAUTHORIZED ) {
+					return this.githubUnauthorized( username, password, response );
+				}
+				logger.log( response.body.message );
+				const errors = response.body.errors || [];
+				errors.forEach( error => logger.log( error.message ) );
+			} )
+			.catch( error => logger.log( "error", error ) );
+	},
+	githubUnauthorized( username, password, response ) {
+		let twoFactorAuth = response.headers[ "x-github-otp" ] || "";
+		twoFactorAuth = !!~twoFactorAuth.indexOf( "required;" );
+		if ( twoFactorAuth ) {
+			return this.prompt( [ {
+				type: "input",
+				name: "authCode",
+				message: "What is your GitHub authentication code"
+			} ] ).then( answers => {
+				return this.createGitHubAuthToken( username, password, {
+					"X-GitHub-OTP": answers.authCode
+				} );
+			} );
+		}
+		logger.log( response.body.message );
 	}
 };
