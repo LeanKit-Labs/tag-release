@@ -18,7 +18,7 @@ test.afterEach( t => {
 
 test.serial( "githubOwner calls git remote get-url upstream", t => {
 	return githubOwner( [ git, {} ] ).then( () => {
-		t.truthy( utils.exec.calledWith( `git remote get-url upstream` ) );
+		t.truthy( utils.exec.calledWith( `git config remote.upstream.url` ) );
 	} );
 } );
 

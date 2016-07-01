@@ -253,7 +253,7 @@ export function gitPushOriginMaster( [ git, options ] ) {
 }
 
 export function githubOwner( [ git, options ] ) {
-	const command = `git remote get-url upstream`;
+	const command = `git config remote.upstream.url`;
 	return utils.exec( command ).then( data => {
 		const [ , owner ] = data.match( /github.com[:/](.*)\// ) || [];
 		options.githubOwner = owner;

@@ -4,7 +4,7 @@ import "sinon-as-promised";
 import { isPromise } from "../helpers/index.js";
 import utils from "../../src/utils.js";
 
-let request = {
+const request = {
 	post: sinon.spy( ( arg, callback ) => callback( null, [ {
 		statusCode: 201,
 		headers: {
@@ -45,26 +45,26 @@ test.serial( "createGitHubAuthToken return token if stateCode 201", t => {
 } );
 
 test.serial( "createGitHubAuthToken calls githubUnauthorized if stateCode 401", t => {
-	request = {
+	const request401 = {
 		post: sinon.spy( ( arg, callback ) => callback( null, [ {
 			statusCode: 401
 		} ] ) )
 	};
-	utils.__Rewire__( "request", request );
+	utils.__Rewire__( "request", request401 );
 	return utils.createGitHubAuthToken( "username", "password" ).then( token => {
 		t.truthy( utils.githubUnauthorized.called );
 	} );
 } );
 
 test.serial( "createGitHubAuthToken logs message and erros on other statusCodes", t => {
-	request = {
+	const request422 = {
 		post: sinon.spy( ( arg, callback ) => callback( null, [ {
 			statusCode: 422,
 			body: { message: "error" },
 			errors: [ { message: "something bad happened" } ]
 		} ] ) )
 	};
-	utils.__Rewire__( "request", request );
+	utils.__Rewire__( "request", request422 );
 	return utils.createGitHubAuthToken( "username", "password" ).catch( e => {
 		t.is( logger.log.calledWith( "error" ) );
 		t.is( logger.log.calledWith( "something bad happened" ) );
