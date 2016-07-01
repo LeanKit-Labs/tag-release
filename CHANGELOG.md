@@ -1,5 +1,10 @@
 ## 3.x
 
+### 3.3.0
+
+* Update to support GitHub Two Factor Authentication
+* Publish tagged version as a GitHub release
+
 ### 3.2.0
 
 * Auto-detect remote develop branch
