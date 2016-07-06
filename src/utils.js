@@ -11,6 +11,7 @@ import logger from "better-console";
 import request from "request";
 import nodefn from "when/node";
 import { extend } from "lodash";
+import sequence from "when/sequence";
 
 const GIT_CONFIG_COMMAND = "git config --global";
 
@@ -107,9 +108,9 @@ export default {
 		] );
 	},
 	setGitConfigs( username, token ) {
-		return Promise.all( [
-			this.setGitConfig( "tag-release.username", username ),
-			this.setGitConfig( "tag-release.token", token )
+		return sequence( [
+			this.setGitConfig.bind( this, "tag-release.username", username ),
+			this.setGitConfig.bind( this, "tag-release.token", token )
 		] ).catch( e => logger.log( chalk.red( e ) ) );
 	},
 	escapeCurlPassword( source ) {
