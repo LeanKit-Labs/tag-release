@@ -28,7 +28,7 @@ const sequenceSteps = [
 	gitMergeMaster,
 	gitPushUpstreamDevelop,
 	gitPushOriginMaster,
-	githubOwner,
+	githubUpstream,
 	githubRelease
 ];
 
@@ -252,11 +252,11 @@ export function gitPushOriginMaster( [ git, options ] ) {
 		.then( () => utils.log.end() );
 }
 
-export function githubOwner( [ git, options ] ) {
+export function githubUpstream( [ git, options ] ) {
 	const command = `git config remote.upstream.url`;
 	return utils.exec( command ).then( data => {
-		const [ , owner ] = data.match( /github.com[:/](.*)\// ) || [];
-		options.githubOwner = owner;
+		const [ , owner, name ] = data.match( /github.com[:/](.*)\/(.*)\.git/ ) || [];
+		options.github = { owner, name };
 	} ).catch( error => logger.log( "error", error ) );
 }
 
@@ -279,8 +279,7 @@ export function githubRelease( [ git, options ] ) {
 			name: answers.name,
 			body: options.log
 		};
-		const pkg = utils.readJSONFile( "./package.json" );
-		const repository = github.getRepo( options.githubOwner, pkg.name );
+		const repository = github.getRepo( options.github.owner, options.github.name );
 		return repository.createRelease( args )
 			.then( response => {
 				utils.log.end();
