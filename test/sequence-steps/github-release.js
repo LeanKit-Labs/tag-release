@@ -9,7 +9,7 @@ const options = {
 	versions: {
 		newVersion: "0.1.1"
 	},
-	githubOwner: "someUser",
+	github: { owner: "someUser", name: "my-special-repo" },
 	token: "k0234f"
 
 };
@@ -20,9 +20,6 @@ const utils = {
 	},
 	prompt: sinon.stub().resolves( {
 		name: "My Special Release"
-	} ),
-	readJSONFile: sinon.stub().returns( {
-		name: "my-special-repo"
 	} )
 };
 const lift = sinon.spy( nodefn, "lift" );
@@ -94,12 +91,6 @@ test.serial( "githubRelease identifies a default tag release name from recent co
 test.serial( "githubRelease begins utils.log with git command", t => {
 	return githubRelease( [ git, options ] ).then( () => {
 		t.truthy( utils.log.begin.calledWithExactly( "release to github" ) );
-	} );
-} );
-
-test.serial( "githubRelease reads from local package.json to determine repo name", t => {
-	return githubRelease( [ git, options ] ).then( () => {
-		t.truthy( utils.readJSONFile.calledWithExactly( "./package.json" ) );
 	} );
 } );
 
