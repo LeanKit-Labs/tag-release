@@ -6,6 +6,8 @@ import _ from "lodash";
 import utils from "./utils.js";
 import chalk from "chalk";
 import tagRelease from "./tag-release";
+import logger from "better-console";
+import fmt from "fmt";
 
 const questions = {
 	general: [
@@ -35,13 +37,16 @@ const questions = {
 };
 
 commander
-	.option( "-r, --release [type]", "Release type (major, minor, patch)", /^(major|minor|patch)/i );
+	.option( "-r, --release [type]", "Release type (major, minor, patch)", /^(major|minor|patch)/i )
+	.option( "-v, --verbose", "Console additional information" );
 
 commander.on( "--help", () => {
 	console.log( "Examples: \n" );
 	console.log( "   $ tag-release" );
 	console.log( "   $ tag-release --release major" );
 	console.log( "   $ tag-release -r minor" );
+	console.log( "   $ tag-release --verbose" );
+	console.log( "   $ tag-release -v" );
 } );
 
 commander.parse( process.argv );
@@ -51,6 +56,12 @@ if ( commander.release ) {
 }
 
 export function startTagRelease( options, queries = questions.general ) {
+	if ( commander.verbose ) {
+		fmt.title( "GitHub Configuration" );
+		fmt.field( "username", options.username );
+		fmt.field( "token", options.token );
+		fmt.line();
+	}
 	return utils.prompt( queries ).then( answers => {
 		answers = _.extend( {}, commander, answers, options );
 		tagRelease( answers );
@@ -65,6 +76,6 @@ utils.getGitConfigs()
 			utils.createGitHubAuthToken( username, password ).then( token => {
 				utils.setGitConfigs( username, token );
 				startTagRelease( { username, token } );
-			} ).catch( e => chalk.red( "error", e ) );
+			} ).catch( e => logger.log( chalk.red( "error", e ) ) );
 		} );
 	} );
