@@ -1,5 +1,11 @@
 ## 3.x
 
+### 3.3.1
+
+* Grab repo name from remote upstream instead of package.json
+* Add a section to the README about common errors
+* Add verbose flag and fix race condition for setGitConfig
+
 ### 3.3.0
 
 * Update to support GitHub Two Factor Authentication
