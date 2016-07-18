@@ -12,6 +12,7 @@ import request from "request";
 import nodefn from "when/node";
 import { extend } from "lodash";
 import sequence from "when/sequence";
+import currentPackage from "../package.json";
 
 const GIT_CONFIG_COMMAND = "git config --global";
 
@@ -156,5 +157,8 @@ export default {
 			} );
 		}
 		logger.log( response.body.message );
+	},
+	getCurrentVersion() {
+		return currentPackage.version;
 	}
 };
