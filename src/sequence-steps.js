@@ -200,19 +200,21 @@ export function gitPushUpstreamMaster( [ git, options ] ) {
 export function npmPublish( [ git, options ] ) {
 	const command = `npm publish`;
 
-	return utils.getPackageRegistry().then( registry => {
-		return utils.prompt( [ {
-			type: "confirm",
-			name: "publish",
-			message: `Do you want to publish this package to ${ registry }`,
-			default: true
-		} ] ).then( answers => {
-			if ( answers.publish ) {
-				utils.log.begin( command );
-				return utils.exec( command ).then( data => utils.log.end() );
-			}
-		} );
-	} ).catch( e => logger.log( chalk.red( e ) ) );
+	if ( !utils.isPackagePrivate() ) {
+		return utils.getPackageRegistry().then( registry => {
+			return utils.prompt( [ {
+				type: "confirm",
+				name: "publish",
+				message: `Do you want to publish this package to ${ registry }`,
+				default: true
+			} ] ).then( answers => {
+				if ( answers.publish ) {
+					utils.log.begin( command );
+					return utils.exec( command ).then( data => utils.log.end() );
+				}
+			} );
+		} ).catch( e => logger.log( chalk.red( e ) ) );
+	}
 }
 
 export function gitCheckoutDevelop( [ git, options ] ) {
