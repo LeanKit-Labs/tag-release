@@ -1,3 +1,11 @@
+## 4.x
+
+### 4.0.0
+
+* Don't prompt for npm publish if set to private
+* Compare current version with latest version from npm
+* Breaking Change: Running `tag-release -v` now shows the version instead of running in verbose mode. To use verbose mode, use `tag-release --verbose`
+
 ## 3.x
 
 ### 3.3.1
