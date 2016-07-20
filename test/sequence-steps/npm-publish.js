@@ -7,7 +7,7 @@ let utils = {};
 import realUtils from "../../src/utils.js";
 import { npmPublish, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 const lift = sinon.spy( nodefn, "lift" );
-const getUtils = () => {
+const getUtils = ( { isPrivate = false } = {} ) => {
 	return {
 		log: {
 			begin: sinon.spy(),
@@ -19,7 +19,8 @@ const getUtils = () => {
 			name: "test-project",
 			publishConfig: { registry: "http://my-registry.com" }
 		} ),
-		getPackageRegistry: realUtils.getPackageRegistry
+		getPackageRegistry: realUtils.getPackageRegistry,
+		isPackagePrivate: sinon.stub().returns( isPrivate )
 	};
 };
 
@@ -52,5 +53,13 @@ test.serial( "npmPublish doesn't publish if denies prompt", t => {
 	utils.prompt = sinon.spy( command => new Promise( resolve => resolve( { publish: false } ) ) );
 	return npmPublish( [ git, {} ], () => {
 		t.truthy( !utils.exec.called );
+	} );
+} );
+
+test.serial( "npmPublish doesn't prompt if package is private", t => {
+	utils = getUtils( { isPrivate: true } );
+	RewireAPI.__Rewire__( "utils", utils );
+	return npmPublish( [ git, {} ], () => {
+		t.truthy( !utils.getPackageRegistry.called );
 	} );
 } );

@@ -71,6 +71,10 @@ export default {
 			} );
 		} );
 	},
+	isPackagePrivate() {
+		const pkg = this.readJSONFile( "./package.json" );
+		return !!pkg.private;
+	},
 	getPackageRegistry() {
 		const pkg = this.readJSONFile( "./package.json" );
 		const registry = get( pkg, "publishConfig.registry" );
