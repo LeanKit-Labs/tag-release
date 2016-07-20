@@ -8,6 +8,7 @@ import chalk from "chalk";
 import tagRelease from "./tag-release";
 import logger from "better-console";
 import fmt from "fmt";
+import pkg from "../package.json";
 
 const questions = {
 	general: [
@@ -38,7 +39,8 @@ const questions = {
 
 commander
 	.option( "-r, --release [type]", "Release type (major, minor, patch)", /^(major|minor|patch)/i )
-	.option( "-v, --verbose", "Console additional information" );
+	.option( "--verbose", "Console additional information" )
+	.option( "-v", "Console the version of tag-release" );
 
 commander.on( "--help", () => {
 	console.log( "Examples: \n" );
@@ -47,6 +49,11 @@ commander.on( "--help", () => {
 	console.log( "   $ tag-release -r minor" );
 	console.log( "   $ tag-release --verbose" );
 	console.log( "   $ tag-release -v" );
+} );
+
+commander.on( "-v", () => {
+	console.log( pkg.version );
+	process.exit( 0 ); // eslint-disable-line
 } );
 
 commander.parse( process.argv );

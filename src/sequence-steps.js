@@ -6,9 +6,11 @@ import semver from "semver";
 import GitHub from "github-api";
 import chalk from "chalk";
 import logger from "better-console";
+import latest from "latest";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const sequenceSteps = [
+	detectVersion,
 	gitFetchUpstreamMaster,
 	gitBranchGrepUpstreamDevelop,
 	gitCheckoutMaster,
@@ -31,6 +33,17 @@ const sequenceSteps = [
 	githubUpstream,
 	githubRelease
 ];
+
+export function detectVersion( [ git, options ] ) {
+	const currentVersion = utils.getCurrentVersion();
+	return nodefn.lift( latest )( "tag-release" ).then( latestVersion => {
+		if ( currentVersion === latestVersion ) {
+			logger.log( chalk.green( `You're using the latest version (${ latestVersion }) of tag-release.` ) );
+		} else {
+			logger.log( chalk.red( `You're using an old version (${ currentVersion }) of tag-release. Please upgrade to ${ latestVersion }.` ) );
+		}
+	} );
+}
 
 export function gitFetchUpstreamMaster( [ git, options ] ) {
 	const command = "git fetch upstream --tags";
