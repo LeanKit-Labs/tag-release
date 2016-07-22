@@ -30,17 +30,18 @@ Usage: tag-release [options]
 
 Options:
 
-	-h, --help            output usage information
-	-r, --release [type]  Release type (major, minor, patch)
-	-v, --verbose         Console additional information
+  -h, --help            output usage information
+  -r, --release [type]  Release type (major, minor, patch)
+  --verbose             Console additional information
+  -v                    Console the version of tag-release
 
 Examples:
 
-	$ tag-release
-	$ tag-release --release major
-	$ tag-release -r minor
-	$ tag-release --verbose
-	$ tag-release -v
+   $ tag-release
+   $ tag-release --release major
+   $ tag-release -r minor
+   $ tag-release --verbose
+   $ tag-release -v
 ```
 
 ### GitHub Integration
@@ -63,7 +64,7 @@ git config --global --unset tag-release.username
 git config --global --unset tag-release.token
 ```
 
-Using the `--verbose` or `-v` flag will output your `username` and `token`
+Using the `--verbose` flag will output your `username` and `token`
 information.
 
 ```
