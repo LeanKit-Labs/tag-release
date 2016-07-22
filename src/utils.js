@@ -1,4 +1,3 @@
-
 import fs from "fs";
 import childProcess from "child_process";
 import inquirer from "inquirer";
@@ -13,6 +12,7 @@ import nodefn from "when/node";
 import { extend } from "lodash";
 import sequence from "when/sequence";
 import currentPackage from "../package.json";
+import latest from "latest";
 
 const GIT_CONFIG_COMMAND = "git config --global";
 
@@ -164,5 +164,14 @@ export default {
 	},
 	getCurrentVersion() {
 		return currentPackage.version;
+	},
+	detectVersion() {
+		const currentVersion = this.getCurrentVersion();
+		return nodefn.lift( latest )( "tag-release" ).then( latestVersion => {
+			const message = currentVersion === latestVersion ?
+				chalk.green( `You're using the latest version (${ latestVersion }) of tag-release.` ) :
+				chalk.red( `You're using an old version (${ currentVersion }) of tag-release. Please upgrade to ${ latestVersion }.` );
+			logger.log( message );
+		} );
 	}
 };
