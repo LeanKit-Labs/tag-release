@@ -80,6 +80,8 @@ token                : a92282731316b2d4f2313ff64b1350b78a5d4cf6
 
 ## What Does That Error Mean!?!
 
+> Click the following errors to reveal an explanation of what the error means and a proposed solution
+
 <details>
 	<summary>Potentially unhandled rejection [21] Error: Command failed: git fetch upstream --tags</summary>
 	You don't have an `upstream` set for your repository. You can add an upstream
