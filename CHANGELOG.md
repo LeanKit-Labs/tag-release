@@ -1,5 +1,9 @@
 ## 4.x
 
+### 4.0.1
+
+* Move babel-plugin-rewire to dependencies
+
 ### 4.0.0
 
 * Don't prompt for npm publish if set to private
