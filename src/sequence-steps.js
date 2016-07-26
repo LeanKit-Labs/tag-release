@@ -52,9 +52,11 @@ export function gitFetchUpstreamMaster( [ git, options ] ) {
 }
 
 export function gitBranchGrepUpstreamDevelop( [ git, options ] ) {
-	const command = `git branch -r | grep "upstream/develop"`;
+	const command = `git branch -r`;
 	return utils.exec( command ).then( data => {
-		options.develop = true;
+		const branches = data.split( "\n" );
+		const hasDevelop = branches.some( branch => ~branch.trim().indexOf( "upstream/develop" ) );
+		options.develop = hasDevelop;
 	} ).catch( data => {
 		options.develop = false;
 	} );

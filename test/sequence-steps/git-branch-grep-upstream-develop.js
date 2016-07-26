@@ -3,7 +3,10 @@ import sinon from "sinon";
 import { git } from "../helpers/index.js";
 
 const utils = {
-	exec: sinon.spy( command => new Promise( resolve => resolve() ) )
+	exec: sinon.spy( command => new Promise( resolve => resolve( `  upstream/master
+  upstream/develop
+  upstream/another-branch
+` ) ) )
 };
 
 import { gitBranchGrepUpstreamDevelop, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
@@ -17,27 +20,41 @@ test.afterEach( t => {
 	RewireAPI.__ResetDependency__( "utils" );
 } );
 
-test.cb( "gitBranchGrepUpstreamDevelop calls git branch command", t => {
-	gitBranchGrepUpstreamDevelop( [ git, {} ] ).then( () => {
-		t.truthy( utils.exec.calledWith( `git branch -r | grep "upstream/develop"` ) );
-		t.end();
+test.serial( "gitBranchGrepUpstreamDevelop calls git branch command", t => {
+	return gitBranchGrepUpstreamDevelop( [ git, {} ] ).then( () => {
+		t.truthy( utils.exec.calledWith( `git branch -r` ) );
 	} );
 } );
 
-test.cb( "gitBranchGrepUpstreamDevelop sets options.develop=true when upstream/develop exists", t => {
+test.serial( "gitBranchGrepUpstreamDevelop sets options.develop=true when upstream/develop exists", t => {
 	const options = { develop: false };
-	gitBranchGrepUpstreamDevelop( [ git, options ] ).then( () => {
+	return gitBranchGrepUpstreamDevelop( [ git, options ] ).then( () => {
 		t.truthy( options.develop );
-		t.end();
 	} );
 } );
 
-test.cb( "gitBranchGrepUpstreamDevelop sets options.develop=false when upstream/develop does not exist", t => {
+test.serial( "gitBranchGrepUpstreamDevelop sets options.develop=false when upstream/develop doesn't exist", t => {
 	const options = { develop: true };
-	utils.exec = sinon.spy( command => new Promise( ( resolve, reject ) => reject() ) );
-	gitBranchGrepUpstreamDevelop( [ git, options ] ).then( () => {
+	const myUtils = {
+		exec: sinon.spy( command => new Promise( ( resolve, reject ) =>
+			resolve( `  upstream/master
+  upstream/not-the-develop-branch
+  upstream/another-branch
+` ) ) )
+	};
+	RewireAPI.__Rewire__( "utils", myUtils );
+	return gitBranchGrepUpstreamDevelop( [ git, options ] ).then( () => {
 		t.truthy( !options.develop );
-		t.end();
 	} );
 } );
 
+test.serial( "gitBranchGrepUpstreamDevelop sets options.develop=false when throws an exception", t => {
+	const options = { develop: true };
+	const myUtils = {
+		exec: sinon.spy( command => new Promise( ( resolve, reject ) => reject() ) )
+	};
+	RewireAPI.__Rewire__( "utils", myUtils );
+	return gitBranchGrepUpstreamDevelop( [ git, options ] ).then( () => {
+		t.truthy( !options.develop );
+	} );
+} );
