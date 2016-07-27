@@ -68,7 +68,7 @@ Using the `--verbose` flag will output your `username` and `token`
 information.
 
 ```
-$ tag-release -v
+$ tag-release --verbose
 --- GitHub Configuration ------------------------------------------------------
 username             : johndoe
 token                : a92282731316b2d4f2313ff64b1350b78a5d4cf6
