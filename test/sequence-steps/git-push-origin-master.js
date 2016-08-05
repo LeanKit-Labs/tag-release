@@ -25,19 +25,19 @@ test.afterEach( t => {
 	RewireAPI.__ResetDependency__( "utils" );
 } );
 
-test( "gitPushOriginMaster calls log.begin", t => {
+test.serial( "gitPushOriginMaster calls log.begin", t => {
 	return gitPushOriginMaster( [ git, {} ], () => {
 		t.truthy( utils.log.begin.calledWith( "git push origin master" ) );
 	} );
 } );
 
-test( "gitPushOriginMaster calls git.push", t => {
+test.serial( "gitPushOriginMaster calls git.push", t => {
 	return gitPushOriginMaster( [ git, {} ], () => {
 		t.truthy( git.push.calledWith( "origin", "master" ) );
 	} );
 } );
 
-test( "gitPushOriginMaster calls log.end", t => {
+test.serial( "gitPushOriginMaster calls log.end", t => {
 	return gitPushOriginMaster( [ git, {} ], () => {
 		t.truthy( utils.log.end.called );
 	} );

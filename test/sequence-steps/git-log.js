@@ -1,5 +1,6 @@
 import test from "ava";
 import sinon from "sinon";
+import "sinon-as-promised";
 import { git } from "../helpers/index.js";
 
 const utils = {
@@ -15,21 +16,22 @@ const utils = {
 * two
 * three
 ` ),
-	writeFile: sinon.spy()
+	writeFile: sinon.spy(),
+	advise: sinon.spy()
 };
 
 import { gitLog, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
 test.beforeEach( t => {
-	utils.exec.reset();
 	RewireAPI.__Rewire__( "utils", utils );
 } );
 
 test.afterEach( t => {
 	RewireAPI.__ResetDependency__( "utils" );
+	utils.advise.reset();
 } );
 
-test( "gitLog removes and formats a Next message", t => {
+test.serial( "gitLog removes and formats a Next message", t => {
 	const options = {};
 	gitLog( [ git, options ] );
 	t.truthy( options.log, `* one
@@ -37,43 +39,58 @@ test( "gitLog removes and formats a Next message", t => {
 * three` );
 } );
 
-test.cb( "gitLog calls log.begin when no Next", t => {
+test.serial( "gitLog calls log.begin when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
-	gitLog( [ git, {} ] ).then( () => {
+	return gitLog( [ git, {} ] ).then( () => {
 		t.truthy( utils.log.begin.called );
-		t.end();
 	} );
 } );
 
-test.cb( "gitLog gets a list of tag versions when no Next", t => {
+test.serial( "gitLog gets a list of tag versions when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
-	gitLog( [ git, {} ] ).then( () => {
+	return gitLog( [ git, {} ] ).then( () => {
 		t.truthy( utils.exec.calledWith( "git tag --sort=v:refname" ) );
-		t.end();
 	} );
 } );
 
-test.cb( "gitLog gets a log with the latest release when no Next", t => {
+test.serial( "gitLog gets a log with the latest release when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
-	gitLog( [ git, {} ] ).then( () => {
+	return gitLog( [ git, {} ] ).then( () => {
 		t.truthy( utils.exec.calledWith( "git --no-pager log --no-merges --date-order --pretty=format:'%s' 1.1.." ) );
-		t.end();
 	} );
 } );
 
-test.cb( "gitLog gets all logs when there are no tags", t => {
+test.serial( "gitLog gets all logs when there are no tags", t => {
 	utils.readFile = sinon.stub().returns( "" );
 	utils.exec = sinon.spy( command => new Promise( resolve => resolve( "" ) ) );
-	gitLog( [ git, {} ] ).then( () => {
+	return gitLog( [ git, {} ] ).then( () => {
 		t.truthy( utils.exec.calledWith( "git --no-pager log --no-merges --date-order --pretty=format:'%s'" ) );
-		t.end();
 	} );
 } );
 
-test.cb( "gitLog calls log.end when no Next", t => {
+test.serial( "gitLog calls log.end when no Next", t => {
 	utils.readFile = sinon.stub().returns( "" );
-	gitLog( [ git, {} ] ).then( () => {
+	return gitLog( [ git, {} ] ).then( () => {
 		t.truthy( utils.log.end.called );
-		t.end();
+	} );
+} );
+
+test.serial( "gitLog does not advise when there are logs", t => {
+	utils.exec = sinon.stub();
+	utils.exec.withArgs( "git tag --sort=v:refname" ).resolves( "1.0" );
+	utils.exec.withArgs( "git --no-pager log --no-merges --date-order --pretty=format:'%s' 1.0.." ).resolves( `one
+two
+three` );
+	return gitLog( [ git, {} ] ).then( () => {
+		t.truthy( !utils.advise.called );
+	} );
+} );
+
+test.serial( "gitLog gives advise when there are no logs", t => {
+	utils.exec = sinon.stub();
+	utils.exec.withArgs( "git tag --sort=v:refname" ).resolves( "1.0" );
+	utils.exec.withArgs( "git --no-pager log --no-merges --date-order --pretty=format:'%s' 1.0.." ).resolves( `` );
+	return gitLog( [ git, {} ] ).then( () => {
+		t.truthy( utils.advise.called );
 	} );
 } );

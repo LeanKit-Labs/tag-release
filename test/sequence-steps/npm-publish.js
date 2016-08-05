@@ -63,3 +63,25 @@ test.serial( "npmPublish doesn't prompt if package is private", t => {
 		t.truthy( !utils.getPackageRegistry.called );
 	} );
 } );
+
+test.serial( "npmPublish gives advise when utils.exec fails", t => {
+	const myUtils = {
+		log: {
+			begin: sinon.spy(),
+			end: sinon.spy()
+		},
+		prompt: sinon.spy( command => new Promise( resolve => resolve( { publish: true } ) ) ),
+		exec: sinon.spy( command => Promise.reject() ),
+		readJSONFile: sinon.stub().returns( {
+			name: "test-project",
+			publishConfig: { registry: "http://my-registry.com" }
+		} ),
+		isPackagePrivate: sinon.stub().returns( false ),
+		getPackageRegistry: realUtils.getPackageRegistry,
+		advise: sinon.spy()
+	};
+	RewireAPI.__Rewire__( "utils", myUtils );
+	return npmPublish( [ git, {} ] ).catch( () => {
+		t.truthy( utils.advise.called );
+	} );
+} );

@@ -15,6 +15,7 @@ import currentPackage from "../package.json";
 import latest from "latest";
 import cowsay from "cowsay";
 import advise from "./advise.js";
+// import processExit from "process-exit";
 
 const GIT_CONFIG_COMMAND = "git config --global";
 
@@ -177,10 +178,13 @@ ${ chalk.red( "To upgrade run " ) } ${ chalk.yellow( "'npm install tag-release -
 			logger.log( message );
 		} );
 	},
-	advise( text ) {
+	advise( text, { exit = true } = {} ) {
 		logger.log( cowsay.say( {
 			text: advise( text ),
 			f: require( "path" ).resolve( __dirname, "clippy.cow" ) // eslint-disable-line
 		} ) );
+		if ( exit ) {
+			process.exit( 0 ); // eslint-disable-line no-process-exit
+		}
 	}
 };
