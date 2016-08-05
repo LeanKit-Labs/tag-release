@@ -1,5 +1,11 @@
 ## 4.x
 
+### 4.1.0
+
+* Help the user along with messages
+* Check for newer version of tag-release right away
+* Fix upstream/develop branch detection on windows
+
 ### 4.0.1
 
 * Move babel-plugin-rewire to dependencies
