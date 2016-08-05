@@ -9,6 +9,7 @@ import tagRelease from "./tag-release";
 import logger from "better-console";
 import fmt from "fmt";
 import pkg from "../package.json";
+import sequence from "when/sequence";
 
 const questions = {
 	general: [
@@ -62,6 +63,8 @@ if ( commander.release ) {
 	_.remove( questions.general, { name: "release" } );
 }
 
+sequence( [ ::utils.detectVersion, bootstrap ] );
+
 export function startTagRelease( options, queries = questions.general ) {
 	if ( commander.verbose ) {
 		fmt.title( "GitHub Configuration" );
@@ -75,14 +78,16 @@ export function startTagRelease( options, queries = questions.general ) {
 	} );
 }
 
-utils.getGitConfigs()
-	.then( ( [ username, token ] ) => startTagRelease( { username, token } ) )
-	.catch( error => {
-		utils.prompt( questions.github ).then( answers => {
-			const { username, password } = answers;
-			utils.createGitHubAuthToken( username, password ).then( token => {
-				utils.setGitConfigs( username, token );
-				startTagRelease( { username, token } );
-			} ).catch( e => logger.log( chalk.red( "error", e ) ) );
+export function bootstrap() {
+	utils.getGitConfigs()
+		.then( ( [ username, token ] ) => startTagRelease( { username, token } ) )
+		.catch( error => {
+			utils.prompt( questions.github ).then( answers => {
+				const { username, password } = answers;
+				utils.createGitHubAuthToken( username, password ).then( token => {
+					utils.setGitConfigs( username, token );
+					startTagRelease( { username, token } );
+				} ).catch( e => logger.log( chalk.red( "error", e ) ) );
+			} );
 		} );
-	} );
+}
