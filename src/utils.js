@@ -15,7 +15,6 @@ import currentPackage from "../package.json";
 import latest from "latest";
 import cowsay from "cowsay";
 import advise from "./advise.js";
-// import processExit from "process-exit";
 
 const GIT_CONFIG_COMMAND = "git config --global";
 

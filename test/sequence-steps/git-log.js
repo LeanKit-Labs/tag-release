@@ -94,3 +94,11 @@ test.serial( "gitLog gives advise when there are no logs", t => {
 		t.truthy( utils.advise.called );
 	} );
 } );
+
+test.serial( "gitLog gives advise when using an old version of git", t => {
+	utils.readFile = sinon.stub().returns( "" );
+	utils.exec = sinon.stub().rejects();
+	return gitLog( [ git, {} ] ).catch( () => {
+		t.truthy( utils.advise.called );
+	} );
+} );

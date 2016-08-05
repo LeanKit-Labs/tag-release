@@ -112,12 +112,12 @@ export function gitLog( [ git, options ] ) {
 			return utils.exec( command ).then( data => {
 				data = data.trim().replace( /^(.+)$/gm, "* $1" );
 				if ( data.length === 0 ) {
-					utils.advise( "gitLog", { exit: false } );
+					utils.advise( "gitLog.log", { exit: false } );
 				}
 				options.log = data;
 				utils.log.end();
 			} );
-		} );
+		} )	.catch( () => utils.advise( "gitLog.tag" ) );
 	}
 }
 

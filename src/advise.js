@@ -14,11 +14,14 @@ You might consider reseting your master by running 'git reset --hard upstream/ma
 	updateVersion: `It looks like there isn't a package.json for this project.
 
 You can easily create one by running 'npm init' and walking through the steps.`,
-	gitLog: `It looks like you don't have any commits to tag.
+	"gitLog.log": `It looks like you don't have any commits to tag.
 
 Are you sure you need to tag and release?
 
 Press 'Control-c' to exit`,
+	"gitLog.tag": `It looks like you may have an old vesion of git installed.
+
+You need at least version 2.x in order for tag-release to work properly.`,
 	npmPublish: `It looks like npm couldn't publish your package.
 
 1. This project may not need to be published. If not, add a private flag in the package.json to not be asked again.
