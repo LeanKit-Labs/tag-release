@@ -14,7 +14,8 @@ test.beforeEach( t => {
 		log: {
 			begin: sinon.spy(),
 			end: sinon.spy()
-		}
+		},
+		advise: sinon.spy()
 	};
 	RewireAPI.__Rewire__( "utils", utils );
 	RewireAPI.__Rewire__( "nodefn", { lift } );
@@ -56,5 +57,12 @@ test( "gitCheckoutDevelop doesn't call git.checkout if not develop", t => {
 test( "gitCheckoutDevelop calls log.end", t => {
 	return gitCheckoutDevelop( [ git, options ] ).then( () => {
 		t.truthy( utils.log.end.called );
+	} );
+} );
+
+test( "gitCheckoutDevelop gives advise when git.checked fails", t => {
+	git.checkout = sinon.stub().yields( "error", "bummer" );
+	return gitCheckoutDevelop( [ git, options ] ).then( () => {
+		t.truthy( utils.advise.called );
 	} );
 } );

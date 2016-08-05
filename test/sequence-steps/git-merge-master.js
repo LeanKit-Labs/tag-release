@@ -7,7 +7,8 @@ const utils = {
 	log: {
 		begin: sinon.spy(),
 		end: sinon.spy()
-	}
+	},
+	advise: sinon.spy()
 };
 const lift = sinon.spy( nodefn, "lift" );
 const options = { develop: true };
@@ -51,5 +52,12 @@ test( "gitMergeMaster calls log.end", t => {
 	options.develop = true;
 	return gitMergeMaster( [ git, options ] ).then( () => {
 		t.truthy( utils.log.end.called );
+	} );
+} );
+
+test( "gitMergeMaster gives advise when git.checked fails", t => {
+	git.merge = sinon.stub().yields( "error", "bummer" );
+	return gitMergeMaster( [ git, options ] ).then( () => {
+		t.truthy( utils.advise.called );
 	} );
 } );

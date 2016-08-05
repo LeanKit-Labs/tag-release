@@ -7,7 +7,8 @@ import utils from "../../src/utils.js";
 const latest = sinon.spy( ( arg, callback ) => callback( null, "1.0.0" ) );
 const chalk = {
 	green: sinon.stub(),
-	red: sinon.stub()
+	red: sinon.stub(),
+	yellow: sinon.stub()
 };
 const lift = sinon.spy( nodefn, "lift" );
 const logger = { log: sinon.stub() };
@@ -48,7 +49,8 @@ test.serial( "detectVersion calls latest", t => {
 
 test.serial( "detectVersion logs latest version if they are the same", t => {
 	return utils.detectVersion().then( () => {
-		t.truthy( chalk.green.calledWith( `You're using the latest version (1.0.0) of tag-release.` ) );
+		t.truthy( chalk.green.called );
+		t.truthy( chalk.yellow.calledWith( "1.0.0" ) );
 	} );
 } );
 

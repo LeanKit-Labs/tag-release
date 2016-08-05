@@ -13,6 +13,8 @@ import { extend } from "lodash";
 import sequence from "when/sequence";
 import currentPackage from "../package.json";
 import latest from "latest";
+import cowsay from "cowsay";
+import advise from "./advise.js";
 
 const GIT_CONFIG_COMMAND = "git config --global";
 
@@ -169,9 +171,19 @@ export default {
 		const currentVersion = this.getCurrentVersion();
 		return nodefn.lift( latest )( "tag-release" ).then( latestVersion => {
 			const message = currentVersion === latestVersion ?
-				chalk.green( `You're using the latest version (${ latestVersion }) of tag-release.` ) :
-				chalk.red( `You're using an old version (${ currentVersion }) of tag-release. Please upgrade to ${ latestVersion }.` );
+				chalk.green( `You're using the latest version (${ chalk.yellow( latestVersion ) }) of tag-release.` ) :
+				chalk.red( `You're using an old version (${ chalk.yellow( currentVersion ) }) of tag-release. Please upgrade to ${ chalk.yellow( latestVersion ) }.
+${ chalk.red( "To upgrade run " ) } ${ chalk.yellow( "'npm install tag-release -g'" ) }` );
 			logger.log( message );
 		} );
+	},
+	advise( text, { exit = true } = {} ) {
+		logger.log( cowsay.say( {
+			text: advise( text ),
+			f: require( "path" ).resolve( __dirname, "clippy.cow" ) // eslint-disable-line
+		} ) );
+		if ( exit ) {
+			process.exit( 0 ); // eslint-disable-line no-process-exit
+		}
 	}
 };

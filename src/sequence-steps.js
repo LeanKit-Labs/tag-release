@@ -35,7 +35,9 @@ const sequenceSteps = [
 export function gitFetchUpstreamMaster( [ git, options ] ) {
 	const command = "git fetch upstream --tags";
 	utils.log.begin( command );
-	return utils.exec( command ).then( () => utils.log.end() );
+	return utils.exec( command )
+		.then( () => utils.log.end() )
+		.catch( () => utils.advise( "gitFetchUpstreamMaster" ) );
 }
 
 export function gitBranchGrepUpstreamDevelop( [ git, options ] ) {
@@ -60,7 +62,8 @@ export function gitMergeUpstreamMaster( [ git, options ] ) {
 	const command = "git merge --ff-only upstream/master";
 	utils.log.begin( command );
 	return nodefn.lift( ::git.merge )( [ "--ff-only", "upstream/master" ] )
-		.then( () => utils.log.end() );
+		.then( () => utils.log.end() )
+		.catch( () => utils.advise( "gitMergeUpstreamMaster" ) );
 }
 
 export function gitMergeUpstreamDevelop( [ git, options ] ) {
@@ -74,7 +77,12 @@ export function gitMergeUpstreamDevelop( [ git, options ] ) {
 }
 
 export function updateVersion( [ git, options ] ) {
-	const packageJson = utils.readJSONFile( "./package.json" );
+	let packageJson = {};
+	try {
+		packageJson = utils.readJSONFile( "./package.json" );
+	} catch ( e ) {
+		utils.advise( "updateVersion" );
+	}
 	const oldVersion = packageJson.version;
 	const newVersion = packageJson.version = semver.inc( oldVersion, options.release );
 	utils.writeJSONFile( "./package.json", packageJson );
@@ -103,10 +111,13 @@ export function gitLog( [ git, options ] ) {
 			utils.log.begin( command );
 			return utils.exec( command ).then( data => {
 				data = data.trim().replace( /^(.+)$/gm, "* $1" );
+				if ( data.length === 0 ) {
+					utils.advise( "gitLog.log", { exit: false } );
+				}
 				options.log = data;
 				utils.log.end();
 			} );
-		} );
+		} )	.catch( () => utils.advise( "gitLog.tag" ) );
 	}
 }
 
@@ -164,6 +175,7 @@ export function gitDiff( [ git, options ] ) {
 			} ] ).then( answers => {
 				utils.log.begin( command );
 				utils.log.end();
+				/* istanbul ignore if  */
 				if ( !answers.proceed ) {
 					process.exit( 0 ); // eslint-disable-line no-process-exit
 				}
@@ -212,7 +224,11 @@ export function npmPublish( [ git, options ] ) {
 			} ] ).then( answers => {
 				if ( answers.publish ) {
 					utils.log.begin( command );
-					return utils.exec( command ).then( data => utils.log.end() );
+					return utils.exec( command )
+						.then( data => utils.log.end() )
+						.catch( () => {
+							utils.advise( "npmPublish", { exit: false } );
+						} );
 				}
 			} );
 		} ).catch( e => logger.log( chalk.red( e ) ) );
@@ -224,7 +240,10 @@ export function gitCheckoutDevelop( [ git, options ] ) {
 	if ( options.develop ) {
 		utils.log.begin( command );
 		return nodefn.lift( ::git.checkout )( "develop" )
-			.then( () => utils.log.end() );
+			.then( () => utils.log.end() )
+			.catch( () => {
+				utils.advise( "gitCheckoutDevelop", { exit: false } );
+			} );
 	}
 	return null;
 }
@@ -234,7 +253,8 @@ export function gitMergeMaster( [ git, options ] ) {
 	if ( options.develop ) {
 		utils.log.begin( command );
 		return nodefn.lift( ::git.merge )( [ "--ff-only", "master" ] )
-			.then( () => utils.log.end() );
+			.then( () => utils.log.end() )
+			.catch( () => utils.advise( "gitMergeMaster" ) );
 	}
 	return null;
 }
