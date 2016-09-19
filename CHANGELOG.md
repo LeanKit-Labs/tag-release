@@ -1,5 +1,10 @@
 ## 4.x
 
+### 4.2.0
+
+* Added preview of git logs to start of tag-release process
+* Fixed issue where remotes not ending in `.git` would cause the Github Release to fail
+
 ### 4.1.0
 
 * Help the user along with messages
