@@ -31,6 +31,33 @@ test.serial( "githubUpstream sets owner and name from upstream https url", t => 
 	} );
 } );
 
+test.serial( "githubUpstream sets owner and name from upstream https url", t => {
+	utils.exec = sinon.spy( command => Promise.resolve( "https://github.com/LeanKit-Labs/tag-release.git" ) );
+	const options = {};
+	return githubUpstream( [ git, options ] ).then( () => {
+		t.is( options.github.owner, "LeanKit-Labs" );
+		t.is( options.github.name, "tag-release" );
+	} );
+} );
+
+test.serial( "githubUpstream sets owner and name from upstream https url with dot in name", t => {
+	utils.exec = sinon.spy( command => Promise.resolve( "https://github.com/LeanKit-Labs/board.ui" ) );
+	const options = {};
+	return githubUpstream( [ git, options ] ).then( () => {
+		t.is( options.github.owner, "LeanKit-Labs" );
+		t.is( options.github.name, "board.ui" );
+	} );
+} );
+
+test.serial( "githubUpstream sets owner and name from upstream https url with dot in name", t => {
+	utils.exec = sinon.spy( command => Promise.resolve( "https://github.com/LeanKit-Labs/board.ui.git" ) );
+	const options = {};
+	return githubUpstream( [ git, options ] ).then( () => {
+		t.is( options.github.owner, "LeanKit-Labs" );
+		t.is( options.github.name, "board.ui" );
+	} );
+} );
+
 test.serial( "githubUpstream sets owner and name from upstream ssh url", t => {
 	utils.exec = sinon.spy( command => Promise.resolve( "git@github.com/LeanKit-Labs/tag-release.git" ) );
 

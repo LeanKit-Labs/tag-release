@@ -248,7 +248,7 @@ export function gitPushOriginMaster( [ git, options ] ) {
 export function githubUpstream( [ git, options ] ) {
 	const command = `git config remote.upstream.url`;
 	return utils.exec( command ).then( data => {
-		const [ , owner, name ] = data.match( /github\.com[:\/](.*)\/([^\n.]*)(\.git)?/ ) || [];
+		const [ , owner, name ] = data.trim().match( /github\.com[:\/](.*)\/(.*(?=\.git)|(?:.*))/ ) || [];
 		options.github = { owner, name };
 	} ).catch( error => logger.log( "error", error ) );
 }
