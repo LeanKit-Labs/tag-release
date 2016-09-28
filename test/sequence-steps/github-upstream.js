@@ -59,7 +59,7 @@ test.serial( "githubUpstream sets owner and name from upstream https url with do
 } );
 
 test.serial( "githubUpstream sets owner and name from upstream ssh url", t => {
-	utils.exec = sinon.spy( command => Promise.resolve( "git@github.com/LeanKit-Labs/tag-release" ) );
+	utils.exec = sinon.spy( command => Promise.resolve( "git@github.com/LeanKit-Labs/tag-release.git" ) );
 
 	const options = {};
 	return githubUpstream( [ git, options ] ).then( () => {
