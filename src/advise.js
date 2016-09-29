@@ -19,7 +19,7 @@ You can easily create one by running 'npm init' and walking through the steps.`,
 Are you sure you need to tag and release?
 
 Press 'Control-c' to exit`,
-	"gitLog.tag": `It looks like you may have an old version of git installed.
+	"gitLog.tag": `It looks like you may have an old vesion of git installed.
 
 You need at least version 2.x in order for tag-release to work properly.`,
 	npmPublish: `It looks like npm couldn't publish your package.

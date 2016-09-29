@@ -8,7 +8,6 @@ import chalk from "chalk";
 import logger from "better-console";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
-
 const sequenceSteps = [
 	gitFetchUpstreamMaster,
 	gitBranchGrepUpstreamDevelop,
@@ -16,6 +15,7 @@ const sequenceSteps = [
 	gitMergeUpstreamMaster,
 	gitMergeUpstreamDevelop,
 	updateVersion,
+	gitLog,
 	updateLog,
 	updateChangelog,
 	gitDiff,
@@ -88,6 +88,37 @@ export function updateVersion( [ git, options ] ) {
 	utils.writeJSONFile( "./package.json", packageJson );
 	options.versions = { oldVersion, newVersion };
 	logger.log( chalk.green( `Updated package.json from ${ oldVersion } to ${ newVersion }` ) );
+}
+
+export function gitLog( [ git, options ] ) {
+	let contents = utils.readFile( CHANGELOG_PATH );
+
+	if ( ~contents.indexOf( "### Next" ) ) {
+		contents = contents.replace( /### Next([^#]+)/, ( match, submatch ) => {
+			options.log = submatch.trim();
+			return "";
+		} );
+		utils.writeFile( CHANGELOG_PATH, contents );
+	} else {
+		return utils.exec( "git tag --sort=v:refname" ).then( tags => {
+			let command = `git --no-pager log --no-merges --date-order --pretty=format:'%s'`;
+			tags = tags.trim();
+			if ( tags.length ) {
+				tags = tags.split( "\n" );
+				const latestRelease = tags[ tags.length - 1 ];
+				command = `${ command } ${ latestRelease }..`;
+			}
+			utils.log.begin( command );
+			return utils.exec( command ).then( data => {
+				data = data.trim().replace( /^(.+)$/gm, "* $1" );
+				if ( data.length === 0 ) {
+					utils.advise( "gitLog.log", { exit: false } );
+				}
+				options.log = data;
+				utils.log.end();
+			} );
+		} )	.catch( () => utils.advise( "gitLog.tag" ) );
+	}
 }
 
 export function updateLog( [ git, options ] ) {
@@ -248,7 +279,7 @@ export function gitPushOriginMaster( [ git, options ] ) {
 export function githubUpstream( [ git, options ] ) {
 	const command = `git config remote.upstream.url`;
 	return utils.exec( command ).then( data => {
-		const [ , owner, name ] = data.match( /github\.com[:\/](.*)\/([^\n.]*)(\.git)?/ ) || [];
+		const [ , owner, name ] = data.match( /github.com[:/](.*)\/(.*)\.git/ ) || [];
 		options.github = { owner, name };
 	} ).catch( error => logger.log( "error", error ) );
 }

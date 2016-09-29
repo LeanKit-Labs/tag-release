@@ -17,12 +17,14 @@ sinon.stub( utils, "getCurrentVersion" ).returns( "1.0.0" );
 utils.__Rewire__( "logger", logger );
 
 test.beforeEach( t => {
+	utils.__Rewire__( "utils", utils );
 	utils.__Rewire__( "latest", latest );
 	utils.__Rewire__( "chalk", chalk );
 	utils.__Rewire__( "nodefn", { lift } );
 } );
 
 test.afterEach.always( t => {
+	utils.__ResetDependency__( "utils" );
 	utils.__ResetDependency__( "latest" );
 	utils.__ResetDependency__( "chalk" );
 	utils.__ResetDependency__( "nodefn" );

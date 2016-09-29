@@ -10,7 +10,6 @@ import logger from "better-console";
 import fmt from "fmt";
 import pkg from "../package.json";
 import sequence from "when/sequence";
-import pipeline from "when/pipeline";
 
 const questions = {
 	general: [
@@ -80,19 +79,14 @@ export function startTagRelease( options, queries = questions.general ) {
 }
 
 export function bootstrap() {
-	const options = {};
-
-	return pipeline( [
-		::utils.showGitLogs,
-		::utils.getGitConfigs,
-		startTagRelease
-	], options )
+	utils.getGitConfigs()
+		.then( ( [ username, token ] ) => startTagRelease( { username, token } ) )
 		.catch( error => {
 			utils.prompt( questions.github ).then( answers => {
 				const { username, password } = answers;
 				utils.createGitHubAuthToken( username, password ).then( token => {
 					utils.setGitConfigs( username, token );
-					startTagRelease( { ...options, username, token } );
+					startTagRelease( { username, token } );
 				} ).catch( e => logger.log( chalk.red( "error", e ) ) );
 			} );
 		} );
