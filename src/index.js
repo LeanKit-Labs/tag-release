@@ -12,18 +12,6 @@ import pkg from "../package.json";
 import sequence from "when/sequence";
 
 const questions = {
-	general: [
-		{
-			type: "list",
-			name: "release",
-			message: "What type of release is this",
-			choices: [
-				{ name: "Major (Breaking Change)", value: "major", short: "l" },
-				{ name: "Minor (New Feature)", value: "minor", short: "m" },
-				{ name: "Patch (Bug Fix)", value: "patch", short: "s" }
-			]
-		}
-	],
 	github: [
 		{
 			type: "input",
@@ -72,10 +60,10 @@ export function startTagRelease( options, queries = questions.general ) {
 		fmt.field( "token", options.token );
 		fmt.line();
 	}
-	return utils.prompt( queries ).then( answers => {
-		answers = _.extend( {}, commander, answers, options );
-		tagRelease( answers );
-	} );
+
+	options = _.extend( {}, commander, options );
+
+	return tagRelease( options );
 }
 
 export function bootstrap() {

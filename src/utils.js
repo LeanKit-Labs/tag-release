@@ -155,7 +155,7 @@ export default {
 			return this.prompt( [ {
 				type: "input",
 				name: "authCode",
-				message: "What is your GitHub authentication code"
+				message: "What is the GitHub authentication code on your device"
 			} ] ).then( answers => {
 				return this.createGitHubAuthToken( username, password, {
 					"X-GitHub-OTP": answers.authCode
@@ -182,6 +182,7 @@ ${ chalk.red( "To upgrade run " ) } ${ chalk.yellow( "'npm install tag-release -
 			text: advise( text ),
 			f: require( "path" ).resolve( __dirname, "clippy.cow" ) // eslint-disable-line
 		} ) );
+
 		if ( exit ) {
 			process.exit( 0 ); // eslint-disable-line no-process-exit
 		}

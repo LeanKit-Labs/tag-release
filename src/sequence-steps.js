@@ -8,15 +8,18 @@ import chalk from "chalk";
 import logger from "better-console";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
+
 const sequenceSteps = [
 	gitFetchUpstreamMaster,
 	gitBranchGrepUpstreamDevelop,
 	gitCheckoutMaster,
 	gitMergeUpstreamMaster,
 	gitMergeUpstreamDevelop,
-	updateVersion,
 	gitLog,
+	previewLog,
+	askSemverJump,
 	updateLog,
+	updateVersion,
 	updateChangelog,
 	gitDiff,
 	gitAdd,
@@ -76,20 +79,6 @@ export function gitMergeUpstreamDevelop( [ git, options ] ) {
 	return null;
 }
 
-export function updateVersion( [ git, options ] ) {
-	let packageJson = {};
-	try {
-		packageJson = utils.readJSONFile( "./package.json" );
-	} catch ( e ) {
-		utils.advise( "updateVersion" );
-	}
-	const oldVersion = packageJson.version;
-	const newVersion = packageJson.version = semver.inc( oldVersion, options.release );
-	utils.writeJSONFile( "./package.json", packageJson );
-	options.versions = { oldVersion, newVersion };
-	logger.log( chalk.green( `Updated package.json from ${ oldVersion } to ${ newVersion }` ) );
-}
-
 export function gitLog( [ git, options ] ) {
 	let contents = utils.readFile( CHANGELOG_PATH );
 
@@ -121,11 +110,30 @@ export function gitLog( [ git, options ] ) {
 	}
 }
 
-export function updateLog( [ git, options ] ) {
-	const command = "log preview";
+export function previewLog( [ git, options ] ) {
 	const label = "Here is a preview of your log:";
 	logger.log( `${ chalk.bold( label ) }
 ${ chalk.green( options.log ) }` );
+}
+
+export function askSemverJump( [ git, options ] ) {
+	return utils.prompt( [ {
+		type: "list",
+		name: "release",
+		message: "What type of release is this",
+		choices: [
+			{ name: "Major (Breaking Change)", value: "major", short: "l" },
+			{ name: "Minor (New Feature)", value: "minor", short: "m" },
+			{ name: "Patch (Bug Fix)", value: "patch", short: "s" }
+		]
+	} ] ).then( answers => {
+		options.release = answers.release;
+		return Promise.resolve();
+	} );
+}
+
+export function updateLog( [ git, options ] ) {
+	const command = "log preview";
 	return utils.prompt( [ {
 		type: "confirm",
 		name: "log",
@@ -142,6 +150,20 @@ ${ chalk.green( options.log ) }` );
 		}
 		return Promise.resolve();
 	} );
+}
+
+export function updateVersion( [ git, options ] ) {
+	let packageJson = {};
+	try {
+		packageJson = utils.readJSONFile( "./package.json" );
+	} catch ( e ) {
+		utils.advise( "updateVersion" );
+	}
+	const oldVersion = packageJson.version;
+	const newVersion = packageJson.version = semver.inc( oldVersion, options.release );
+	utils.writeJSONFile( "./package.json", packageJson );
+	options.versions = { oldVersion, newVersion };
+	logger.log( chalk.green( `Updated package.json from ${ oldVersion } to ${ newVersion }` ) );
 }
 
 export function updateChangelog( [ git, options ] ) {
@@ -279,7 +301,7 @@ export function gitPushOriginMaster( [ git, options ] ) {
 export function githubUpstream( [ git, options ] ) {
 	const command = `git config remote.upstream.url`;
 	return utils.exec( command ).then( data => {
-		const [ , owner, name ] = data.match( /github.com[:/](.*)\/(.*)\.git/ ) || [];
+		const [ , owner, name ] = data.match( /github\.com[:\/](.*)\/(.*(?=\.git)|(?:.*))/ ) || [];
 		options.github = { owner, name };
 	} ).catch( error => logger.log( "error", error ) );
 }
