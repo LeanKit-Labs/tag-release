@@ -340,10 +340,11 @@ export function gitPushUpstreamFeatureBranch( [ git, options ] ) {
 }
 
 export function npmPublish( [ git, options ] ) {
+	const configPath = options.config ? options.config : "./package.json";
 	const command = `npm publish`;
 
-	if ( !utils.isPackagePrivate() ) {
-		return utils.getPackageRegistry().then( registry => {
+	if ( !utils.isPackagePrivate( configPath ) ) {
+		return utils.getPackageRegistry( configPath ).then( registry => {
 			return utils.prompt( [ {
 				type: "confirm",
 				name: "publish",

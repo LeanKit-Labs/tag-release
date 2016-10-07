@@ -73,12 +73,12 @@ export default {
 			} );
 		} );
 	},
-	isPackagePrivate() {
-		const pkg = this.readJSONFile( "./package.json" );
+	isPackagePrivate( configPath ) {
+		const pkg = this.readJSONFile( configPath );
 		return !!pkg.private;
 	},
-	getPackageRegistry() {
-		const pkg = this.readJSONFile( "./package.json" );
+	getPackageRegistry( configPath ) {
+		const pkg = this.readJSONFile( configPath );
 		const registry = get( pkg, "publishConfig.registry" );
 
 		if ( registry ) {
