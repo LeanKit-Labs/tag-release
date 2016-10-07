@@ -31,6 +31,7 @@ Usage: tag-release [options]
 Options:
 
   -h, --help                     Output usage information
+  -c, --config [filePath] Path to JSON Configuration file (defaults to './package.json')
   -r, --release [type]           Release type (major, minor, patch)
   --verbose                      Console additional information
   -v                             Console the version of tag-release
@@ -40,6 +41,8 @@ Options:
 Examples:
 
    $ tag-release
+   $ tag-release --config ../../config.json
+   $ tag-release -c ./manifest.json
    $ tag-release --release major
    $ tag-release -r minor
    $ tag-release --verbose

@@ -36,7 +36,7 @@ test.afterEach( t => {
 } );
 
 test.serial( "updateVersion calls readJSONFile", t => {
-	updateVersion( [ git, { release: "minor" } ] );
+	updateVersion( [ git, { configPath: "./package.json", release: "minor" } ] );
 	t.truthy( utils.readJSONFile.calledWith( "./package.json" ) );
 } );
 
@@ -53,7 +53,7 @@ test.serial( "updateVersion passes options.release to semver.inc", t => {
 } );
 
 test.serial( "updateVersion calls writeJSONFile", t => {
-	updateVersion( [ git, { release: "minor" } ] );
+	updateVersion( [ git, { configPath: "./package.json", release: "minor" } ] );
 	t.truthy( utils.writeJSONFile.calledWith( "./package.json", { version: "1.1.0" } ) );
 } );
 
@@ -64,13 +64,13 @@ test.serial( "updateVersion gives advise when utils.readJSONFile fails", t => {
 } );
 
 test.serial( "updateVersion correctly reads non default JSON config file", t => {
-	const options = { release: "minor", config: "./manifest.json" };
+	const options = { release: "minor", configPath: "./manifest.json" };
 	updateVersion( [ git, options ] );
-	t.truthy( utils.readJSONFile.calledWith( options.config ) );
+	t.truthy( utils.readJSONFile.calledWith( options.configPath ) );
 } );
 
 test.serial( "updateVersion correctly updates non default config file", t => {
-	const options = { release: "minor", config: "./manifest.json" };
+	const options = { release: "minor", configPath: "./manifest.json" };
 	updateVersion( [ git, options ] );
-	t.truthy( utils.writeJSONFile.calledWith( options.config, { version: "1.1.0" } ) );
+	t.truthy( utils.writeJSONFile.calledWith( options.configPath, { version: "1.1.0" } ) );
 } );
