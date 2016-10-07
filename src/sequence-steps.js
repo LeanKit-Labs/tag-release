@@ -246,16 +246,18 @@ export function updateLog( [ git, options ] ) {
 
 export function updateVersion( [ git, options ] ) {
 	let packageJson = {};
+	const configPath = options.config ? options.config : "./package.json";
+
 	try {
-		packageJson = utils.readJSONFile( "./package.json" );
+		packageJson = utils.readJSONFile( configPath );
 	} catch ( e ) {
 		utils.advise( "updateVersion" );
 	}
-	const oldVersion = options.currentVersion;
+	const oldVersion = packageJson.version;
 	const newVersion = packageJson.version = semver.inc( oldVersion, options.release, options.identifier );
-	utils.writeJSONFile( "./package.json", packageJson );
+	utils.writeJSONFile( configPath, packageJson );
 	options.versions = { oldVersion, newVersion };
-	logger.log( chalk.green( `Updated package.json from ${ oldVersion } to ${ newVersion }` ) );
+	logger.log( chalk.green( `Updated ${ configPath } from ${ oldVersion } to ${ newVersion }` ) );
 }
 
 export function updateChangelog( [ git, options ] ) {
@@ -277,7 +279,8 @@ export function updateChangelog( [ git, options ] ) {
 }
 
 export function gitDiff( [ git, options ] ) {
-	const command = "git diff --color CHANGELOG.md package.json";
+	const configPath = options.config ? options.config : "./package.json";
+	const command = `git diff --color CHANGELOG.md ${ configPath }`;
 	return utils.exec( command )
 		.then( data => {
 			logger.log( data );
@@ -298,9 +301,10 @@ export function gitDiff( [ git, options ] ) {
 }
 
 export function gitAdd( [ git, options ] ) {
-	const command = "git add CHANGELOG.md package.json";
+	const configPath = options.config ? options.config : "./package.json";
+	const command = `git add CHANGELOG.md ${ configPath }`;
 	utils.log.begin( command );
-	return nodefn.lift( ::git.add )( [ "CHANGELOG.md", "package.json" ] )
+	return nodefn.lift( ::git.add )( [ "CHANGELOG.md", configPath ] )
 		.then( () => utils.log.end() );
 }
 

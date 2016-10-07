@@ -62,3 +62,15 @@ test.serial( "updateVersion gives advise when utils.readJSONFile fails", t => {
 	updateVersion( [ git, { release: "minor" } ] );
 	t.truthy( utils.advise.called );
 } );
+
+test.serial( "updateVersion correctly reads non default JSON config file", t => {
+	const options = { release: "minor", config: "./manifest.json" };
+	updateVersion( [ git, options ] );
+	t.truthy( utils.readJSONFile.calledWith( options.config ) );
+} );
+
+test.serial( "updateVersion correctly updates non default config file", t => {
+	const options = { release: "minor", config: "./manifest.json" };
+	updateVersion( [ git, options ] );
+	t.truthy( utils.writeJSONFile.calledWith( options.config, { version: "1.1.0" } ) );
+} );
