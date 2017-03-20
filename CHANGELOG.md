@@ -1,5 +1,10 @@
 ## 4.x
 
+### 4.2.1
+
+* Moved Release Jump question until after user previews commits for this release
+* Revert "Added preview of git logs to start of tag-release process"
+
 ### 4.2.0
 
 * Added preview of git logs to start of tag-release process
