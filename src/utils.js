@@ -17,7 +17,6 @@ import cowsay from "cowsay";
 import advise from "./advise.js";
 
 const GIT_CONFIG_COMMAND = "git config --global";
-const CHANGELOG_PATH = "./CHANGELOG.md";
 
 export default {
 	readFile( path ) {
@@ -109,57 +108,17 @@ export default {
 	setGitConfig( name, value ) {
 		return this.exec( `${ GIT_CONFIG_COMMAND } ${ name } ${ value.trim() }` );
 	},
-	getGitConfigs( options ) {
+	getGitConfigs() {
 		return Promise.all( [
 			this.getGitConfig( "tag-release.username" ),
 			this.getGitConfig( "tag-release.token" )
-		] )
-			.then( config => {
-				const [ username, token ] = config;
-				return { ...options, username, token };
-			} );
+		] );
 	},
 	setGitConfigs( username, token ) {
 		return sequence( [
 			this.setGitConfig.bind( this, "tag-release.username", username ),
 			this.setGitConfig.bind( this, "tag-release.token", token )
 		] ).catch( e => logger.log( chalk.red( e ) ) );
-	},
-	showGitLogs( options ) {
-		let contents = this.readFile( CHANGELOG_PATH );
-
-		if ( ~contents.indexOf( "### Next" ) ) {
-			contents = contents.replace( /### Next([^#]+)/, ( match, submatch ) => {
-				options.log = submatch.trim();
-				return "";
-			} );
-			this.writeFile( CHANGELOG_PATH, contents );
-			return Promise.resolve( options );
-		}
-
-		return this.exec( "git tag --sort=v:refname" ).then( tags => {
-			let command = `git --no-pager log --no-merges --date-order --pretty=format:'%s'`;
-			tags = tags.trim();
-			if ( tags.length ) {
-				tags = tags.split( "\n" );
-				const latestRelease = tags[ tags.length - 1 ];
-				command = `${ command } ${ latestRelease }..`;
-			}
-			this.log.begin( command );
-			return this.exec( command ).then( data => {
-				this.log.end();
-				data = data.trim().replace( /^(.+)$/gm, "* $1" );
-				if ( data.length === 0 ) {
-					this.advise( "gitLog.log", { exit: false } );
-				}
-				options.log = data;
-
-				const label = "These are the newest commits since last tag release:";
-				logger.log( `${ chalk.bold( label ) }\n${ chalk.green( options.log ) }` );
-
-				return Promise.resolve( options );
-			} );
-		} ).catch( () => this.advise( "gitLog.tag" ) );
 	},
 	escapeCurlPassword( source ) {
 		return source.replace( /([\[\]$"\\])/g, "\\$1" );

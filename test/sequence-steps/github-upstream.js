@@ -31,6 +31,15 @@ test.serial( "githubUpstream sets owner and name from upstream https url", t => 
 	} );
 } );
 
+test.serial( "githubUpstream sets owner and name from upstream https card.ui url", t => {
+	utils.exec = sinon.spy( command => Promise.resolve( "https://github.com/LeanKit-Labs/card.ui" ) );
+	const options = {};
+	return githubUpstream( [ git, options ] ).then( () => {
+		t.is( options.github.owner, "LeanKit-Labs" );
+		t.is( options.github.name, "card.ui" );
+	} );
+} );
+
 test.serial( "githubUpstream sets owner and name from upstream ssh url", t => {
 	utils.exec = sinon.spy( command => Promise.resolve( "git@github.com/LeanKit-Labs/tag-release.git" ) );
 
@@ -41,7 +50,17 @@ test.serial( "githubUpstream sets owner and name from upstream ssh url", t => {
 	} );
 } );
 
-test.serial( "githubUpstream sets owner and name to undefined if no match", t => {
+test.serial( "githubUpstream sets owner and name from upstream ssh card.ui url", t => {
+	utils.exec = sinon.spy( command => Promise.resolve( "git@github.com/LeanKit-Labs/card.ui.git" ) );
+
+	const options = {};
+	return githubUpstream( [ git, options ] ).then( () => {
+		t.is( options.github.owner, "LeanKit-Labs" );
+		t.is( options.github.name, "card.ui" );
+	} );
+} );
+
+test.serial( "githubUpstream sets owner and anme to undefined if no match", t => {
 	const options = {};
 	utils.exec = sinon.spy( command => Promise.resolve( "" ) );
 	return githubUpstream( [ git, options ] ).then( () => {

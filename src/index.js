@@ -10,21 +10,8 @@ import logger from "better-console";
 import fmt from "fmt";
 import pkg from "../package.json";
 import sequence from "when/sequence";
-import pipeline from "when/pipeline";
 
 const questions = {
-	general: [
-		{
-			type: "list",
-			name: "release",
-			message: "What type of release is this",
-			choices: [
-				{ name: "Major (Breaking Change)", value: "major", short: "l" },
-				{ name: "Minor (New Feature)", value: "minor", short: "m" },
-				{ name: "Patch (Bug Fix)", value: "patch", short: "s" }
-			]
-		}
-	],
 	github: [
 		{
 			type: "input",
@@ -73,26 +60,21 @@ export function startTagRelease( options, queries = questions.general ) {
 		fmt.field( "token", options.token );
 		fmt.line();
 	}
-	return utils.prompt( queries ).then( answers => {
-		answers = _.extend( {}, commander, answers, options );
-		tagRelease( answers );
-	} );
+
+	options = _.extend( {}, commander, options );
+
+	return tagRelease( options );
 }
 
 export function bootstrap() {
-	const options = {};
-
-	return pipeline( [
-		::utils.showGitLogs,
-		::utils.getGitConfigs,
-		startTagRelease
-	], options )
+	utils.getGitConfigs()
+		.then( ( [ username, token ] ) => startTagRelease( { username, token } ) )
 		.catch( error => {
 			utils.prompt( questions.github ).then( answers => {
 				const { username, password } = answers;
 				utils.createGitHubAuthToken( username, password ).then( token => {
 					utils.setGitConfigs( username, token );
-					startTagRelease( { ...options, username, token } );
+					startTagRelease( { username, token } );
 				} ).catch( e => logger.log( chalk.red( "error", e ) ) );
 			} );
 		} );
