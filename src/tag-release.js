@@ -2,10 +2,12 @@
 
 import simpleGitFactory from "simple-git";
 import sequence from "when/sequence";
-import sequenceSteps from "./sequence-steps";
+import { releaseSteps, preReleaseSteps } from "./sequence-steps";
 
 export default options => {
 	const git = simpleGitFactory( "." );
 
-	sequence( sequenceSteps, [ git, options ] ).then( () => console.log( "Finished" ) );
+	const steps = options.prerelease ? preReleaseSteps : releaseSteps;
+
+	sequence( steps, [ git, options ] ).then( () => console.log( "Finished" ) );
 };
