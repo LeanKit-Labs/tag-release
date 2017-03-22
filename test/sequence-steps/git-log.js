@@ -102,3 +102,23 @@ test.serial( "gitLog gives advise when using an old version of git", t => {
 		t.truthy( utils.advise.called );
 	} );
 } );
+
+test.serial( "gitLog should filter pre-release versions out for release", t => {
+	utils.readFile = sinon.stub().returns( "" );
+	utils.exec = sinon.spy( command => new Promise( resolve => resolve( `v1.0.0
+v2.0.0
+v2.1.0-blah.0` ) ) );
+	return gitLog( [ git, {} ] ).then( () => {
+		t.truthy( utils.exec.calledWith( "git --no-pager log --no-merges --date-order --pretty=format:'%s' v2.0.0.." ) );
+	} );
+} );
+
+test.serial( "gitLog should use currentVersion when in pre-release mode", t => {
+	utils.readFile = sinon.stub().returns( "" );
+	utils.exec = sinon.spy( command => new Promise( resolve => resolve( `v1.0.0
+v2.0.0
+v2.1.0-blah.0` ) ) );
+	return gitLog( [ git, { prerelease: true, currentVersion: "2.1.0-blah.0" } ] ).then( () => {
+		t.truthy( utils.exec.calledWith( "git --no-pager log --no-merges --date-order --pretty=format:'%s' v2.1.0-blah.0.." ) );
+	} );
+} );

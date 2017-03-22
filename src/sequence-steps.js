@@ -13,10 +13,8 @@ const releaseSteps = [
 	gitFetchUpstreamMaster,
 	gitBranchGrepUpstreamDevelop,
 	gitCheckoutMaster,
-	function gitMergeUpstreamMaster( [ git, options ] ) {
-		options.branch = "master";
-		return gitMergeUpstreamBranch( [ git, options ] );
-	},
+	gitMergeUpstreamMaster,
+	getCurrentVersion, // For releases we want the current version that is in master
 	gitMergeUpstreamDevelop,
 	gitLog,
 	previewLog,
@@ -40,13 +38,10 @@ const releaseSteps = [
 
 const preReleaseSteps = [
 	gitFetchUpstreamMaster,
+	getCurrentVersion,
 	askPrereleaseIdentifier,
-	function gitMergeUpstreamFeatureBranch( [ git, options ] ) {
-		return getFeatureBranch( [ git, options ] ).then( branch => {
-			options.branch = branch;
-			return gitMergeUpstreamBranch( [ git, options ] );
-		} );
-	},
+	getFeatureBranch,
+	gitMergeUpstreamFeatureBranch,
 	gitLog,
 	previewLog,
 	askSemverJump,
@@ -62,6 +57,26 @@ const preReleaseSteps = [
 	githubUpstream,
 	githubRelease
 ];
+
+export function getCurrentVersion( [ git, options ] ) {
+	let packageJson = {};
+	try {
+		packageJson = utils.readJSONFile( "./package.json" );
+	} catch ( e ) {
+		utils.advise( "updateVersion" );
+	}
+	options.currentVersion = packageJson.version;
+	return Promise.resolve();
+}
+
+export function gitMergeUpstreamMaster( [ git, options ] ) {
+	options.branch = "master";
+	return gitMergeUpstreamBranch( [ git, options ] );
+}
+
+export function gitMergeUpstreamFeatureBranch( [ git, options ] ) {
+	return gitMergeUpstreamBranch( [ git, options ] );
+}
 
 export function gitFetchUpstreamMaster( [ git, options ] ) {
 	const command = "git fetch upstream --tags";
@@ -83,15 +98,14 @@ export function gitBranchGrepUpstreamDevelop( [ git, options ] ) {
 }
 
 export function askPrereleaseIdentifier( [ git, options ] ) {
-	if ( !options.prerelease ) {
+	if ( options.tag && options.tag.length ) {
 		return Promise.resolve();
 	}
 
 	return utils.prompt( [ {
 		type: "input",
 		name: "prereleaseIdentifier",
-		message: "Prerelease Identifier:",
-		default: options.tag || null
+		message: "Prerelease Identifier:"
 	} ] ).then( answer => {
 		options.tag = answer.prereleaseIdentifier;
 		return Promise.resolve();
@@ -109,11 +123,9 @@ export function getFeatureBranch( [ git, options ] ) {
 	const command = "git rev-parse --abbrev-ref HEAD";
 	utils.log.begin( command );
 	return utils.exec( command ).then( branch => {
+		options.branch = branch.trim();
 		utils.log.end();
-		return Promise.resolve( branch.trim() );
-	} ).catch( e => {
-		console.log( "getFeatureBranch:", e );
-	} );
+	} ).catch( () => utils.advise( "getFeatureBranch" ) );
 }
 
 export function gitMergeUpstreamBranch( [ git, options ] ) {
@@ -147,10 +159,18 @@ export function gitLog( [ git, options ] ) {
 	} else {
 		return utils.exec( "git tag --sort=v:refname" ).then( tags => {
 			let command = `git --no-pager log --no-merges --date-order --pretty=format:'%s'`;
+			let latestRelease = "";
 			tags = tags.trim();
 			if ( tags.length ) {
 				tags = tags.split( "\n" );
-				const latestRelease = tags[ tags.length - 1 ];
+				if ( options.prerelease ) {
+					latestRelease = `v${ options.currentVersion }`;
+				} else {
+					tags = tags.filter( tag => {
+						return !tag.includes( "-" );
+					} );
+					latestRelease = tags[ tags.length - 1 ];
+				}
 				command = `${ command } ${ latestRelease }..`;
 			}
 			utils.log.begin( command );
@@ -186,18 +206,10 @@ export function askSemverJump( [ git, options ] ) {
 		{ name: "Pre-Release (Bump existing Pre-Release)", value: "prerelease", short: "p-r" }
 	];
 
-	let packageJson = {};
-	try {
-		packageJson = utils.readJSONFile( "./package.json" );
-	} catch ( e ) {
-		utils.advise( "updateVersion" );
-	}
-	const oldVersion = packageJson.version;
-
 	const choicesSource = options.prerelease ? prereleaseChoices : releaseChoices;
 
 	const choices = choicesSource.map( item => {
-		const version = `v${ semver.inc( oldVersion, item.value, options.tag ) }`;
+		const version = `v${ semver.inc( options.currentVersion, item.value, options.tag ) }`;
 		return Object.assign( {}, item, { name: `${ item.name } ${ chalk.gray( version ) }` } );
 	} );
 
@@ -239,7 +251,7 @@ export function updateVersion( [ git, options ] ) {
 	} catch ( e ) {
 		utils.advise( "updateVersion" );
 	}
-	const oldVersion = packageJson.version;
+	const oldVersion = options.currentVersion;
 	const newVersion = packageJson.version = semver.inc( oldVersion, options.release, options.tag );
 	utils.writeJSONFile( "./package.json", packageJson );
 	options.versions = { oldVersion, newVersion };
@@ -314,7 +326,7 @@ export function gitPushUpstreamMaster( [ git, options ] ) {
 }
 
 export function gitPushUpstreamFeatureBranch( [ git, options ] ) {
-	const command = "git push upstream feature-test-prerelease --tags";
+	const command = `git push upstream ${ options.branch } --tags`;
 	utils.log.begin( command );
 	return utils.exec( command )
 		.then( data => utils.log.end() );

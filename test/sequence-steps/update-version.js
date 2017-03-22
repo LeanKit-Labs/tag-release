@@ -47,7 +47,7 @@ test.serial( "updateVersion adds versions to options", t => {
 } );
 
 test.serial( "updateVersion passes options.release to semver.inc", t => {
-	const options = { release: "minor" };
+	const options = { release: "minor", currentVersion: "1.0.0" };
 	updateVersion( [ git, options ] );
 	t.truthy( inc.calledWith( "1.0.0", options.release ) );
 } );
