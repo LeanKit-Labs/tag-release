@@ -45,22 +45,31 @@ test.serial( "askSemverJump calls utils.prompt with choices for Major, Minor, an
 	} );
 } );
 
-test.serial( "askSemverJump calls utils.prompt with choices for Pre-Major, Pre-Minor, Pre-Patch and Pre-Release when the prerelease option is true", t => {
+test.serial( "askSemverJump calls utils.prompt with choices for Pre-major, Pre-minor, Pre-patch and Pre-release when the prerelease option is true", t => {
 	utils = getUtils( "throwaway" );
 	RewireAPI.__Rewire__( "utils", utils );
 
-	return askSemverJump( [ git, { prerelease: true, tag: "test", currentVersion: "1.0.0" } ] ).then( () => {
+	return askSemverJump( [ git, { prerelease: true, identifier: "test", currentVersion: "1.0.0" } ] ).then( () => {
 		t.truthy( utils.prompt.calledWith( [ {
 			type: "list",
 			name: "release",
 			message: "What type of release is this",
 			choices: [
-				{ name: "Pre-Major (Breaking Change) v2.0.0-test.0", value: "premajor", short: "p-l" },
-				{ name: "Pre-Minor (New Feature) v1.1.0-test.0", value: "preminor", short: "p-m" },
-				{ name: "Pre-Patch (Bug Fix) v1.0.1-test.0", value: "prepatch", short: "p-s" },
-				{ name: "Pre-Release (Bump existing Pre-Release) v1.0.1-test.0", value: "prerelease", short: "p-r" }
+				{ name: "Pre-major (Breaking Change) v2.0.0-test.0", value: "premajor", short: "p-l" },
+				{ name: "Pre-minor (New Feature) v1.1.0-test.0", value: "preminor", short: "p-m" },
+				{ name: "Pre-patch (Bug Fix) v1.0.1-test.0", value: "prepatch", short: "p-s" },
+				{ name: "Pre-release (Bump existing Pre-release) v1.0.1-test.0", value: "prerelease", short: "p-r" }
 			]
 		} ] ) );
+	} );
+} );
+
+test.serial( "Should use provided release option when passed instead of prompting", t => {
+	utils = getUtils( "throwaway" );
+	RewireAPI.__Rewire__( "utils", utils );
+
+	return askSemverJump( [ git, { release: "prepatch" } ] ).then( () => {
+		t.truthy( !utils.prompt.called );
 	} );
 } );
 
@@ -94,5 +103,49 @@ test( "askSemverJump assigns 'patch' to options.release", t => {
 
 	return askSemverJump( [ git, options ] ).then( () => {
 		t.is( options.release, "patch" );
+	} );
+} );
+
+test( "askSemverJump assigns 'patch' to options.release", t => {
+	const options = {};
+
+	utils = getUtils( "premajor" );
+	RewireAPI.__Rewire__( "utils", utils );
+
+	return askSemverJump( [ git, options ] ).then( () => {
+		t.is( options.release, "premajor" );
+	} );
+} );
+
+test( "askSemverJump assigns 'minor' to options.release", t => {
+	const options = {};
+
+	utils = getUtils( "preminor" );
+	RewireAPI.__Rewire__( "utils", utils );
+
+	return askSemverJump( [ git, options ] ).then( () => {
+		t.is( options.release, "preminor" );
+	} );
+} );
+
+test( "askSemverJump assigns 'patch' to options.release", t => {
+	const options = {};
+
+	utils = getUtils( "prepatch" );
+	RewireAPI.__Rewire__( "utils", utils );
+
+	return askSemverJump( [ git, options ] ).then( () => {
+		t.is( options.release, "prepatch" );
+	} );
+} );
+
+test( "askSemverJump assigns 'patch' to options.release", t => {
+	const options = {};
+
+	utils = getUtils( "prerelease" );
+	RewireAPI.__Rewire__( "utils", utils );
+
+	return askSemverJump( [ git, options ] ).then( () => {
+		t.is( options.release, "prerelease" );
 	} );
 } );

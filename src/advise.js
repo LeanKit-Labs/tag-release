@@ -19,6 +19,9 @@ You can easily create one by running 'npm init' and walking through the steps.`,
 Are you sure you need to tag and release?
 
 Press 'Control-c' to exit`,
+	getCurrentBranchVersion: `It looks like there isn't a package.json for this project.
+
+You can easily create one by running 'npm init' and walking through the steps.`,
 	"gitLog.tag": `It looks like you may have an old version of git installed.
 
 You need at least version 2.x in order for tag-release to work properly.`,
@@ -37,7 +40,12 @@ You can retrieve upstream's develop by running 'git branch -t upstream/develop'`
 
 It could be that your local environment is out of sync with your upstream.
 
-You might consider reseting your develop by running 'git reset --hard upstream/develop'`
+You might consider reseting your develop by running 'git reset --hard upstream/develop'`,
+	gitPushUpstreamFeatureBranch: `It looks like git couldn't push to your feature branch.
+
+It could be that your local environment is out of sync with your upstream or you are missing a upstream feature branch.
+
+You might consider reseting your branch by running 'git reset --hard upstream/develop' or creating a upstream feature branch.`
 };
 const MAXIMUM_WIDTH = 50;
 

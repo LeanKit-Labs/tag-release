@@ -31,7 +31,7 @@ commander
 	.option( "--verbose", "Console additional information" )
 	.option( "-v", "Console the version of tag-release" )
 	.option( "-p, --prerelease", "Create a pre-release" )
-	.option( "-t, --tag <tag>", "Tag used for pre-release" );
+	.option( "-i, --identifier <identifier>", "Identifier used for pre-release" );
 
 commander.on( "--help", () => {
 	console.log( "Examples: \n" );
@@ -40,7 +40,7 @@ commander.on( "--help", () => {
 	console.log( "   $ tag-release -r minor" );
 	console.log( "   $ tag-release --verbose" );
 	console.log( "   $ tag-release -v" );
-	console.log( "   $ tag-release -t rc" );
+	console.log( "   $ tag-release -i rc" );
 } );
 
 commander.on( "-v", () => {

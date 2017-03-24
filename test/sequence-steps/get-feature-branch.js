@@ -45,18 +45,3 @@ test.serial( "getFeatureBranch calls log.end", t => {
 		t.truthy( utils.log.end.called );
 	} );
 } );
-
-test.serial( "getFeatureBranch gives advise when git.exec fails", t => {
-	const myUtils = {
-		log: {
-			begin: sinon.spy(),
-			end: sinon.spy()
-		},
-		exec: sinon.spy( command => Promise.reject() ),
-		advise: sinon.spy()
-	};
-	RewireAPI.__Rewire__( "utils", myUtils );
-	return getFeatureBranch( [ git, {} ] ).then( () => {
-		t.truthy( myUtils.advise.calledWith( "getFeatureBranch" ) );
-	} );
-} );

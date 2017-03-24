@@ -11,7 +11,7 @@ function getUtils( release ) {
 	};
 }
 
-test.serial( "should prompt for a prerelease identifier when no tag is provided", t => {
+test.serial( "should prompt for a prerelease identifier when no identifier is provided", t => {
 	utils = getUtils( "prerelease" );
 	RewireAPI.__Rewire__( "utils", utils );
 
@@ -19,16 +19,16 @@ test.serial( "should prompt for a prerelease identifier when no tag is provided"
 		t.truthy( utils.prompt.calledWith( [ {
 			type: "input",
 			name: "prereleaseIdentifier",
-			message: "Prerelease Identifier:"
+			message: "Pre-release Identifier:"
 		} ] ) );
 	} );
 } );
 
-test.serial( "should prompt for a prerelease identifier with a default value when the prerelease option is true and options.tag is set", t => {
+test.serial( "should prompt for a prerelease identifier with a default value when the prerelease option is true and options.identifier is set", t => {
 	utils = getUtils( "prerelease" );
 	RewireAPI.__Rewire__( "utils", utils );
 
-	return askPrereleaseIdentifier( [ git, { tag: "test" } ] ).then( () => {
+	return askPrereleaseIdentifier( [ git, { identifier: "test" } ] ).then( () => {
 		t.truthy( !utils.prompt.called );
 	} );
 } );

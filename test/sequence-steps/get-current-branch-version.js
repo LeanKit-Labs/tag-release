@@ -9,7 +9,7 @@ const utils = {
 	advise: sinon.spy()
 };
 
-import { getCurrentVersion, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
+import { getCurrentBranchVersion, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 
 test.beforeEach( t => {
 	RewireAPI.__Rewire__( "utils", utils );
@@ -19,19 +19,19 @@ test.afterEach( t => {
 	RewireAPI.__ResetDependency__( "utils" );
 } );
 
-test.serial( "getCurrentVersion calls readJSONFile", t => {
-	getCurrentVersion( [ git, {} ] );
+test.serial( "getCurrentBranchVersion calls readJSONFile", t => {
+	getCurrentBranchVersion( [ git, {} ] );
 	t.truthy( utils.readJSONFile.calledWith( "./package.json" ) );
 } );
 
-test.serial( "getCurrentVersion should add currentVersion to options", t => {
+test.serial( "getCurrentBranchVersion should add currentVersion to options", t => {
 	const options = {};
-	getCurrentVersion( [ git, options ] );
+	getCurrentBranchVersion( [ git, options ] );
 	t.truthy( options.currentVersion, "1.0.0" );
 } );
 
-test.serial( "getCurrentVersion gives advise when utils.readJSONFile fails", t => {
+test.serial( "getCurrentBranchVersion gives advise when utils.readJSONFile fails", t => {
 	utils.readJSONFile = sinon.stub().throws();
-	getCurrentVersion( [ git, {} ] );
+	getCurrentBranchVersion( [ git, {} ] );
 	t.truthy( utils.advise.called );
 } );
