@@ -30,12 +30,12 @@ Usage: tag-release [options]
 
 Options:
 
-  -h, --help            output usage information
-  -r, --release [type]  Release type (major, minor, patch)
-  --verbose             Console additional information
-  -v                    Console the version of tag-release
-  -p, --prerelease      Create a pre-release
-  -i, --identifier <identifier>       Identifier used for pre-release
+  -h, --help                     Output usage information
+  -r, --release [type]           Release type (major, minor, patch)
+  --verbose                      Console additional information
+  -v                             Console the version of tag-release
+  -p, --prerelease               Create a pre-release
+  -i, --identifier <identifier>  Identifier used for pre-release
 
 Examples:
 
@@ -95,7 +95,7 @@ Example:
 These tags always match the following schema: [version]-[identifier].[bump]
 
 |----------------|-------------------|---------|---------------|---------------|----------------|
-| Latest Release | Latest Prerelease | Release | Pre-release   | Tag           | Next Version   |
+| Latest Release | Latest Prerelease | Release | Pre-release   | Identifier    | Next Version   |
 |----------------|-------------------|---------|---------------|---------------|----------------|
 | 1.2.3          | N/A               | major   | yes           | pre (default) | 2.0.0-pre.0    |
 | 1.2.3          | 2.0.0-pre.0       | major   | yes           | pre (default) | 2.0.0-pre.1    |
