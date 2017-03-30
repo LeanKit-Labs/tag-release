@@ -1,5 +1,12 @@
 ## 4.x
 
+### 4.3.0
+
+* Update README.md
+* Added README.md section.
+* Added tests for new pre-release option.
+* Added ability to create/tag pre-release builds.
+
 ### 4.2.1
 
 * Moved Release Jump question until after user previews commits for this release
