@@ -10,8 +10,8 @@ const options = {
 		newVersion: "0.1.1"
 	},
 	github: { owner: "someUser", name: "my-special-repo" },
-	token: "k0234f"
-
+	token: "k0234f",
+	prerelease: false
 };
 const utils = {
 	log: {
@@ -104,7 +104,8 @@ test.serial( "githubRelease calls to API to create release on GitHub", t => {
 	const args = {
 		tag_name: "v0.1.1", // eslint-disable-line
 		name: "My Special Release",
-		body: "* Added last feature\n* Added second feature\n* Added first feature"
+		body: "* Added last feature\n* Added second feature\n* Added first feature",
+		prerelease: false
 	};
 
 	return githubRelease( [ git, options ] ).then( () => {

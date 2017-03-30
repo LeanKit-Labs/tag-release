@@ -30,10 +30,12 @@ Usage: tag-release [options]
 
 Options:
 
-  -h, --help            output usage information
-  -r, --release [type]  Release type (major, minor, patch)
-  --verbose             Console additional information
-  -v                    Console the version of tag-release
+  -h, --help                     Output usage information
+  -r, --release [type]           Release type (major, minor, patch)
+  --verbose                      Console additional information
+  -v                             Console the version of tag-release
+  -p, --prerelease               Create a pre-release
+  -i, --identifier <identifier>  Identifier used for pre-release
 
 Examples:
 
@@ -42,7 +44,64 @@ Examples:
    $ tag-release -r minor
    $ tag-release --verbose
    $ tag-release -v
+   $ tag-release -p
+   $ tag-release -p -i foo
 ```
+
+### Pre-releases
+
+Pre-releases are mainly for interim releases that are not intended for production use.
+The benefit of this approach is being able to quickly deploy releases that can be easily
+iterated upon. In order use this feature will you have to provide `tag-release` with the
+`-p` or `--prerelease` command-line flag. Afterwards, you will be prompted for a identifier
+(or you can provide the identifier on the command-line) that will be used in the pre-release tag.
+Then the flow will continue as normal release.
+
+Notes: When using the pre-release feature you should have an upstream feature branch with the same name.
+
+```
+Usage:
+   $ tag-release -p
+   $ tag-release --prerelease
+   $ tag-release -p -i foo
+
+Example:
+
+   $ tag-release -p
+   ? Pre-release Identifier: foo
+   ? What type of release is this (Use arrow keys)
+   ❯ Pre-major (Breaking Change)
+     Pre-minor (New Feature)
+     Pre-patch (Bug Fix)
+     Pre-release (Bump existing Pre-release)
+   etc...
+```
+
+Using the `-i` or `-identifier` command-line option will allow you to pass over the step
+asking for the "Pre-release Indentifier".
+
+```
+Example:
+
+   $ tag-release -p -i foo
+   ? What type of release is this (Use arrow keys)
+   ❯ Pre-major (Breaking Change)
+     Pre-minor (New Feature)
+     Pre-patch (Bug Fix)
+     Pre-release (Bump existing Pre-release)
+   etc...
+```
+
+These tags always match the following schema: [version]-[identifier].[bump]
+
+|----------------|-------------------|---------|---------------|---------------|----------------|
+| Latest Release | Latest Prerelease | Release | Pre-release   | Identifier    | Next Version   |
+|----------------|-------------------|---------|---------------|---------------|----------------|
+| 1.2.3          | N/A               | major   | yes           | pre (default) | 2.0.0-pre.0    |
+| 1.2.3          | 2.0.0-pre.0       | major   | yes           | pre (default) | 2.0.0-pre.1    |
+| 1.2.3          | 2.0.0-pre.1       | minor   | no            | N/A           | 1.3.0          |
+| 1.3.0          | 2.0.0-pre.1       | minor   | yes           | filter        | 1.4.0-filter.0 |
+|----------------|-------------------|---------|---------------|---------------|----------------|
 
 ### GitHub Integration
 
