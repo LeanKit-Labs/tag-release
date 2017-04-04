@@ -94,14 +94,12 @@ Example:
 
 These tags always match the following schema: [version]-[identifier].[bump]
 
-|----------------|-------------------|---------|---------------|---------------|----------------|
 | Latest Release | Latest Prerelease | Release | Pre-release   | Identifier    | Next Version   |
 |----------------|-------------------|---------|---------------|---------------|----------------|
 | 1.2.3          | N/A               | major   | yes           | pre (default) | 2.0.0-pre.0    |
 | 1.2.3          | 2.0.0-pre.0       | major   | yes           | pre (default) | 2.0.0-pre.1    |
 | 1.2.3          | 2.0.0-pre.1       | minor   | no            | N/A           | 1.3.0          |
 | 1.3.0          | 2.0.0-pre.1       | minor   | yes           | filter        | 1.4.0-filter.0 |
-|----------------|-------------------|---------|---------------|---------------|----------------|
 
 ### GitHub Integration
 
