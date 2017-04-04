@@ -94,14 +94,12 @@ Example:
 
 These tags always match the following schema: [version]-[identifier].[bump]
 
-|----------------|-------------------|---------|---------------|---------------|----------------|
 | Latest Release | Latest Prerelease | Release | Pre-release   | Identifier    | Next Version   |
 |----------------|-------------------|---------|---------------|---------------|----------------|
 | 1.2.3          | N/A               | major   | yes           | pre (default) | 2.0.0-pre.0    |
 | 1.2.3          | 2.0.0-pre.0       | major   | yes           | pre (default) | 2.0.0-pre.1    |
 | 1.2.3          | 2.0.0-pre.1       | minor   | no            | N/A           | 1.3.0          |
 | 1.3.0          | 2.0.0-pre.1       | minor   | yes           | filter        | 1.4.0-filter.0 |
-|----------------|-------------------|---------|---------------|---------------|----------------|
 
 ### GitHub Integration
 
@@ -138,24 +136,29 @@ token                : a92282731316b2d4f2313ff64b1350b78a5d4cf6
  Patch (Bug Fix)
 ```
 
-## What Does That Error Mean!?!
+## Frequently Asked Questions
 
-> Click the following errors to reveal an explanation of what the error means and a proposed solution
+> **Note**: Click the following items to reveal more information
 
 <details>
-	<summary>Potentially unhandled rejection [21] Error: Command failed: git fetch upstream --tags</summary>
+	<summary>How can I tag a new repo as a `1.0.0` release?</summary>
+	If your `package.json` version is already set to `1.0.0` tag-release will try to bump that version to either `2.0.0` (major), `1.1.0` (minor), or `1.0.1` (patch) depending on the option you choose. If you want to publish a `1.0.0` tag for your first release you'll need to update your `package.json` version to something smaller (`0.1.0` for example).
+</details>
+
+<details>
+	<summary>What does the following error mean? `Potentially unhandled rejection [21] Error: Command failed: git fetch upstream --tags`</summary>
 	You don't have an `upstream` set for your repository. You can add an upstream
 	with the following command `git remote add upstream https://github.com/[upstream-owner]/[repo-name].git`
 </details>
 
 <details>
-	<summary>Error: Command failed: "npm publish"</summary>
+	<summary>What does the following error mean? `Error: Command failed: "npm publish"`</summary>
 	You may have not authenticated with npm on your machine yet. You can do so
 	with the following command `npm adduser`.
 </details>
 
 <details>
-	<summary>Potentially unhandled rejection [8] Error: Command failed: "git push upstream master --tags"</summary>
+	<summary>What does the following error mean? `Potentially unhandled rejection [8] Error: Command failed: "git push upstream master --tags"`</summary>
 	If you have GitHub Two Factor Authentication enabled and you are prompted for
 	your password when `tag-release` tries to push code then you'll need to use
 	your GitHub `token` as your password. If you use the `--verbose` flag when
