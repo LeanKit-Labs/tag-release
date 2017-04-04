@@ -1,5 +1,9 @@
 ## 4.x
 
+### 4.3.1
+
+* Fix readme table and add how to tag 1.0.0 FAQ
+
 ### 4.3.0
 
 * Update README.md
