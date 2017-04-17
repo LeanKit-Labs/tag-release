@@ -1,5 +1,9 @@
 ## 4.x
 
+### 4.4.0
+
+* Added new --config option to suport manifest.config
+
 ### 4.3.1
 
 * Fix readme table and add how to tag 1.0.0 FAQ
