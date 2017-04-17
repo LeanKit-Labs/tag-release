@@ -45,7 +45,13 @@ You might consider reseting your develop by running 'git reset --hard upstream/d
 
 It could be that your local environment is out of sync with your upstream or you are missing a upstream feature branch.
 
-You might consider reseting your branch by running 'git reset --hard upstream/develop' or creating a upstream feature branch.`
+You might consider reseting your branch by running 'git reset --hard upstream/develop' or creating a upstream feature branch.`,
+	gitStash: `It looks like you had some uncommited changes. We went ahead and stashed them so you don't lose any of your work.`,
+	gitUpstream: `It appears we couldn't access your remote upstream repository.
+
+tag-release needs an upstream remote in order to work correctly. You can double check by running 'git remote -v'
+
+To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`
 };
 const MAXIMUM_WIDTH = 50;
 
