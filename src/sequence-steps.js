@@ -60,8 +60,9 @@ const preReleaseSteps = [
 
 export function getCurrentBranchVersion( [ git, options ] ) {
 	let packageJson = {};
+
 	try {
-		packageJson = utils.readJSONFile( "./package.json" );
+		packageJson = utils.readJSONFile( options.configPath );
 	} catch ( e ) {
 		utils.advise( "updateVersion" );
 	}
@@ -246,16 +247,17 @@ export function updateLog( [ git, options ] ) {
 
 export function updateVersion( [ git, options ] ) {
 	let packageJson = {};
+
 	try {
-		packageJson = utils.readJSONFile( "./package.json" );
+		packageJson = utils.readJSONFile( options.configPath );
 	} catch ( e ) {
 		utils.advise( "updateVersion" );
 	}
 	const oldVersion = options.currentVersion;
 	const newVersion = packageJson.version = semver.inc( oldVersion, options.release, options.identifier );
-	utils.writeJSONFile( "./package.json", packageJson );
+	utils.writeJSONFile( options.configPath, packageJson );
 	options.versions = { oldVersion, newVersion };
-	logger.log( chalk.green( `Updated package.json from ${ oldVersion } to ${ newVersion }` ) );
+	logger.log( chalk.green( `Updated ${ options.configPath } from ${ oldVersion } to ${ newVersion }` ) );
 }
 
 export function updateChangelog( [ git, options ] ) {
@@ -277,7 +279,7 @@ export function updateChangelog( [ git, options ] ) {
 }
 
 export function gitDiff( [ git, options ] ) {
-	const command = "git diff --color CHANGELOG.md package.json";
+	const command = `git diff --color CHANGELOG.md ${ options.configPath }`;
 	return utils.exec( command )
 		.then( data => {
 			logger.log( data );
@@ -298,9 +300,9 @@ export function gitDiff( [ git, options ] ) {
 }
 
 export function gitAdd( [ git, options ] ) {
-	const command = "git add CHANGELOG.md package.json";
+	const command = `git add CHANGELOG.md ${ options.configPath }`;
 	utils.log.begin( command );
-	return nodefn.lift( ::git.add )( [ "CHANGELOG.md", "package.json" ] )
+	return nodefn.lift( ::git.add )( [ "CHANGELOG.md", options.configPath ] )
 		.then( () => utils.log.end() );
 }
 
@@ -336,10 +338,14 @@ export function gitPushUpstreamFeatureBranch( [ git, options ] ) {
 }
 
 export function npmPublish( [ git, options ] ) {
+	if ( options.configPath !== "./package.json" ) {
+		return null;
+	}
+
 	const command = `npm publish`;
 
-	if ( !utils.isPackagePrivate() ) {
-		return utils.getPackageRegistry().then( registry => {
+	if ( !utils.isPackagePrivate( options.configPath ) ) {
+		return utils.getPackageRegistry( options.configPath ).then( registry => {
 			return utils.prompt( [ {
 				type: "confirm",
 				name: "publish",

@@ -20,7 +20,7 @@ test.afterEach( t => {
 } );
 
 test.serial( "getCurrentBranchVersion calls readJSONFile", t => {
-	getCurrentBranchVersion( [ git, {} ] );
+	getCurrentBranchVersion( [ git, { configPath: "./package.json" } ] );
 	t.truthy( utils.readJSONFile.calledWith( "./package.json" ) );
 } );
 

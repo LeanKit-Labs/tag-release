@@ -28,6 +28,7 @@ const questions = {
 
 commander
 	.option( "-r, --release [type]", "Release type (major, minor, patch, premajor, preminor, prepatch, prerelease)", /^(major|minor|patch|premajor|preminor|prepatch|prerelease)/i )
+	.option( "-c, --config [filePath]", "Path to JSON Configuration file (defaults to './package.json')", /^.*\.json$/ )
 	.option( "--verbose", "Console additional information" )
 	.option( "-v", "Console the version of tag-release" )
 	.option( "-p, --prerelease", "Create a pre-release" )
@@ -36,6 +37,8 @@ commander
 commander.on( "--help", () => {
 	console.log( "Examples: \n" );
 	console.log( "   $ tag-release" );
+	console.log( "   $ tag-release --config ../../config.json" );
+	console.log( "   $ tag-release -c ./manifest.json" );
 	console.log( "   $ tag-release --release major" );
 	console.log( "   $ tag-release -r minor" );
 	console.log( "   $ tag-release --verbose" );
@@ -65,6 +68,7 @@ export function startTagRelease( options, queries = questions.general ) {
 	}
 
 	options = _.extend( {}, commander, options );
+	options.configPath = options.config || "./package.json";
 
 	return tagRelease( options );
 }
