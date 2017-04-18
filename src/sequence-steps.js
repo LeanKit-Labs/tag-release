@@ -476,8 +476,9 @@ export function verifyDevelopBranch( [ git, options ] ) {
 
 export function verifyBranch( [ git, options ] ) {
 	const command = `git branch --list ${ options.branch }`;
+	utils.log.begin( command );
 	return utils.exec( command ).then( data => {
-		const branches = data.split( "\n" ).filter( String ); // Remove empty array entry
+		const branches = data.split( "\n" ).filter( String );
 		const exists = branches.length;
 		if ( !exists ) {
 			const createCommand = `git branch ${ options.branch } upstream/${ options.branch }`;
@@ -490,22 +491,16 @@ export function verifyBranch( [ git, options ] ) {
 	} );
 }
 
-export function gitCheckoutBranch( [ git, options ] ) {
-	const command = `git checkout ${ options.branch }`;
-	utils.log.begin( command );
-	return nodefn.lift( ::git.checkout )( `${ options.branch }` )
-		.then( () => utils.log.end() );
-}
-
 export function gitStash( [ git, options ] ) {
-	const co = `git diff-index HEAD --`;
-	return utils.exec( co )
+	const command = `git diff-index HEAD --`;
+	utils.log.begin( command );
+	return utils.exec( command )
 		.then( data => {
 			utils.log.end();
 			if ( data ) {
-				const command = `git stash`;
-				utils.log.begin( command );
-				return utils.exec( command )
+				const stashCommand = `git stash`;
+				utils.log.begin( stashCommand );
+				return utils.exec( stashCommand )
 					.then( result => {
 						utils.log.end();
 						utils.advise( "gitStash", { exit: false } );
