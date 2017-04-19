@@ -1,5 +1,9 @@
 ## 4.x
 
+### 4.5.0
+
+* Added reset flag.
+
 ### 4.4.0
 
 * Added new --config option to suport manifest.config
