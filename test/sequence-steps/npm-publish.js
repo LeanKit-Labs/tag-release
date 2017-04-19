@@ -7,7 +7,7 @@ let utils = {};
 import realUtils from "../../src/utils.js";
 import { npmPublish, __RewireAPI__ as RewireAPI } from "../../src/sequence-steps";
 const lift = sinon.spy( nodefn, "lift" );
-const getUtils = ( { isPrivate = false } = {} ) => {
+const getUtils = ( { isPrivate = false, packageRegistry = "./package.json" } = {} ) => {
 	return {
 		log: {
 			begin: sinon.spy(),
@@ -31,7 +31,7 @@ test.beforeEach( t => {
 } );
 
 test.serial( "npmPublish calls log.begin", t => {
-	return npmPublish( [ git, {} ], () => {
+	return npmPublish( [ git, { configPath: "./package.json" } ], () => {
 		t.truthy( utils.log.begin.called );
 	} );
 } );
@@ -44,14 +44,14 @@ test.serial( "npmPublish publishes if confirms prompt", t => {
 } );
 
 test.serial( "npmPublish calls log.end", t => {
-	return npmPublish( [ git, {} ] ).then( () => {
+	return npmPublish( [ git, { configPath: "./package.json" } ] ).then( () => {
 		t.truthy( utils.log.end.called );
 	} );
 } );
 
 test.serial( "npmPublish doesn't publish if denies prompt", t => {
 	utils.prompt = sinon.spy( command => new Promise( resolve => resolve( { publish: false } ) ) );
-	return npmPublish( [ git, {} ], () => {
+	return npmPublish( [ git, { configPath: "./package.json" } ], () => {
 		t.truthy( !utils.exec.called );
 	} );
 } );
@@ -59,7 +59,15 @@ test.serial( "npmPublish doesn't publish if denies prompt", t => {
 test.serial( "npmPublish doesn't prompt if package is private", t => {
 	utils = getUtils( { isPrivate: true } );
 	RewireAPI.__Rewire__( "utils", utils );
-	return npmPublish( [ git, {} ], () => {
+	return npmPublish( [ git, { configPath: "./package.json" } ], () => {
+		t.truthy( !utils.getPackageRegistry.called );
+	} );
+} );
+
+test.serial( "npmPublish doesn't prompt if using alternative package.json file", t => {
+	utils = getUtils( { isPrivate: false } );
+	RewireAPI.__Rewire__( "utils", utils );
+	return npmPublish( [ git, { configPath: "./alternative.json" } ], () => {
 		t.truthy( !utils.getPackageRegistry.called );
 	} );
 } );
@@ -81,7 +89,7 @@ test.serial( "npmPublish gives advise when utils.exec fails", t => {
 		advise: sinon.spy()
 	};
 	RewireAPI.__Rewire__( "utils", myUtils );
-	return npmPublish( [ git, {} ] ).catch( () => {
+	return npmPublish( [ git, { configPath: "./package.json" } ] ).catch( () => {
 		t.truthy( utils.advise.called );
 	} );
 } );

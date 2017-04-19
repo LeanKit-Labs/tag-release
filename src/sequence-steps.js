@@ -40,7 +40,7 @@ const preReleaseSteps = [
 	gitFetchUpstreamMaster,
 	getCurrentBranchVersion,
 	askPrereleaseIdentifier,
-	getFeatureBranch,
+	getCurrentBranch,
 	gitMergeUpstreamBranch,
 	gitLog,
 	previewLog,
@@ -56,6 +56,18 @@ const preReleaseSteps = [
 	npmPublish,
 	githubUpstream,
 	githubRelease
+];
+
+const resetSteps = [
+	gitFetchUpstreamMaster,
+	gitBranchGrepUpstreamDevelop,
+	gitStash,
+	verifyMasterBranch,
+	gitCheckoutMaster,
+	gitResetBranch,
+	verifyDevelopBranch,
+	gitCheckoutDevelop,
+	gitResetBranch
 ];
 
 export function getCurrentBranchVersion( [ git, options ] ) {
@@ -116,7 +128,7 @@ export function gitCheckoutMaster( [ git, options ] ) {
 		.then( () => utils.log.end() );
 }
 
-export function getFeatureBranch( [ git, options ] ) {
+export function getCurrentBranch( [ git, options ] ) {
 	const command = "git rev-parse --abbrev-ref HEAD";
 	utils.log.begin( command );
 	return utils.exec( command ).then( branch => {
@@ -444,4 +456,58 @@ export function githubRelease( [ git, options ] ) {
 	} );
 }
 
-export { releaseSteps, preReleaseSteps };
+export function gitResetBranch( [ git, options ] ) {
+	const command = `git reset --hard upstream/${ options.branch }`;
+	utils.log.begin( command );
+	return utils.exec( command )
+		.then( data => utils.log.end() )
+		.catch( error => utils.advise( "gitUpstream" ) );
+}
+
+export function verifyMasterBranch( [ git, options ] ) {
+	options.branch = "master";
+	return verifyBranch( [ git, options ] );
+}
+
+export function verifyDevelopBranch( [ git, options ] ) {
+	options.branch = "develop";
+	return verifyBranch( [ git, options ] );
+}
+
+export function verifyBranch( [ git, options ] ) {
+	const command = `git branch --list ${ options.branch }`;
+	utils.log.begin( command );
+	return utils.exec( command ).then( data => {
+		const branches = data.split( "\n" ).filter( String );
+		const exists = branches.length;
+		if ( !exists ) {
+			const createCommand = `git branch ${ options.branch } upstream/${ options.branch }`;
+			utils.log.begin( createCommand );
+			return utils.exec( createCommand )
+				.then( result => utils.log.end() )
+				.catch( error => utils.advise( "gitUpstream" ) );
+		}
+		return Promise.resolve();
+	} );
+}
+
+export function gitStash( [ git, options ] ) {
+	const command = `git diff-index HEAD --`;
+	utils.log.begin( command );
+	return utils.exec( command )
+		.then( data => {
+			utils.log.end();
+			if ( data ) {
+				const stashCommand = `git stash`;
+				utils.log.begin( stashCommand );
+				return utils.exec( stashCommand )
+					.then( result => {
+						utils.log.end();
+						utils.advise( "gitStash", { exit: false } );
+					} );
+			}
+			return Promise.resolve();
+		} );
+}
+
+export { releaseSteps, preReleaseSteps, resetSteps };
