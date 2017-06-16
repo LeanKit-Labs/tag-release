@@ -1,18 +1,18 @@
-/* eslint no-console: 0 */
-
-import simpleGitFactory from "simple-git";
 import sequence from "when/sequence";
-import { releaseSteps, preReleaseSteps, resetSteps } from "./sequence-steps";
+import defaultWorkflow from "./workflows/default";
+import prereleaseWorkflow from "./workflows/pre-release";
+import resetWorkflow from "./workflows/reset";
 
-export default options => {
-	const git = simpleGitFactory( "." );
-	let steps = [];
+export default state => {
+	let workflow = defaultWorkflow;
 
-	if ( options.reset ) {
-		steps = resetSteps;
-	} else {
-		steps = options.prerelease ? preReleaseSteps : releaseSteps;
+	if ( state.prerelease ) {
+		workflow = prereleaseWorkflow;
 	}
 
-	sequence( steps, [ git, options ] ).then( () => console.log( "Finished" ) );
+	if ( state.reset ) {
+		workflow = resetWorkflow;
+	}
+
+	sequence( workflow, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
 };
