@@ -166,7 +166,7 @@ export default {
 	},
 	githubUnauthorized( username, password, response ) {
 		let twoFactorAuth = response.headers[ "x-github-otp" ] || "";
-		twoFactorAuth = !!~twoFactorAuth.indexOf( "required;" );
+		twoFactorAuth = twoFactorAuth.includes( "required;" );
 
 		if ( twoFactorAuth ) {
 			return this.prompt( [ {

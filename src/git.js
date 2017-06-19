@@ -9,7 +9,7 @@ const git = {
 		}
 
 		util.log.begin( logMessage || command );
-		const promisedResult = util.exec( command )
+		return util.exec( command )
 			.then( result => {
 				util.log.end();
 				return Promise.resolve( result );
@@ -19,8 +19,6 @@ const git = {
 				util.advise( failHelpKey, { exit: exitOnFail } );
 				return Promise.reject( err );
 			} );
-
-		return promisedResult;
 	},
 
 	getRemoteBranches() {

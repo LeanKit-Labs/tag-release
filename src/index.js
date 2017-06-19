@@ -43,10 +43,10 @@ commander.on( "--help", () => {
 	console.log( "   $ tag-release --release major" );
 	console.log( "   $ tag-release -r minor" );
 	console.log( "   $ tag-release --prerelease" );
+	console.log( "   $ tag-release -p -i rc" );
 	console.log( "   $ tag-release --reset" );
 	console.log( "   $ tag-release --verbose" );
 	console.log( "   $ tag-release -v" );
-	console.log( "   $ tag-release -i rc" );
 } );
 
 commander.on( "-v", () => {

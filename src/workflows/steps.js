@@ -35,7 +35,7 @@ export function gitMergeUpstreamDevelop( state ) {
 export function checkHasDevelopBranch( state ) {
 	return git.getRemoteBranches().then( data => {
 		const branches = data.split( "\n" );
-		state.hasDevelopBranch = branches.some( branch => ~branch.trim().indexOf( "upstream/develop" ) );
+		state.hasDevelopBranch = branches.some( branch => branch.trim().includes( "upstream/develop" ) );
 	} ).catch( () => {
 		state.hasDevelopBranch = false;
 	} );
@@ -82,7 +82,7 @@ export function gitShortLog( state ) {
 
 	let contents = util.readFile( CHANGELOG_PATH );
 
-	if ( ~contents.indexOf( "### Next" ) ) {
+	if ( contents.includes( "### Next" ) ) {
 		contents = contents.replace( /### Next([^#]+)/, ( match, submatch ) => {
 			state.log = submatch.trim();
 			return "";
