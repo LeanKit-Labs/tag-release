@@ -1,0 +1,8 @@
+{
+	"extends": [ "leankit/test" ],
+	"globals": {
+		"jest": true,
+		"expect": true,
+		"afterAll": true
+	}
+}

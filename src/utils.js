@@ -8,8 +8,6 @@ import { get } from "lodash";
 import chalk from "chalk";
 import logger from "better-console";
 import request from "request";
-import nodefn from "when/node";
-import { extend } from "lodash";
 import sequence from "when/sequence";
 import currentPackage from "../package.json";
 import latest from "latest";
@@ -20,14 +18,18 @@ const GIT_CONFIG_COMMAND = "git config --global";
 
 export default {
 	readFile( path ) {
-		try {
-			return fs.readFileSync( path, "utf-8" );
-		} catch ( exception ) {
-			return "";
+		if ( path ) {
+			try {
+				return fs.readFileSync( path, "utf-8" );
+			} catch ( exception ) {
+				return null;
+			}
 		}
+
+		return null;
 	},
 	readJSONFile( path ) {
-		const content = this.readFile( path );
+		const content = this.readFile( path ) || "{}";
 		return JSON.parse( content );
 	},
 	writeFile( path, content ) {
@@ -57,7 +59,7 @@ export default {
 			} )
 		);
 	},
-	editor( data ) {
+	editLog( data ) {
 		const tempFilePath = "./.shortlog";
 
 		return new Promise( ( resolve, reject ) => {
@@ -132,25 +134,40 @@ export default {
 			scopes: [ "repo" ],
 			note: `tag-release-${ new Date().toISOString() }`
 		};
-		headers = extend( { "User-Agent": "request" }, headers );
-		return nodefn.lift( request.post )( { url, headers, auth, json } )
-			.then( response => {
-				response = response[ 0 ];
-				const statusCode = response.statusCode;
-				if ( statusCode === CREATED ) {
-					return response.body.token;
-				} else if ( statusCode === UNAUTHORIZED ) {
-					return this.githubUnauthorized( username, password, response );
+
+		headers = Object.assign( {}, { "User-Agent": "request" }, headers );
+
+		return new Promise( ( resolve, reject ) => {
+			request.post( { url, headers, auth, json }, ( err, response, body ) => {
+				if ( err ) {
+					logger.log( "error", err );
+					reject( err );
 				}
-				logger.log( response.body.message );
-				const errors = response.body.errors || [];
-				errors.forEach( error => logger.log( error.message ) );
-			} )
-			.catch( error => logger.log( "error", error ) );
+
+				response = response[ 0 ];
+				const { statusCode, errors } = response;
+
+				if ( statusCode === CREATED ) {
+					resolve( body.token );
+				} else if ( statusCode === UNAUTHORIZED ) {
+					resolve( this.githubUnauthorized( username, password, response ) );
+				}
+
+				// for any other HTTP status code...
+				logger.log( body.message );
+
+				if ( errors && errors.length ) {
+					errors.forEach( error => logger.log( error.message ) );
+				}
+
+				resolve();
+			} );
+		} );
 	},
 	githubUnauthorized( username, password, response ) {
 		let twoFactorAuth = response.headers[ "x-github-otp" ] || "";
-		twoFactorAuth = !!~twoFactorAuth.indexOf( "required;" );
+		twoFactorAuth = twoFactorAuth.includes( "required;" );
+
 		if ( twoFactorAuth ) {
 			return this.prompt( [ {
 				type: "input",
@@ -169,11 +186,17 @@ export default {
 	},
 	detectVersion() {
 		const currentVersion = this.getCurrentVersion();
-		return nodefn.lift( latest )( "tag-release" ).then( latestVersion => {
-			const message = currentVersion === latestVersion ?
+		return new Promise( ( resolve, reject ) => {
+			latest( "tag-release", ( err, version ) => {
+				resolve( version );
+			} );
+		} ).then( latestVersion => {
+			const currentIsLatest = currentVersion === latestVersion;
+			const message = currentIsLatest ?
 				chalk.green( `You're using the latest version (${ chalk.yellow( latestVersion ) }) of tag-release.` ) :
 				chalk.red( `You're using an old version (${ chalk.yellow( currentVersion ) }) of tag-release. Please upgrade to ${ chalk.yellow( latestVersion ) }.
-${ chalk.red( "To upgrade run " ) } ${ chalk.yellow( "'npm install tag-release -g'" ) }` );
+${ chalk.red( "To upgrade run" ) } ${ chalk.yellow( "'npm install tag-release -g'" ) }` );
+
 			logger.log( message );
 		} );
 	},
