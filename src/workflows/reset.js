@@ -8,6 +8,7 @@ export default [
 	run.verifyMasterBranch,
 	run.gitCheckoutMaster,
 	run.gitResetMaster,
+	run.gitRemovePromotionBranches,
 	run.verifyDevelopBranch,
 	run.gitCheckoutDevelop,
 	run.gitResetDevelop
