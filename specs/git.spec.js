@@ -8,11 +8,13 @@ jest.mock( "../src/utils", () => ( {
 
 import util from "../src/utils";
 import git from "../src/git";
+import path from "path";
 
 describe( "git", () => {
 	describe( "runCommand", () => {
 		beforeEach( () => {
 			util.advise = jest.fn();
+			util.writeFile = jest.fn();
 		} );
 
 		it( "should run `git` with the given args", () => {
@@ -54,6 +56,13 @@ describe( "git", () => {
 			} );
 		} );
 
+		it( "should use full command and not append `git` when the `fullCommand` option is true", () => {
+			return git.runCommand( { args: "some command", fullCommand: true } ).then( anything => {
+				expect( util.exec ).toHaveBeenCalledTimes( 1 );
+				expect( util.exec ).toHaveBeenCalledWith( "some command" );
+			} );
+		} );
+
 		describe( "failure", () => {
 			beforeEach( () => {
 				util.exec = jest.fn( () => Promise.reject( "fail" ) );
@@ -63,6 +72,13 @@ describe( "git", () => {
 				return git.runCommand( { args: "--version" } ).catch( err => {
 					expect( util.log.end ).toHaveBeenCalledTimes( 1 );
 					expect( err ).toEqual( "fail" );
+				} );
+			} );
+
+			it( "should reject with no error when the command execution fails and `showError` is false", () => {
+				return git.runCommand( { args: "--version", showError: false } ).catch( err => {
+					expect( util.log.end ).toHaveBeenCalledTimes( 1 );
+					expect( err ).toEqual( undefined );
 				} );
 			} );
 		} );
@@ -93,6 +109,10 @@ describe( "git", () => {
 				args: "upstream/test-branch",
 				expectedRunCommandArgs: { args: "merge upstream/test-branch --ff-only" }
 			},
+			rebase: {
+				args: "upstream/test-branch",
+				expectedRunCommandArgs: { args: "rebase upstream/test-branch" }
+			},
 			mergeMaster: {
 				expectedRunCommandArgs: { args: "merge master --ff-only", failHelpKey: "gitMergeMaster" }
 			},
@@ -101,6 +121,9 @@ describe( "git", () => {
 			},
 			mergeUpstreamDevelop: {
 				expectedRunCommandArgs: { args: "merge upstream/develop" }
+			},
+			mergePromotionBranch: {
+				expectedRunCommandArgs: { args: "merge promote-release-undefined --ff-only" }
 			},
 			getCurrentBranch: {
 				expectedRunCommandArgs: { args: "rev-parse --abbrev-ref HEAD", log: "Getting current branch" }
@@ -163,6 +186,33 @@ describe( "git", () => {
 			resetBranch: {
 				args: "test-branch",
 				expectedRunCommandArgs: { args: "reset --hard upstream/test-branch", logMessage: `Hard reset on branch: "test-branch"` }
+			},
+			checkoutTag: {
+				args: "v1.1.1-blah.0",
+				expectedRunCommandArgs: { args: "checkout -b promote-release-v1.1.1-blah.0 v1.1.1-blah.0" }
+			},
+			generateRebaseCommitLog: {
+				args: "v1.1.1-blah.0",
+				expectedRunCommandArgs: { args: "log upstream/master..HEAD --pretty=format:'%h %s'" }
+			},
+			rebaseUpstreamMaster: {
+				expectedRunCommandArgs: { args: "rebase upstream/master" }
+			},
+			getBranchList: {
+				expectedRunCommandArgs: { args: "branch", logMessage: `Getting branch list` }
+			},
+			deleteBranch: {
+				args: "promote-release-v1.1.1-feature.0",
+				expectedRunCommandArgs: { args: "branch -D promote-release-v1.1.1-feature.0", showOutput: true }
+			},
+			stageFiles: {
+				expectedRunCommandArgs: { args: "add -A" }
+			},
+			rebaseContinue: {
+				expectedRunCommandArgs: { args: `GIT_EDITOR="cat" git rebase --continue`, logMessage: "Continuing with rebase", failHelpKey: "gitRebaseInteractive", showError: false, fullCommand: true }
+			},
+			checkConflictMarkers: {
+				expectedRunCommandArgs: { args: "diff --check", logMessage: "Verifying conflict resolution", failHelpKey: "gitCheckConflictMarkers", showError: false }
 			}
 		};
 
@@ -200,13 +250,6 @@ describe( "git", () => {
 				} );
 			} );
 
-			it( "should call `git.fetch` with the `master` branch by default when not specified", () => {
-				return git.fetchWithoutTags().then( () => {
-					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "fetch upstream master" } );
-				} );
-			} );
-
 			it( "should call `git.shortLog` with the appropriate options when a tag is given", () => {
 				return git.shortLog( "v1.2.3" ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
@@ -225,6 +268,112 @@ describe( "git", () => {
 				return git.push( "upstream test-branch", false ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
 					expect( git.runCommand ).toHaveBeenCalledWith( { args: "push upstream test-branch" } );
+				} );
+			} );
+
+			it( `should call "git.merge" with provided promotion tag`, () => {
+				return git.mergePromotionBranch( "v1.1.1" ).then( () => {
+					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "merge promote-release-v1.1.1 --ff-only" } );
+				} );
+			} );
+
+			it( `should call "git.merge" with provided promotion tag`, () => {
+				return git.mergePromotionBranch( "v1.1.1" ).then( () => {
+					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "merge promote-release-v1.1.1 --ff-only" } );
+				} );
+			} );
+
+			it( `should call "checkoutTag" with provided promotion tag`, () => {
+				return git.checkoutTag( "v1.1.1" ).then( () => {
+					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "checkout -b promote-release-v1.1.1 v1.1.1" } );
+				} );
+			} );
+
+			it( `should call "deleteBranch" with provided branch`, () => {
+				return git.deleteBranch( "promote-release-v1.1.1", false ).then( () => {
+					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "branch -D promote-release-v1.1.1", showOutput: false } );
+				} );
+			} );
+
+			describe( "removePreReleaseCommits", () => {
+				let joinSpy;
+				beforeEach( () => {
+					git.runCommand = jest.fn( () => Promise.resolve( "" ) );
+					joinSpy = jest.spyOn( path, "join" ).mockImplementation( () => "my_path/" );
+				} );
+				it( "should call 'git.runCommand' with appropriate arguments", () => {
+					return git.removePreReleaseCommits().then( () => {
+						expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
+						expect( git.runCommand ).toHaveBeenCalledWith( { args: "GIT_SEQUENCE_EDITOR=\"cat my_path/ >\" git rebase -i upstream/master", failHelpKey: "gitRebaseInteractive", fullCommand: true, logMessage: "Removing pre-release commit history", showError: false } );
+					} );
+				} );
+				afterEach( () => {
+					joinSpy.mockRestore();
+				} );
+			} );
+
+			describe( "removePromotionBranches", () => {
+				it( "should remove all promotion branches", () => {
+					git.getBranchList = jest.fn( () => Promise.resolve( [
+						"feature-branch",
+						"promote-release-v1.1.1-feature.0",
+						"* master",
+						"develop",
+						"promote-release-v1.1.1-feature.1" ]
+					) );
+					git.deleteBranch = jest.fn( branch => Promise.resolve( branch ) );
+					return git.removePromotionBranches().then( result => {
+						expect( result ).toEqual( [ "promote-release-v1.1.1-feature.0", "promote-release-v1.1.1-feature.1" ] );
+						expect( git.deleteBranch ).toHaveBeenCalledTimes( 2 );
+					} );
+				} );
+			} );
+
+			describe( "getPrereleaseTagList", () => {
+				it( "should run `git` with the given args", () => {
+					git.runCommand = jest.fn( branch => Promise.resolve( `v18.0.0-robert.0
+v17.12.0-break.1
+v17.12.0-break.0
+v17.11.2` ) );
+					return git.getPrereleaseTagList().then( () => {
+						expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
+						expect( git.runCommand ).toHaveBeenCalledWith( { args: "tag --sort=-v:refname", logMessage: "Getting list of pre-releases" } );
+					} );
+				} );
+
+				it( "should return list of latest tags", () => {
+					git.runCommand = jest.fn( branch => Promise.resolve( `v18.0.0-robert.0
+v17.12.0-break.0
+v17.12.0-break.1
+v17.11.2` ) );
+					return git.getPrereleaseTagList( 10 ).then( result => {
+						expect( result ).toEqual( [ "v18.0.0-robert.0", "v17.12.0-break.1" ] );
+					} );
+				} );
+			} );
+
+			describe( "generateRebaseCommitLog", () => {
+				let writeSpy;
+				beforeEach( () => {
+					writeSpy = jest.spyOn( util, "writeFile" ).mockImplementation( () => "" );
+				} );
+				it( "should remove all pre-release commits", () => {
+					git.runCommand = jest.fn( branch => Promise.resolve( `v1.1.1-feature.1
+this is commit 2
+v1.1.1-feature.0
+this is commit 1` ) );
+					return git.generateRebaseCommitLog( "v1.1.1-feature.1" ).then( result => {
+						expect( writeSpy.mock.calls[ 0 ][ 1 ] ).toEqual( `pick this is commit 1
+pick this is commit 2
+` );
+					} );
+				} );
+				afterEach( () => {
+					writeSpy.mockRestore();
 				} );
 			} );
 		} );

@@ -49,12 +49,18 @@ You might consider reseting your develop by running 'git reset --hard upstream/d
 It could be that your local environment is out of sync with your upstream or you are missing a upstream feature branch.
 
 You might consider reseting your branch by running 'git reset --hard upstream/develop' or creating a upstream feature branch.`,
-	gitStash: "It looks like you had some uncommited changes. We went ahead and stashed them so you don't lose any of your work.",
+	gitStash: `It looks like you had some uncommited changes. We went ahead and stashed them so you don't lose any of your work.`,
 	gitUpstream: `It appears we couldn't access your remote upstream repository.
 
 tag-release needs an upstream remote in order to work correctly. You can double check by running 'git remote -v'
 
-To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`
+To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`,
+	gitRebaseInteractive: `It looks like there was some conflict(s) while trying to rebase with upstream/master.
+
+Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue' to continue the tag promotion.`,
+	gitCheckConflictMarkers: `We detected the presence of conflict markers: '<<<<<<<', '=======', and/or '>>>>>>>'
+
+Please fix all conflict markers with the current conflict before running 'tag-release --continue'.`
 };
 
 const MAXIMUM_WIDTH = 50;
