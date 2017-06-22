@@ -14,10 +14,20 @@ jest.mock( "../src/workflows/reset", () => {
 	return "reset";
 } );
 
+jest.mock( "../src/workflows/promote", () => {
+	return "promote";
+} );
+
+jest.mock( "../src/workflows/continue", () => {
+	return "continue";
+} );
+
 import sequence from "when/sequence";
 import defaultWorkflow from "../src/workflows/default";
 import prereleaseWorkflow from "../src/workflows/pre-release";
 import resetWorkflow from "../src/workflows/reset";
+import promoteWorkflow from "../src/workflows/promote";
+import continueWorkflow from "../src/workflows/continue";
 import tagRelease from "../src/tag-release";
 
 describe( "tag-release", () => {
@@ -48,5 +58,17 @@ describe( "tag-release", () => {
 		tagRelease( { prerelease: true, reset: true } );
 		expect( sequence ).toHaveBeenCalledTimes( 1 );
 		expect( sequence ).toHaveBeenCalledWith( resetWorkflow, { prerelease: true, reset: true } );
+	} );
+
+	it( "should run the promote workflow when the CLI flag is passed", () => {
+		tagRelease( { promote: true } );
+		expect( sequence ).toHaveBeenCalledTimes( 1 );
+		expect( sequence ).toHaveBeenCalledWith( promoteWorkflow, { promote: true } );
+	} );
+
+	it( "should run the continue workflow when when the CLI flag is passed", () => {
+		tagRelease( { continue: true } );
+		expect( sequence ).toHaveBeenCalledTimes( 1 );
+		expect( sequence ).toHaveBeenCalledWith( continueWorkflow, { continue: true } );
 	} );
 } );

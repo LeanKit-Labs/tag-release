@@ -33,13 +33,15 @@ commander
 	.option( "-v", "Console the version of tag-release" )
 	.option( "-p, --prerelease", "Create a pre-release" )
 	.option( "-i, --identifier <identifier>", "Identifier used for pre-release" )
-	.option( "--reset", "Reset repo to upstream master/develop branches." );
+	.option( "--reset", "Reset repo to upstream master/develop branches." )
+	.option( "--promote [tag]", "Promotes specified pre-release tag to an offical release." )
+	.option( "--continue", "Continues the rebase process of a tag promotion." );
 
 commander.on( "--help", () => {
 	console.log( "Examples: \n" );
 	console.log( "   $ tag-release" );
-	console.log( "   $ tag-release --config ../../config.json" );
-	console.log( "   $ tag-release -c ./manifest.json" );
+	console.log( "   $ tag-release --config [../../config.json]" );
+	console.log( "   $ tag-release -c [./manifest.json]" );
 	console.log( "   $ tag-release --release major" );
 	console.log( "   $ tag-release -r minor" );
 	console.log( "   $ tag-release --prerelease" );
@@ -47,6 +49,9 @@ commander.on( "--help", () => {
 	console.log( "   $ tag-release --reset" );
 	console.log( "   $ tag-release --verbose" );
 	console.log( "   $ tag-release -v" );
+	console.log( "   $ tag-release --promote" );
+	console.log( "   $ tag-release --promote [v1.1.1-my-tagged-version.0]" );
+	console.log( "   $ tag-release --continue" );
 } );
 
 commander.on( "-v", () => {
