@@ -10,7 +10,8 @@ import logger from "better-console";
 import request from "request";
 import sequence from "when/sequence";
 import currentPackage from "../package.json";
-import latest from "latest";
+import npm from "npm";
+import semver from "semver";
 import cowsay from "cowsay";
 import advise from "./advise.js";
 
@@ -184,20 +185,80 @@ export default {
 	getCurrentVersion() {
 		return currentPackage.version;
 	},
+	getAvailableVersionInfo() {
+		const packageName = "tag-release";
+		const versionsLimit = 10;
+
+		return new Promise( ( resolve, reject ) => {
+			npm.load( { name: packageName, loglevel: "silent" }, loadErr => {
+				if ( loadErr ) {
+					reject( loadErr );
+				}
+
+				npm.commands.show( [ packageName, "versions" ], true, ( versionsErr, data ) => {
+					if ( versionsErr ) {
+						reject( versionsErr );
+					}
+
+					const tagReleaseVersions = data[ Object.keys( data )[ 0 ] ].versions;
+					const fullVersions = tagReleaseVersions.filter( f => !f.includes( "-" ) ).slice( -versionsLimit );
+					const prereleaseVersions = tagReleaseVersions.filter( f => f.includes( "-" ) ).slice( -versionsLimit );
+
+					const latestFullVersion = fullVersions.reduce( ( memo, v ) => {
+						return semver.gt( v, memo ) ? v : memo;
+					}, fullVersions[ 0 ] );
+
+					const latestPrereleaseVersion = prereleaseVersions.reduce( ( memo, prv ) => {
+						return semver.gt( prv, memo ) ? prv : memo;
+					}, prereleaseVersions[ 0 ] );
+
+					resolve( {
+						latestFullVersion,
+						latestPrereleaseVersion
+					} );
+				} );
+			} );
+		} );
+	},
 	detectVersion() {
 		const currentVersion = this.getCurrentVersion();
-		return new Promise( ( resolve, reject ) => {
-			latest( "tag-release", ( err, version ) => {
-				resolve( version );
-			} );
-		} ).then( latestVersion => {
-			const currentIsLatest = currentVersion === latestVersion;
-			const message = currentIsLatest ?
-				chalk.green( `You're using the latest version (${ chalk.yellow( latestVersion ) }) of tag-release.` ) :
-				chalk.red( `You're using an old version (${ chalk.yellow( currentVersion ) }) of tag-release. Please upgrade to ${ chalk.yellow( latestVersion ) }.
-${ chalk.red( "To upgrade run" ) } ${ chalk.yellow( "'npm install tag-release -g'" ) }` );
 
-			logger.log( message );
+		const logVersionMessage = ( { availableVersionInfo, isRunningPrerelease } ) => {
+			const { latestPrereleaseVersion, latestFullVersion } = availableVersionInfo;
+
+			const logUpgradeCommand = upgradeTo => {
+				const isPrerelease = upgradeTo.includes( "-" );
+				const upgradeVersion = isPrerelease ? `@${ upgradeTo }` : "";
+				const upgradeCommand = `'npm install -g tag-release${ upgradeVersion }'`;
+				logger.log( chalk.red( `To upgrade, run ${ chalk.yellow( upgradeCommand ) }` ) );
+			};
+
+			const checkAgainstFullVersion = prerelease => {
+				if ( semver.gt( latestFullVersion, currentVersion ) ) {
+					logger.log( chalk.red( `There is an updated ${ prerelease ? "full " : "" }version (${ chalk.yellow( latestFullVersion ) }) of tag-release available.` ) );
+					logUpgradeCommand( latestFullVersion );
+					return Promise.resolve();
+				}
+
+				logger.log( chalk.green( `You're running the latest ${ prerelease ? "pre-release " : "" }version (${ chalk.yellow( currentVersion ) }) of tag-release.` ) );
+				return Promise.resolve();
+			};
+
+			if ( isRunningPrerelease ) {
+				if ( semver.gt( latestPrereleaseVersion, currentVersion ) ) {
+					logger.log( chalk.red( `There is an updated pre-release version (${ chalk.yellow( latestPrereleaseVersion ) }) of tag-release available.` ) );
+					logUpgradeCommand( latestPrereleaseVersion );
+					return Promise.resolve();
+				}
+
+				return checkAgainstFullVersion( true );
+			}
+
+			return checkAgainstFullVersion( false );
+		};
+
+		return this.getAvailableVersionInfo().then( availableVersionInfo => {
+			return logVersionMessage( { availableVersionInfo, isRunningPrerelease: currentVersion.includes( "-" ) } );
 		} );
 	},
 	advise( text, { exit = true } = {} ) {
