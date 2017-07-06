@@ -411,7 +411,7 @@ export function verifyMasterBranch( state ) {
 
 export function verifyDevelopBranch( state ) {
 	return git.branchExists( "develop" ).then( exists => {
-		if ( !exists ) {
+		if ( !exists && state.hasDevelopBranch ) {
 			return git.createLocalBranch( "develop" );
 		}
 	} );
@@ -422,7 +422,10 @@ export function gitResetMaster( state ) {
 }
 
 export function gitResetDevelop( state ) {
-	return git.resetBranch( "develop" );
+	if ( state.hasDevelopBranch ) {
+		return git.resetBranch( "develop" );
+	}
+	return Promise.resolve();
 }
 
 export function gitCheckoutTag( state ) {

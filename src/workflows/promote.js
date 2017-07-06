@@ -12,7 +12,6 @@ export default [
 	run.gitMergeUpstreamMaster,
 	run.gitMergePromotionBranch,
 	run.gitMergeUpstreamBranch,
-	// default tag-release flow
 	run.checkHasDevelopBranch,
 	run.getCurrentBranchVersion,
 	run.gitMergeUpstreamDevelop,
