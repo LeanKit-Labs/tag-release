@@ -1,5 +1,10 @@
 ## 4.x
 
+### 5.0.0-refactor-and-jest.0
+
+* Migrated all specs from Ava to Jest
+* Refactored internal implementation for flexibility and extensibility, removed dependency on some external libraries that were problematic
+
 ### 4.5.0
 
 * Added reset flag.

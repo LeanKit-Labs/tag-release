@@ -8,11 +8,10 @@ import { get } from "lodash";
 import chalk from "chalk";
 import logger from "better-console";
 import request from "request";
-import nodefn from "when/node";
-import { extend } from "lodash";
 import sequence from "when/sequence";
 import currentPackage from "../package.json";
-import latest from "latest";
+import npm from "npm";
+import semver from "semver";
 import cowsay from "cowsay";
 import advise from "./advise.js";
 
@@ -20,14 +19,18 @@ const GIT_CONFIG_COMMAND = "git config --global";
 
 export default {
 	readFile( path ) {
-		try {
-			return fs.readFileSync( path, "utf-8" );
-		} catch ( exception ) {
-			return "";
+		if ( path ) {
+			try {
+				return fs.readFileSync( path, "utf-8" );
+			} catch ( exception ) {
+				return null;
+			}
 		}
+
+		return null;
 	},
 	readJSONFile( path ) {
-		const content = this.readFile( path );
+		const content = this.readFile( path ) || "{}";
 		return JSON.parse( content );
 	},
 	writeFile( path, content ) {
@@ -57,7 +60,7 @@ export default {
 			} )
 		);
 	},
-	editor( data ) {
+	editLog( data ) {
 		const tempFilePath = "./.shortlog";
 
 		return new Promise( ( resolve, reject ) => {
@@ -132,25 +135,40 @@ export default {
 			scopes: [ "repo" ],
 			note: `tag-release-${ new Date().toISOString() }`
 		};
-		headers = extend( { "User-Agent": "request" }, headers );
-		return nodefn.lift( request.post )( { url, headers, auth, json } )
-			.then( response => {
-				response = response[ 0 ];
-				const statusCode = response.statusCode;
-				if ( statusCode === CREATED ) {
-					return response.body.token;
-				} else if ( statusCode === UNAUTHORIZED ) {
-					return this.githubUnauthorized( username, password, response );
+
+		headers = Object.assign( {}, { "User-Agent": "request" }, headers );
+
+		return new Promise( ( resolve, reject ) => {
+			request.post( { url, headers, auth, json }, ( err, response, body ) => {
+				if ( err ) {
+					logger.log( "error", err );
+					reject( err );
 				}
-				logger.log( response.body.message );
-				const errors = response.body.errors || [];
-				errors.forEach( error => logger.log( error.message ) );
-			} )
-			.catch( error => logger.log( "error", error ) );
+
+				response = response[ 0 ];
+				const { statusCode, errors } = response;
+
+				if ( statusCode === CREATED ) {
+					resolve( body.token );
+				} else if ( statusCode === UNAUTHORIZED ) {
+					resolve( this.githubUnauthorized( username, password, response ) );
+				}
+
+				// for any other HTTP status code...
+				logger.log( body.message );
+
+				if ( errors && errors.length ) {
+					errors.forEach( error => logger.log( error.message ) );
+				}
+
+				resolve();
+			} );
+		} );
 	},
 	githubUnauthorized( username, password, response ) {
 		let twoFactorAuth = response.headers[ "x-github-otp" ] || "";
-		twoFactorAuth = !!~twoFactorAuth.indexOf( "required;" );
+		twoFactorAuth = twoFactorAuth.includes( "required;" );
+
 		if ( twoFactorAuth ) {
 			return this.prompt( [ {
 				type: "input",
@@ -167,14 +185,80 @@ export default {
 	getCurrentVersion() {
 		return currentPackage.version;
 	},
+	getAvailableVersionInfo() {
+		const packageName = "tag-release";
+		const versionsLimit = 10;
+
+		return new Promise( ( resolve, reject ) => {
+			npm.load( { name: packageName, loglevel: "silent" }, loadErr => {
+				if ( loadErr ) {
+					reject( loadErr );
+				}
+
+				npm.commands.show( [ packageName, "versions" ], true, ( versionsErr, data ) => {
+					if ( versionsErr ) {
+						reject( versionsErr );
+					}
+
+					const tagReleaseVersions = data[ Object.keys( data )[ 0 ] ].versions;
+					const fullVersions = tagReleaseVersions.filter( f => !f.includes( "-" ) ).slice( -versionsLimit );
+					const prereleaseVersions = tagReleaseVersions.filter( f => f.includes( "-" ) ).slice( -versionsLimit );
+
+					const latestFullVersion = fullVersions.reduce( ( memo, v ) => {
+						return semver.gt( v, memo ) ? v : memo;
+					}, fullVersions[ 0 ] );
+
+					const latestPrereleaseVersion = prereleaseVersions.reduce( ( memo, prv ) => {
+						return semver.gt( prv, memo ) ? prv : memo;
+					}, prereleaseVersions[ 0 ] );
+
+					resolve( {
+						latestFullVersion,
+						latestPrereleaseVersion
+					} );
+				} );
+			} );
+		} );
+	},
 	detectVersion() {
 		const currentVersion = this.getCurrentVersion();
-		return nodefn.lift( latest )( "tag-release" ).then( latestVersion => {
-			const message = currentVersion === latestVersion ?
-				chalk.green( `You're using the latest version (${ chalk.yellow( latestVersion ) }) of tag-release.` ) :
-				chalk.red( `You're using an old version (${ chalk.yellow( currentVersion ) }) of tag-release. Please upgrade to ${ chalk.yellow( latestVersion ) }.
-${ chalk.red( "To upgrade run " ) } ${ chalk.yellow( "'npm install tag-release -g'" ) }` );
-			logger.log( message );
+
+		const logVersionMessage = ( { availableVersionInfo, isRunningPrerelease } ) => {
+			const { latestPrereleaseVersion, latestFullVersion } = availableVersionInfo;
+
+			const logUpgradeCommand = upgradeTo => {
+				const isPrerelease = upgradeTo.includes( "-" );
+				const upgradeVersion = isPrerelease ? `@${ upgradeTo }` : "";
+				const upgradeCommand = `'npm install -g tag-release${ upgradeVersion }'`;
+				logger.log( chalk.red( `To upgrade, run ${ chalk.yellow( upgradeCommand ) }` ) );
+			};
+
+			const checkAgainstFullVersion = prerelease => {
+				if ( semver.gt( latestFullVersion, currentVersion ) ) {
+					logger.log( chalk.red( `There is an updated ${ prerelease ? "full " : "" }version (${ chalk.yellow( latestFullVersion ) }) of tag-release available.` ) );
+					logUpgradeCommand( latestFullVersion );
+					return Promise.resolve();
+				}
+
+				logger.log( chalk.green( `You're running the latest ${ prerelease ? "pre-release " : "" }version (${ chalk.yellow( currentVersion ) }) of tag-release.` ) );
+				return Promise.resolve();
+			};
+
+			if ( isRunningPrerelease ) {
+				if ( semver.gt( latestPrereleaseVersion, currentVersion ) ) {
+					logger.log( chalk.red( `There is an updated pre-release version (${ chalk.yellow( latestPrereleaseVersion ) }) of tag-release available.` ) );
+					logUpgradeCommand( latestPrereleaseVersion );
+					return Promise.resolve();
+				}
+
+				return checkAgainstFullVersion( true );
+			}
+
+			return checkAgainstFullVersion( false );
+		};
+
+		return this.getAvailableVersionInfo().then( availableVersionInfo => {
+			return logVersionMessage( { availableVersionInfo, isRunningPrerelease: currentVersion.includes( "-" ) } );
 		} );
 	},
 	advise( text, { exit = true } = {} ) {
