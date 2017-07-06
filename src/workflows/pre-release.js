@@ -11,7 +11,6 @@ export default [
 	run.askSemverJump,
 	run.updateLog,
 	run.updateVersion,
-	run.updateChangelog,
 	run.gitDiff,
 	run.gitAdd,
 	run.gitCommit,

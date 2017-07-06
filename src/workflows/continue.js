@@ -6,11 +6,10 @@ export default [
 	run.gitRebaseContinue,
 	run.getFeatureBranch,
 	run.setPromote,
-	// default tag-release flow
 	run.checkHasDevelopBranch,
 	run.gitCheckoutMaster,
 	run.gitMergeUpstreamMaster,
-	run.gitMergePromotionBranch, // not part of default flow...
+	run.gitMergePromotionBranch,
 	run.getCurrentBranchVersion,
 	run.gitMergeUpstreamDevelop,
 	run.gitShortLog,

@@ -123,7 +123,8 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "merge upstream/develop" }
 			},
 			mergePromotionBranch: {
-				expectedRunCommandArgs: { args: "merge promote-release-undefined --ff-only" }
+				args: "v1.1.1-feature.0",
+				expectedRunCommandArgs: { args: "merge promote-release-v1.1.1-feature.0 --ff-only" }
 			},
 			getCurrentBranch: {
 				expectedRunCommandArgs: { args: "rev-parse --abbrev-ref HEAD", log: "Getting current branch" }

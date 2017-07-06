@@ -233,7 +233,7 @@ describe( "shared workflow steps", () => {
 			];
 
 			prereleases.forEach( prereleaseToPromote => {
-				it( `when "${ prereleaseToPromote }"" is selected`, () => {
+				it( `when "${ prereleaseToPromote }" is selected`, () => {
 					state = { promote: true };
 					git.getPrereleaseTagList = jest.fn( () => Promise.resolve( prereleases ) );
 					util.prompt = jest.fn( () => Promise.resolve( { prereleaseToPromote } ) );
@@ -1279,10 +1279,18 @@ describe( "shared workflow steps", () => {
 		} );
 
 		it( "should call `git.createLocalBranch` when the branch doesn't exist locally", () => {
+			state.hasDevelopBranch = true;
 			git.branchExists = jest.fn( () => Promise.resolve( false ) );
-			return run.verifyDevelopBranch().then( () => {
+			return run.verifyDevelopBranch( state ).then( () => {
 				expect( git.createLocalBranch ).toHaveBeenCalledTimes( 1 );
 				expect( git.createLocalBranch ).toHaveBeenCalledWith( "develop" );
+			} );
+		} );
+
+		it( "should not call `git.createLocalBranch` when the branch doesn't exist locally and on remote", () => {
+			git.branchExists = jest.fn( () => Promise.resolve( false ) );
+			return run.verifyDevelopBranch( state ).then( () => {
+				expect( git.createLocalBranch ).not.toHaveBeenCalled();
 			} );
 		} );
 	} );
@@ -1299,10 +1307,18 @@ describe( "shared workflow steps", () => {
 
 	describe( "resetDevelop", () => {
 		it( "should call `git.resetBranch` with the appropriate arguments", () => {
+			state.hasDevelopBranch = true;
 			git.resetBranch = jest.fn( () => Promise.resolve() );
-			return run.gitResetDevelop().then( () => {
+			return run.gitResetDevelop( state ).then( () => {
 				expect( git.resetBranch ).toHaveBeenCalledTimes( 1 );
 				expect( git.resetBranch ).toHaveBeenCalledWith( "develop" );
+			} );
+		} );
+
+		it( "should not call `git.resetBranch` with no develop branch on upstream", () => {
+			git.resetBranch = jest.fn( () => Promise.resolve() );
+			return run.gitResetDevelop( state ).then( () => {
+				expect( git.resetBranch ).not.toHaveBeenCalled();
 			} );
 		} );
 	} );
