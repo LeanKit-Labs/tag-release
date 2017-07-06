@@ -80,11 +80,20 @@ jest.mock( "better-console", () => ( {
 	log: jest.fn()
 } ) );
 
-jest.mock( "latest", () => {
-	return jest.fn( ( arg, cb ) => {
-		cb( null, "1.0.0" );
-	} );
-} );
+jest.mock( "npm", () => ( {
+	load: jest.fn( ( arg, cb ) => {
+		cb( null, { name: "tag-release", version: "1.2.3" } );
+	} ),
+	commands: {
+		show: jest.fn( ( arg1, arg2, cb ) => {
+			cb( null, {
+				"1.2.3": {
+					versions: []
+				}
+			} );
+		} )
+	}
+} ) );
 
 jest.mock( "cowsay", () => ( {
 	say: jest.fn( arg => arg )
@@ -108,7 +117,7 @@ import logUpdate from "log-update";
 import logger from "better-console";
 import chalk from "chalk";
 import request from "request";
-import latest from "latest";
+import npm from "npm";
 import cowsay from "cowsay";
 import advise from "../src/advise.js"; // eslint-disable-line no-unused-vars
 import currentPackage from "../package.json";
@@ -639,46 +648,191 @@ describe( "utils", () => {
 		} );
 	} );
 
+	describe( "getAvailableVersionInfo", () => {
+		beforeEach( () => {
+			npm.commands.show = jest.fn( ( arg1, arg2, cb ) => {
+				cb( null, {
+					"4.5.0": {
+						versions: [
+							"0.0.1",
+							"0.0.2",
+							"1.0.0",
+							"2.0.0",
+							"3.0.0",
+							"3.0.1",
+							"3.1.0",
+							"3.2.0",
+							"3.3.0",
+							"3.4.0-trying-something.0",
+							"3.3.1",
+							"4.0.0",
+							"4.0.1",
+							"4.1.0",
+							"4.2.0",
+							"4.2.1",
+							"4.3.0",
+							"4.4.0",
+							"4.3.1",
+							"4.5.0",
+							"5.0.0-refactor-and-jest.0",
+							"5.2.0-another-prerelease.1",
+							"5.2.0-another-prerelease.0"
+						]
+					}
+				} );
+			} );
+		} );
+
+		it( "should load npm package info for tag-release", () => {
+			return util.getAvailableVersionInfo().then( () => {
+				expect( npm.load ).toHaveBeenCalledTimes( 1 );
+				expect( npm.load ).toHaveBeenCalledWith( { name: "tag-release", loglevel: "silent" }, expect.any( Function ) );
+			} );
+		} );
+
+		it( "should fetch available npm versions for tag-release", () => {
+			return util.getAvailableVersionInfo().then( () => {
+				expect( npm.commands.show ).toHaveBeenCalledTimes( 1 );
+				expect( npm.commands.show ).toHaveBeenCalledWith( [ "tag-release", "versions" ], true, expect.any( Function ) );
+			} );
+		} );
+
+		it( "should reject when `npm.load` throws an error", () => {
+			npm.load = jest.fn( ( arg, cb ) => {
+				cb( "nope", null );
+			} );
+
+			return util.getAvailableVersionInfo().catch( err => {
+				expect( err ).toEqual( "nope" );
+			} );
+		} );
+
+		it( "should reject when `npm.commands.show` throws an error", () => {
+			npm.commands.show = jest.fn( ( arg1, arg2, cb ) => {
+				cb( "nope", null );
+			} );
+
+			return util.getAvailableVersionInfo().catch( err => {
+				expect( err ).toEqual( "nope" );
+			} );
+		} );
+	} );
+
 	describe( "detectVersion", () => {
-		it( "should return a promise", () => {
-			const result = util.detectVersion();
-			expect( isPromise( result ) ).toBeTruthy();
-		} );
+		describe( "when using a non-prerelease version", () => {
+			beforeEach( () => {
+				currentPackage.version = "4.5.0";
+				util.getAvailableVersionInfo = jest.fn( () => ( Promise.resolve( {
+					latestFullVersion: "4.5.0",
+					latestPrereleaseVersion: "5.0.0-refactor-and-jest.0"
+				} ) ) );
+			} );
 
-		it( "should check for the latest version", () => {
-			return util.detectVersion().then( () => {
-				expect( latest ).toHaveBeenCalledTimes( 1 );
-				expect( latest ).toHaveBeenCalledWith( "tag-release", expect.any( Function ) );
+			describe( "and using the latest version", () => {
+				it( "should log the appropriate message", () => {
+					return util.detectVersion().then( () => {
+						expect( chalk.green ).toHaveBeenCalledTimes( 1 );
+						expect( chalk.green ).toHaveBeenCalledWith( "You're running the latest version (4.5.0) of tag-release." );
+					} );
+				} );
+			} );
+
+			describe( "and there is a newer version available", () => {
+				beforeEach( () => {
+					currentPackage.version = "4.4.0";
+				} );
+
+				it( "should log the appropriate message", () => {
+					return util.detectVersion().then( () => {
+						expect( chalk.red ).toHaveBeenCalledTimes( 2 );
+						expect( chalk.red.mock.calls[ 0 ] ).toEqual( [ "There is an updated version (4.5.0) of tag-release available." ] );
+						expect( chalk.red.mock.calls[ 1 ] ).toEqual( [ "To upgrade, run 'npm install -g tag-release'" ] );
+						expect( chalk.yellow ).toHaveBeenCalledTimes( 2 );
+						expect( chalk.yellow.mock.calls[ 0 ] ).toEqual( [ "4.5.0" ] );
+						expect( chalk.yellow.mock.calls[ 1 ] ).toEqual( [ "'npm install -g tag-release'" ] );
+					} );
+				} );
 			} );
 		} );
 
-		it( "should log the current version when it is the latest", () => {
-			currentPackage.version = "2.1.1";
-
-			latest.mockImplementation( jest.fn( ( arg, cb ) => {
-				cb( null, "2.1.1" );
-			} ) );
-
-			return util.detectVersion().then( () => {
-				expect( chalk.green ).toHaveBeenCalledTimes( 1 );
-				expect( chalk.yellow ).toHaveBeenCalledTimes( 1 );
-				expect( chalk.green ).toHaveBeenCalledWith( "You're using the latest version (2.1.1) of tag-release." );
-				expect( chalk.yellow ).toHaveBeenCalledWith( "2.1.1" );
+		describe( "when using a prerelease version", () => {
+			beforeEach( () => {
+				util.getAvailableVersionInfo = jest.fn( () => ( Promise.resolve( {
+					latestFullVersion: "7.6.0",
+					latestPrereleaseVersion: "7.7.7-pre.0"
+				} ) ) );
 			} );
-		} );
 
-		it( "should log the old version if the current version is not the latest", () => {
-			currentPackage.version = "1.0.0";
+			describe( "and it is the latest available prerelease version", () => {
+				beforeEach( () => {
+					currentPackage.version = "7.7.7-pre.0";
+				} );
 
-			latest.mockImplementation( jest.fn( ( arg, cb ) => {
-				cb( null, "2.1.1" );
-			} ) );
+				it( "should log the appropriate message", () => {
+					return util.detectVersion().then( () => {
+						expect( chalk.green ).toHaveBeenCalledTimes( 1 );
+						expect( chalk.green ).toHaveBeenCalledWith( "You're running the latest pre-release version (7.7.7-pre.0) of tag-release." );
+					} );
+				} );
+			} );
 
-			return util.detectVersion().then( () => {
-				expect( chalk.red ).toHaveBeenCalledTimes( 2 );
-				expect( chalk.yellow ).toHaveBeenCalledTimes( 3 );
-				expect( chalk.red.mock.calls ).toEqual( [ [ "To upgrade run" ], [ "You're using an old version (1.0.0) of tag-release. Please upgrade to 2.1.1.\nTo upgrade run 'npm install tag-release -g'" ] ] );
-				expect( chalk.yellow.mock.calls ).toEqual( [ [ "1.0.0" ], [ "2.1.1" ], [ "'npm install tag-release -g'" ] ] );
+			describe( "and there is a newer prerelease version available", () => {
+				beforeEach( () => {
+					currentPackage.version = "7.7.1-pre.0";
+				} );
+
+				it( "should log the appropriate message", () => {
+					return util.detectVersion().then( () => {
+						expect( chalk.red ).toHaveBeenCalledTimes( 2 );
+						expect( chalk.red.mock.calls[ 0 ] ).toEqual( [ "There is an updated pre-release version (7.7.7-pre.0) of tag-release available." ] );
+						expect( chalk.red.mock.calls[ 1 ] ).toEqual( [ "To upgrade, run 'npm install -g tag-release@7.7.7-pre.0'" ] );
+						expect( chalk.yellow ).toHaveBeenCalledTimes( 2 );
+						expect( chalk.yellow.mock.calls[ 0 ] ).toEqual( [ "7.7.7-pre.0" ] );
+						expect( chalk.yellow.mock.calls[ 1 ] ).toEqual( [ "'npm install -g tag-release@7.7.7-pre.0'" ] );
+					} );
+				} );
+
+				describe( "with a different prerelease tag", () => {
+					beforeEach( () => {
+						currentPackage.version = "7.7.1-pre.0";
+						util.getAvailableVersionInfo = jest.fn( () => ( Promise.resolve( {
+							latestFullVersion: "7.6.0",
+							latestPrereleaseVersion: "7.8.0-some-other-pre.0"
+						} ) ) );
+					} );
+
+					it( "should log the appropriate message", () => {
+						return util.detectVersion().then( () => {
+							expect( chalk.red ).toHaveBeenCalledTimes( 2 );
+							expect( chalk.red.mock.calls[ 0 ] ).toEqual( [ "There is an updated pre-release version (7.8.0-some-other-pre.0) of tag-release available." ] );
+							expect( chalk.red.mock.calls[ 1 ] ).toEqual( [ "To upgrade, run 'npm install -g tag-release@7.8.0-some-other-pre.0'" ] );
+							expect( chalk.yellow ).toHaveBeenCalledTimes( 2 );
+							expect( chalk.yellow.mock.calls[ 0 ] ).toEqual( [ "7.8.0-some-other-pre.0" ] );
+							expect( chalk.yellow.mock.calls[ 1 ] ).toEqual( [ "'npm install -g tag-release@7.8.0-some-other-pre.0'" ] );
+						} );
+					} );
+				} );
+			} );
+
+			describe( "and there is a newer non-prerelease version available", () => {
+				beforeEach( () => {
+					currentPackage.version = "7.7.7-pre.0";
+					util.getAvailableVersionInfo = jest.fn( () => ( Promise.resolve( {
+						latestFullVersion: "7.8.0",
+						latestPrereleaseVersion: "7.7.7-pre.0"
+					} ) ) );
+				} );
+
+				it( "should log the appropriate message", () => {
+					return util.detectVersion().then( () => {
+						expect( chalk.red ).toHaveBeenCalledTimes( 2 );
+						expect( chalk.red.mock.calls[ 0 ] ).toEqual( [ "There is an updated full version (7.8.0) of tag-release available." ] );
+						expect( chalk.red.mock.calls[ 1 ] ).toEqual( [ "To upgrade, run 'npm install -g tag-release'" ] );
+						expect( chalk.yellow ).toHaveBeenCalledTimes( 2 );
+						expect( chalk.yellow.mock.calls[ 0 ] ).toEqual( [ "7.8.0" ] );
+						expect( chalk.yellow.mock.calls[ 1 ] ).toEqual( [ "'npm install -g tag-release'" ] );
+					} );
+				} );
 			} );
 		} );
 	} );
