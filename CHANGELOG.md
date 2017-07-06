@@ -1,5 +1,9 @@
 ## 4.x
 
+### 5.0.0-refactor-and-jest.1
+
+* Updated `detectVersion` function to appropriately notify user of latest versions, even when using a pre-release version.
+
 ### 5.0.0-refactor-and-jest.0
 
 * Migrated all specs from Ava to Jest
