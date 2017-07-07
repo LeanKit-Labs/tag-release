@@ -1,3 +1,11 @@
+## 5.x
+
+### 5.0.0
+
+* Refactored internal implementation for flexibility and extensibility
+* Migrated all specs from Ava to Jest
+* Don't remove existing CHANGELOG.md entries for major version bumps
+
 ## 4.x
 
 ### 4.5.0
