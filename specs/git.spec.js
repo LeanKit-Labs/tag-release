@@ -120,11 +120,11 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "merge upstream/master --ff-only" }
 			},
 			mergeUpstreamDevelop: {
-				expectedRunCommandArgs: { args: "merge upstream/develop" }
+				expectedRunCommandArgs: { args: "merge upstream/develop --no-ff" }
 			},
 			mergePromotionBranch: {
 				args: "v1.1.1-feature.0",
-				expectedRunCommandArgs: { args: "merge promote-release-v1.1.1-feature.0 --ff-only" }
+				expectedRunCommandArgs: { args: "merge promote-release-v1.1.1-feature.0 --no-ff" }
 			},
 			getCurrentBranch: {
 				expectedRunCommandArgs: { args: "rev-parse --abbrev-ref HEAD", log: "Getting current branch" }
@@ -261,7 +261,7 @@ describe( "git", () => {
 			it( `should call "git.merge" without fast-forward when specified`, () => {
 				return git.merge( "upstream/test-branch", false ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "merge upstream/test-branch" } );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "merge upstream/test-branch --no-ff" } );
 				} );
 			} );
 
@@ -275,14 +275,14 @@ describe( "git", () => {
 			it( `should call "git.merge" with provided promotion tag`, () => {
 				return git.mergePromotionBranch( "v1.1.1" ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "merge promote-release-v1.1.1 --ff-only" } );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "merge promote-release-v1.1.1 --no-ff" } );
 				} );
 			} );
 
 			it( `should call "git.merge" with provided promotion tag`, () => {
 				return git.mergePromotionBranch( "v1.1.1" ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "merge promote-release-v1.1.1 --ff-only" } );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "merge promote-release-v1.1.1 --no-ff" } );
 				} );
 			} );
 

@@ -58,7 +58,7 @@ const git = {
 	},
 
 	merge( branch, fastForwardOnly = true, failHelpKey ) {
-		const args = `merge ${ branch }${ fastForwardOnly ? " --ff-only" : "" }`;
+		const args = `merge ${ branch }${ fastForwardOnly ? " --ff-only" : " --no-ff" }`;
 		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey } : { args } );
 	},
 
@@ -80,7 +80,7 @@ const git = {
 	},
 
 	mergePromotionBranch( tag ) {
-		return git.merge( `promote-release-${ tag }` );
+		return git.merge( `promote-release-${ tag }`, false );
 	},
 
 	getCurrentBranch() {
