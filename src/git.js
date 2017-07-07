@@ -208,7 +208,7 @@ const git = {
 	generateRebaseCommitLog( tag ) {
 		tag = tag.slice( 1, tag.lastIndexOf( "." ) ); // remove the 'v' and version of pre-release that it is eg. .0, .1, .2, etc...
 
-		const args = `log upstream/master..HEAD --pretty=format:'%h %s'`;
+		const args = `log upstream/master..HEAD --pretty=format:'%h %s' --no-merges`;
 		return git.runCommand( { args } ).then( result => {
 			let commits = result.split( "\n" );
 
