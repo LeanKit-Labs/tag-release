@@ -194,7 +194,7 @@ describe( "git", () => {
 			},
 			generateRebaseCommitLog: {
 				args: "v1.1.1-blah.0",
-				expectedRunCommandArgs: { args: "log upstream/master..HEAD --pretty=format:'%h %s'" }
+				expectedRunCommandArgs: { args: "log upstream/master..HEAD --pretty=format:'%h %s' --no-merges" }
 			},
 			rebaseUpstreamMaster: {
 				expectedRunCommandArgs: { args: "rebase upstream/master" }
