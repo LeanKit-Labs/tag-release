@@ -203,7 +203,7 @@ export function updateChangelog( state ) {
 	let contents = util.readFile( CHANGELOG_PATH );
 
 	if ( release === "major" ) {
-		contents = `## ${ wildcardVersion }\n\n${ update}\n`;
+		contents = `## ${ wildcardVersion }\n\n${ update }\n\n${ contents }`;
 	} else {
 		contents = contents ?
 			contents.replace( /(## .*\n)/, `$1\n${ update }\n` ) :
