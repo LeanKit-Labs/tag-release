@@ -637,28 +637,12 @@ describe( "shared workflow steps", () => {
 			state.release = "major";
 			state.versions.newVersion = "2.0.0";
 			run.updateChangelog( state );
-			const contents = "## 2.x\n\n### 2.0.0\n\n* commit message\n";
+			const contents = "## 2.x\n\n### 2.0.0\n\n* commit message\n\n## 1.x\n\n### 1.2.3\n\n* update to v1.2.3";
 			expect( util.writeFile ).toHaveBeenCalledTimes( 1 );
 			expect( util.writeFile ).toHaveBeenCalledWith( "./CHANGELOG.md", contents );
 		} );
 
-		it( "should create a new CHANGELOG.md for major changes", () => {
-			util.readFile = jest.fn( () => ( "" ) );
-			state = {
-				release: "major",
-				log: "* major stuff",
-				versions: {
-					newVersion: "2.0.0"
-				}
-			};
-
-			run.updateChangelog( state );
-			const contents = "## 2.x\n\n### 2.0.0\n\n* major stuff\n";
-			expect( util.writeFile ).toHaveBeenCalledTimes( 1 );
-			expect( util.writeFile ).toHaveBeenCalledWith( "./CHANGELOG.md", contents );
-		} );
-
-		it( "should create a new CHANGELOG.md for minor/defect changes", () => {
+		it( "should create a new entry in CHANGELOG.md for minor/defect changes", () => {
 			util.readFile = jest.fn( () => ( "" ) );
 			state = {
 				release: "minor",
