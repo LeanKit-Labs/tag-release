@@ -108,6 +108,18 @@ describe( "shared workflow steps", () => {
 		} );
 	} );
 
+	describe( "gitMergePromotionBranch", () => {
+		it( "should return the result of `git.mergePromotionBranch`", () => {
+			state.promote = "v1.1.1";
+			git.mergePromotionBranch = jest.fn( () => Promise.resolve() );
+
+			return run.gitMergePromotionBranch( state ).then( () => {
+				expect( git.mergePromotionBranch ).toHaveBeenCalledTimes( 1 );
+				expect( git.mergePromotionBranch ).toHaveBeenCalledWith( "v1.1.1" );
+			} );
+		} );
+	} );
+
 	describe( "checkHasDevelopBranch", () => {
 		it( "should set `hasDevelopBranch` to true on state when an `upstream/develop` branch exists", () => {
 			const branches = "branch-one\nbranch-two\nbranch-three\nupstream/branch-one\nupstream/branch-two\nupstream/branch-three\nupstream/develop";
@@ -169,6 +181,67 @@ describe( "shared workflow steps", () => {
 			return run.askPrereleaseIdentifier( state ).then( () => {
 				expect( state ).toHaveProperty( "identifier" );
 				expect( state.identifier ).toEqual( "pre" );
+			} );
+		} );
+	} );
+
+	describe( "selectPrereleaseToPromote", () => {
+		beforeEach( () => {
+			util.prompt = jest.fn( () => Promise.resolve( { prereleaseIdentifier: "pre" } ) );
+			git.getPrereleaseTagList = jest.fn( () => Promise.resolve( [
+				"v18.0.0-robert.0",
+				"v17.12.0-break.1",
+				"v17.11.2-no-break.0",
+				"v17.11.0-no-conflict.1",
+				"v17.10.6-conflict.4"
+			] ) );
+		} );
+
+		it( "should not prompt if tag was provided at the command line", () => {
+			state = { promote: "v1.1.1-feature.0" };
+			return run.selectPrereleaseToPromote( state ).then( () => {
+				expect( util.prompt ).not.toHaveBeenCalled();
+			} );
+		} );
+
+		it( "should prompt with the latest tags for promotion", () => {
+			state = { promote: true };
+			return run.selectPrereleaseToPromote( state ).then( () => {
+				expect( util.prompt ).toHaveBeenCalledTimes( 1 );
+				expect( util.prompt ).toHaveBeenCalledWith( [ {
+					type: "list",
+					name: "prereleaseToPromote",
+					message: "Select the pre-release you wish to promote:",
+					choices: [
+						"v18.0.0-robert.0",
+						"v17.12.0-break.1",
+						"v17.11.2-no-break.0",
+						"v17.11.0-no-conflict.1",
+						"v17.10.6-conflict.4"
+					]
+				} ] );
+			} );
+		} );
+
+		describe( "should persist the selected promote option to state", () => {
+			const prereleases = [
+				"v18.0.0-robert.0",
+				"v17.12.0-break.1",
+				"v17.11.2-no-break.0",
+				"v17.11.0-no-conflict.1",
+				"v17.10.6-conflict.4"
+			];
+
+			prereleases.forEach( prereleaseToPromote => {
+				it( `when "${ prereleaseToPromote }" is selected`, () => {
+					state = { promote: true };
+					git.getPrereleaseTagList = jest.fn( () => Promise.resolve( prereleases ) );
+					util.prompt = jest.fn( () => Promise.resolve( { prereleaseToPromote } ) );
+					return run.selectPrereleaseToPromote( state ).then( () => {
+						expect( state ).toHaveProperty( "promote" );
+						expect( state.promote ).toEqual( prereleaseToPromote );
+					} );
+				} );
 			} );
 		} );
 	} );
@@ -1222,10 +1295,18 @@ describe( "shared workflow steps", () => {
 		} );
 
 		it( "should call `git.createLocalBranch` when the branch doesn't exist locally", () => {
+			state.hasDevelopBranch = true;
 			git.branchExists = jest.fn( () => Promise.resolve( false ) );
-			return run.verifyDevelopBranch().then( () => {
+			return run.verifyDevelopBranch( state ).then( () => {
 				expect( git.createLocalBranch ).toHaveBeenCalledTimes( 1 );
 				expect( git.createLocalBranch ).toHaveBeenCalledWith( "develop" );
+			} );
+		} );
+
+		it( "should not call `git.createLocalBranch` when the branch doesn't exist locally and on remote", () => {
+			git.branchExists = jest.fn( () => Promise.resolve( false ) );
+			return run.verifyDevelopBranch( state ).then( () => {
+				expect( git.createLocalBranch ).not.toHaveBeenCalled();
 			} );
 		} );
 	} );
@@ -1242,10 +1323,112 @@ describe( "shared workflow steps", () => {
 
 	describe( "resetDevelop", () => {
 		it( "should call `git.resetBranch` with the appropriate arguments", () => {
+			state.hasDevelopBranch = true;
 			git.resetBranch = jest.fn( () => Promise.resolve() );
-			return run.gitResetDevelop().then( () => {
+			return run.gitResetDevelop( state ).then( () => {
 				expect( git.resetBranch ).toHaveBeenCalledTimes( 1 );
 				expect( git.resetBranch ).toHaveBeenCalledWith( "develop" );
+			} );
+		} );
+
+		it( "should not call `git.resetBranch` with no develop branch on upstream", () => {
+			git.resetBranch = jest.fn( () => Promise.resolve() );
+			return run.gitResetDevelop( state ).then( () => {
+				expect( git.resetBranch ).not.toHaveBeenCalled();
+			} );
+		} );
+	} );
+
+	describe( "gitCheckoutTag", () => {
+		it( "should call `git.checkoutTag` with the appropriate arguments when tag includes `v`", () => {
+			state.promote = "v1.1.1";
+			git.checkoutTag = jest.fn( () => Promise.resolve() );
+			return run.gitCheckoutTag( state ).then( () => {
+				expect( git.checkoutTag ).toHaveBeenCalledTimes( 1 );
+				expect( git.checkoutTag ).toHaveBeenCalledWith( "v1.1.1" );
+			} );
+		} );
+
+		it( "should call `git.checkoutTag` with the appropriate arguments when tag excludes `v`", () => {
+			state.promote = "1.1.1";
+			git.checkoutTag = jest.fn( () => Promise.resolve() );
+			return run.gitCheckoutTag( state ).then( () => {
+				expect( git.checkoutTag ).toHaveBeenCalledTimes( 1 );
+				expect( git.checkoutTag ).toHaveBeenCalledWith( "v1.1.1" );
+			} );
+		} );
+	} );
+
+	describe( "gitGenerateRebaseCommitLog", () => {
+		it( "should call `git.generateRebaseCommitLog` with the appropriate arguments", () => {
+			state.promote = "v1.1.1";
+			git.generateRebaseCommitLog = jest.fn( () => Promise.resolve() );
+			return run.gitGenerateRebaseCommitLog( state ).then( () => {
+				expect( git.generateRebaseCommitLog ).toHaveBeenCalledTimes( 1 );
+				expect( git.generateRebaseCommitLog ).toHaveBeenCalledWith( "v1.1.1" );
+			} );
+		} );
+	} );
+
+	describe( "gitRemovePreReleaseCommits", () => {
+		it( "should call `git.removePreReleaseCommits`", () => {
+			git.removePreReleaseCommits = jest.fn( () => Promise.resolve() );
+			return run.gitRemovePreReleaseCommits( state ).then( () => {
+				expect( git.removePreReleaseCommits ).toHaveBeenCalledTimes( 1 );
+			} );
+		} );
+	} );
+
+	describe( "gitRebaseUpstreamMaster", () => {
+		it( "should call `git.rebaseUpstreamMaster`", () => {
+			git.rebaseUpstreamMaster = jest.fn( () => Promise.resolve() );
+			return run.gitRebaseUpstreamMaster().then( () => {
+				expect( git.rebaseUpstreamMaster ).toHaveBeenCalledTimes( 1 );
+			} );
+		} );
+	} );
+
+	describe( "gitRemovePromotionBranches", () => {
+		it( "should call `git.removePromotionBranches`", () => {
+			git.removePromotionBranches = jest.fn( () => Promise.resolve() );
+			return run.gitRemovePromotionBranches().then( () => {
+				expect( git.removePromotionBranches ).toHaveBeenCalledTimes( 1 );
+			} );
+		} );
+	} );
+
+	describe( "gitStageFiles", () => {
+		it( "should call `git.stageFiles`", () => {
+			git.stageFiles = jest.fn( () => Promise.resolve() );
+			return run.gitStageFiles().then( () => {
+				expect( git.stageFiles ).toHaveBeenCalledTimes( 1 );
+			} );
+		} );
+	} );
+
+	describe( "gitRebaseContinue", () => {
+		it( "should call `git.rebaseContinue`", () => {
+			git.rebaseContinue = jest.fn( () => Promise.resolve() );
+			return run.gitRebaseContinue().then( () => {
+				expect( git.rebaseContinue ).toHaveBeenCalledTimes( 1 );
+			} );
+		} );
+	} );
+
+	describe( "setPromote", () => {
+		it( "should set `state.promote` based on current branch", () => {
+			state.branch = "promote-release-v1.1.1-feature.0";
+			return run.setPromote( state ).then( () => {
+				expect( state.promote ).toEqual( "v1.1.1-feature.0" );
+			} );
+		} );
+	} );
+
+	describe( "verifyConflictResolution", () => {
+		it( "should call `git.checkConflictMarkers`", () => {
+			git.checkConflictMarkers = jest.fn( () => Promise.resolve() );
+			return run.verifyConflictResolution().then( () => {
+				expect( git.checkConflictMarkers ).toHaveBeenCalledTimes( 1 );
 			} );
 		} );
 	} );

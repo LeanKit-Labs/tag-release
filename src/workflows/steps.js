@@ -32,6 +32,10 @@ export function gitMergeUpstreamDevelop( state ) {
 	return hasDevelopBranch ? git.mergeUpstreamDevelop() : Promise.resolve();
 }
 
+export function gitMergePromotionBranch( state ) {
+	return git.mergePromotionBranch( state.promote );
+}
+
 export function checkHasDevelopBranch( state ) {
 	return git.getRemoteBranches().then( data => {
 		const branches = data.split( "\n" );
@@ -56,6 +60,24 @@ export function askPrereleaseIdentifier( state ) {
 		state.identifier = response.prereleaseIdentifier;
 		return Promise.resolve();
 	} );
+}
+
+export function selectPrereleaseToPromote( state ) {
+	if ( state.promote && typeof state.promote === "boolean" ) {
+		return git.getPrereleaseTagList().then( prereleases => {
+			return util.prompt( [ {
+				type: "list",
+				name: "prereleaseToPromote",
+				message: "Select the pre-release you wish to promote:",
+				choices: prereleases
+			} ] ).then( ( { prereleaseToPromote: selectedPrerelease } ) => {
+				state.promote = selectedPrerelease;
+				return Promise.resolve();
+			} );
+		} );
+	}
+
+	return Promise.resolve();
 }
 
 export function gitCheckoutMaster( state ) {
@@ -389,7 +411,7 @@ export function verifyMasterBranch( state ) {
 
 export function verifyDevelopBranch( state ) {
 	return git.branchExists( "develop" ).then( exists => {
-		if ( !exists ) {
+		if ( !exists && state.hasDevelopBranch ) {
 			return git.createLocalBranch( "develop" );
 		}
 	} );
@@ -400,5 +422,49 @@ export function gitResetMaster( state ) {
 }
 
 export function gitResetDevelop( state ) {
-	return git.resetBranch( "develop" );
+	if ( state.hasDevelopBranch ) {
+		return git.resetBranch( "develop" );
+	}
+	return Promise.resolve();
+}
+
+export function gitCheckoutTag( state ) {
+	if ( state.promote.charAt( 0 ) !== "v" ) {
+		state.promote = `v${ state.promote }`;
+	}
+
+	return git.checkoutTag( state.promote );
+}
+
+export function gitGenerateRebaseCommitLog( state ) {
+	return git.generateRebaseCommitLog( state.promote );
+}
+
+export function gitRemovePreReleaseCommits() {
+	return git.removePreReleaseCommits();
+}
+
+export function gitRebaseUpstreamMaster() {
+	return git.rebaseUpstreamMaster();
+}
+
+export function gitRemovePromotionBranches() {
+	return git.removePromotionBranches();
+}
+
+export function gitStageFiles() {
+	return git.stageFiles();
+}
+
+export function gitRebaseContinue() {
+	return git.rebaseContinue();
+}
+
+export function setPromote( state ) {
+	state.promote = state.branch.slice( state.branch.indexOf( "v" ), state.branch.length ); // retrieve from promote-release branch, e.g. v1.1.1-feature.0
+	return Promise.resolve();
+}
+
+export function verifyConflictResolution() {
+	return git.checkConflictMarkers();
 }
