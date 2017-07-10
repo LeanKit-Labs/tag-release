@@ -13,8 +13,8 @@ export function getFeatureBranch( state ) {
 	} );
 }
 
-export function gitFetchUpstreamMaster( state ) {
-	return git.fetchUpstreamMaster();
+export function gitFetchUpstream( state ) {
+	return git.fetchUpstream();
 }
 
 export function gitMergeUpstreamBranch( state ) {

@@ -35,13 +35,13 @@ const git = {
 		return git.runCommand( { args } );
 	},
 
-	fetch( branch = "master", includeTags = true, failHelpKey ) {
-		const args = `fetch upstream ${ branch }${ includeTags ? " --tags" : "" }`;
+	fetch( failHelpKey ) {
+		const args = `fetch upstream --tags`;
 		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey } : { args } );
 	},
 
-	fetchUpstreamMaster() {
-		return git.fetch( "master", true, "gitFetchUpstreamMaster" );
+	fetchUpstream() {
+		return git.fetch( "gitFetchUpstream" );
 	},
 
 	checkout( branch, failHelpKey ) {

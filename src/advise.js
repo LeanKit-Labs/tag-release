@@ -4,7 +4,7 @@ const MESSAGES = {
 	gitCommandFailed: `Ooops. Hhmmm...that didn't work very well.
 
 You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
-	gitFetchUpstreamMaster: `It looks like git couldn't fetch your upstream.
+	gitFetchUpstream: `It looks like git couldn't fetch your upstream.
 
 tag-release needs an upstream remote in order to work correctly. You can double check by running 'git remote -v'
 

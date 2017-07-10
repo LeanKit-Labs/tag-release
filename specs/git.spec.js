@@ -90,10 +90,11 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "branch -r" }
 			},
 			fetch: {
-				expectedRunCommandArgs: { args: "fetch upstream master --tags" }
+				expectedRunCommandArgs: { args: "fetch upstream --tags" }
 			},
-			fetchUpstreamMaster: {
-				expectedRunCommandArgs: { args: "fetch upstream master --tags", failHelpKey: "gitFetchUpstreamMaster" }
+			fetchUpstream: {
+				args: "gitFetchUpstream",
+				expectedRunCommandArgs: { args: "fetch upstream --tags", failHelpKey: "gitFetchUpstream" }
 			},
 			checkout: {
 				args: "test-branch",
@@ -241,13 +242,6 @@ describe( "git", () => {
 				return git.checkout( "test-branch", "test-key" ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
 					expect( git.runCommand ).toHaveBeenCalledWith( { args: "checkout test-branch", failHelpKey: "test-key" } );
-				} );
-			} );
-
-			it( "should call `git.fetch` without tags when specified", () => {
-				return git.fetch( "test-branch", false ).then( () => {
-					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "fetch upstream test-branch" } );
 				} );
 			} );
 

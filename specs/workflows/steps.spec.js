@@ -57,12 +57,12 @@ describe( "shared workflow steps", () => {
 		} );
 	} );
 
-	describe( "gitFetchUpstreamMaster", () => {
-		it( "should return the result of `git.fetchUpstreamMaster`", () => {
-			git.fetchUpstreamMaster = jest.fn( () => Promise.resolve() );
+	describe( "gitFetchUpstream", () => {
+		it( "should return the result of `git.fetchUpstream`", () => {
+			git.fetchUpstream = jest.fn( () => Promise.resolve() );
 
-			return run.gitFetchUpstreamMaster( state ).then( () => {
-				expect( git.fetchUpstreamMaster ).toHaveBeenCalledTimes( 1 );
+			return run.gitFetchUpstream( state ).then( () => {
+				expect( git.fetchUpstream ).toHaveBeenCalledTimes( 1 );
 			} );
 		} );
 	} );
