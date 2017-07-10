@@ -190,9 +190,14 @@ const git = {
 		} );
 	},
 
-	createLocalBranch( branch ) {
-		const args = `branch ${ branch } upstream/${ branch }`;
+	createLocalBranch( branch, tracking = branch ) {
+		const args = `branch ${ branch } upstream/${ tracking }`;
 		return git.runCommand( { args, logMessage: `Creating local branch "${ branch }"` } );
+	},
+
+	createUpstreamBranch( branch ) {
+		const args = `push upstream ${ branch }`;
+		return git.runCommand( { args, logMessage: `Creating upstream branch "${ branch }"` } );
 	},
 
 	resetBranch( branch ) {
@@ -269,6 +274,11 @@ const git = {
 	checkConflictMarkers() {
 		const args = `diff --check`;
 		return git.runCommand( { args, logMessage: "Verifying conflict resolution", failHelpKey: "gitCheckConflictMarkers", showError: false } );
+	},
+
+	checkoutBranch( branch, tracking = "develop" ) {
+		const args = `checkout -b ${ branch } upstream/${ tracking }`;
+		return git.runCommand( { args } );
 	}
 
 };
