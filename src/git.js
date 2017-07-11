@@ -76,7 +76,7 @@ const git = {
 	},
 
 	mergeUpstreamDevelop() {
-		return git.merge( "upstream/develop", false );
+		return git.merge( "upstream/develop" );
 	},
 
 	mergePromotionBranch( tag ) {
