@@ -134,7 +134,7 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "tag --sort=v:refname", logMessage: "Getting list of tags" }
 			},
 			shortLog: {
-				expectedRunCommandArgs: { args: "--no-pager log --no-merges --date-order --pretty=format:'%s'", logMessage: "Parsing git log" }
+				expectedRunCommandArgs: { args: "--no-pager log --no-merges --date-order --pretty=format:\"%s\"", logMessage: "Parsing git log" }
 			},
 			diff: {
 				args: [ "CHANGELOG.md", "package.json" ],
@@ -195,7 +195,7 @@ describe( "git", () => {
 			},
 			generateRebaseCommitLog: {
 				args: "v1.1.1-blah.0",
-				expectedRunCommandArgs: { args: "log upstream/master..HEAD --pretty=format:'%h %s' --no-merges" }
+				expectedRunCommandArgs: { args: "log upstream/master..HEAD --pretty=format:\"%h %s\" --no-merges" }
 			},
 			rebaseUpstreamMaster: {
 				expectedRunCommandArgs: { args: "rebase upstream/master" }
@@ -248,7 +248,7 @@ describe( "git", () => {
 			it( "should call `git.shortLog` with the appropriate options when a tag is given", () => {
 				return git.shortLog( "v1.2.3" ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "--no-pager log --no-merges --date-order --pretty=format:'%s' v1.2.3..", logMessage: "Parsing git log" } );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "--no-pager log --no-merges --date-order --pretty=format:\"%s\" v1.2.3..", logMessage: "Parsing git log" } );
 				} );
 			} );
 
