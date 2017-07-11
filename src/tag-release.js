@@ -2,6 +2,8 @@ import sequence from "when/sequence";
 import defaultWorkflow from "./workflows/default";
 import prereleaseWorkflow from "./workflows/pre-release";
 import resetWorkflow from "./workflows/reset";
+import promoteWorkflow from "./workflows/promote";
+import continueWorkflow from "./workflows/continue";
 
 export default state => {
 	let workflow = defaultWorkflow;
@@ -12,6 +14,14 @@ export default state => {
 
 	if ( state.reset ) {
 		workflow = resetWorkflow;
+	}
+
+	if ( state.promote ) {
+		workflow = promoteWorkflow;
+	}
+
+	if ( state.continue ) {
+		workflow = continueWorkflow;
 	}
 
 	sequence( workflow, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
