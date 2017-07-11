@@ -1,5 +1,12 @@
 ## 5.x
 
+### 5.1.1
+
+* Updated README.md for --promote feature and fixed --version command
+* Changed single quotes to double quotes in some commands for windows users
+* Correctly fetch upstream to retrieve changes
+* Added README.md reminder to PR checklist
+
 ### 5.1.0
 
 * Keep merge commit when doing pre-release promotion to official release
