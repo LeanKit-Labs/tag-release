@@ -1,5 +1,13 @@
 ## 5.x
 
+### 5.1.0
+
+* Keep merge commit when doing pre-release promotion to official release
+* Remove merge commits for rebase with promotion.
+* Remove step for updating CHANGELOG.md for pre-releases
+* Added promote command to promote pre-releases to offical releases
+* Added a pull request template file
+
 ### 5.0.0
 
 * Refactored internal implementation for flexibility and extensibility
