@@ -90,10 +90,11 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "branch -r" }
 			},
 			fetch: {
-				expectedRunCommandArgs: { args: "fetch upstream master --tags" }
+				expectedRunCommandArgs: { args: "fetch upstream --tags" }
 			},
-			fetchUpstreamMaster: {
-				expectedRunCommandArgs: { args: "fetch upstream master --tags", failHelpKey: "gitFetchUpstreamMaster" }
+			fetchUpstream: {
+				args: "gitFetchUpstream",
+				expectedRunCommandArgs: { args: "fetch upstream --tags", failHelpKey: "gitFetchUpstream" }
 			},
 			checkout: {
 				args: "test-branch",
@@ -120,7 +121,7 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "merge upstream/master --ff-only" }
 			},
 			mergeUpstreamDevelop: {
-				expectedRunCommandArgs: { args: "merge upstream/develop --no-ff" }
+				expectedRunCommandArgs: { args: "merge upstream/develop --ff-only" }
 			},
 			mergePromotionBranch: {
 				args: "v1.1.1-feature.0",
@@ -133,7 +134,7 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "tag --sort=v:refname", logMessage: "Getting list of tags" }
 			},
 			shortLog: {
-				expectedRunCommandArgs: { args: "--no-pager log --no-merges --date-order --pretty=format:'%s'", logMessage: "Parsing git log" }
+				expectedRunCommandArgs: { args: `--no-pager log --no-merges --date-order --pretty=format:"%s"`, logMessage: "Parsing git log" }
 			},
 			diff: {
 				args: [ "CHANGELOG.md", "package.json" ],
@@ -145,7 +146,7 @@ describe( "git", () => {
 			},
 			commit: {
 				args: "This is a test commit",
-				expectedRunCommandArgs: { args: "commit -m \"This is a test commit\"" }
+				expectedRunCommandArgs: { args: `commit -m "This is a test commit"` }
 			},
 			tag: {
 				args: "v1.0.0",
@@ -194,7 +195,7 @@ describe( "git", () => {
 			},
 			generateRebaseCommitLog: {
 				args: "v1.1.1-blah.0",
-				expectedRunCommandArgs: { args: "log upstream/master..HEAD --pretty=format:'%h %s' --no-merges" }
+				expectedRunCommandArgs: { args: `log upstream/master..HEAD --pretty=format:"%h %s" --no-merges` }
 			},
 			rebaseUpstreamMaster: {
 				expectedRunCommandArgs: { args: "rebase upstream/master" }
@@ -244,17 +245,10 @@ describe( "git", () => {
 				} );
 			} );
 
-			it( "should call `git.fetch` without tags when specified", () => {
-				return git.fetch( "test-branch", false ).then( () => {
-					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "fetch upstream test-branch" } );
-				} );
-			} );
-
 			it( "should call `git.shortLog` with the appropriate options when a tag is given", () => {
 				return git.shortLog( "v1.2.3" ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "--no-pager log --no-merges --date-order --pretty=format:'%s' v1.2.3..", logMessage: "Parsing git log" } );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: `--no-pager log --no-merges --date-order --pretty=format:"%s" v1.2.3..`, logMessage: "Parsing git log" } );
 				} );
 			} );
 

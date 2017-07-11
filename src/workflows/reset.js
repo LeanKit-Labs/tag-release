@@ -1,7 +1,7 @@
 import * as run from "./steps";
 
 export default [
-	run.gitFetchUpstreamMaster,
+	run.gitFetchUpstream,
 	run.checkHasDevelopBranch,
 	run.checkForUncommittedChanges,
 	run.stashIfUncommittedChangesExist,

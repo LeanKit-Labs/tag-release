@@ -27,10 +27,10 @@ const questions = {
 };
 
 commander
+	.version( pkg.version )
 	.option( "-r, --release [type]", "Release type (major, minor, patch, premajor, preminor, prepatch, prerelease)", /^(major|minor|patch|premajor|preminor|prepatch|prerelease)/i )
 	.option( "-c, --config [filePath]", "Path to JSON Configuration file (defaults to './package.json')", /^.*\.json$/ )
 	.option( "--verbose", "Console additional information" )
-	.option( "-v", "Console the version of tag-release" )
 	.option( "-p, --prerelease", "Create a pre-release" )
 	.option( "-i, --identifier <identifier>", "Identifier used for pre-release" )
 	.option( "--reset", "Reset repo to upstream master/develop branches." )
@@ -38,25 +38,22 @@ commander
 	.option( "--continue", "Continues the rebase process of a tag promotion." );
 
 commander.on( "--help", () => {
-	console.log( "Examples: \n" );
-	console.log( "   $ tag-release" );
-	console.log( "   $ tag-release --config ../../config.json" );
-	console.log( "   $ tag-release -c ./manifest.json" );
-	console.log( "   $ tag-release --release major" );
-	console.log( "   $ tag-release -r minor" );
-	console.log( "   $ tag-release --prerelease" );
-	console.log( "   $ tag-release -p -i rc" );
-	console.log( "   $ tag-release --reset" );
-	console.log( "   $ tag-release --verbose" );
-	console.log( "   $ tag-release -v" );
-	console.log( "   $ tag-release --promote" );
-	console.log( "   $ tag-release --promote v1.1.1-my-tagged-version.0" );
-	console.log( "   $ tag-release --continue" );
-} );
-
-commander.on( "-v", () => {
-	console.log( pkg.version );
-	process.exit( 0 ); // eslint-disable-line
+	console.log( "" );
+	console.log( "  Examples: \n" );
+	console.log( "    $ tag-release" );
+	console.log( "    $ tag-release --config ../../config.json" );
+	console.log( "    $ tag-release -c ./manifest.json" );
+	console.log( "    $ tag-release --release major" );
+	console.log( "    $ tag-release -r minor" );
+	console.log( "    $ tag-release --prerelease" );
+	console.log( "    $ tag-release -p -i rc" );
+	console.log( "    $ tag-release --reset" );
+	console.log( "    $ tag-release --verbose" );
+	console.log( "    $ tag-release -v" );
+	console.log( "    $ tag-release --promote" );
+	console.log( "    $ tag-release --promote v1.1.1-my-tagged-version.0" );
+	console.log( "    $ tag-release --continue" );
+	console.log( "" );
 } );
 
 commander.parse( process.argv );

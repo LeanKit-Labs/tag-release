@@ -31,12 +31,15 @@ Usage: tag-release [options]
 Options:
 
   -h, --help                     Output usage information
-  -c, --config [filePath] Path to JSON Configuration file (defaults to './package.json')
+  -c, --config [filePath]        Path to JSON Configuration file (defaults to './package.json')
   -r, --release [type]           Release type (major, minor, patch)
   --verbose                      Console additional information
-  -v                             Console the version of tag-release
+  -V, --version                  output the version number
   -p, --prerelease               Create a pre-release
   -i, --identifier <identifier>  Identifier used for pre-release
+  --reset                        Reset repo to upstream master/develop branches
+	--promote [tag]                Promotes specified pre-release tag to an offical release
+	--continue                     Continues the rebase process of a tag promotion
 
 Examples:
 
@@ -46,9 +49,15 @@ Examples:
    $ tag-release --release major
    $ tag-release -r minor
    $ tag-release --verbose
-   $ tag-release -v
+   $ tag-release -V
+   $ tag-release --version
+   $ tag-release --prerelease
    $ tag-release -p
    $ tag-release -p -i foo
+   $ tag-release --reset
+   $ tag-release --promote
+   $ tag-release --promote v1.1.1-my-tagged-version.0
+   $ tag-release --continue
 ```
 
 ### Pre-releases
@@ -103,6 +112,42 @@ These tags always match the following schema: [version]-[identifier].[bump]
 | 1.2.3          | 2.0.0-pre.0       | major   | yes           | pre (default) | 2.0.0-pre.1    |
 | 1.2.3          | 2.0.0-pre.1       | minor   | no            | N/A           | 1.3.0          |
 | 1.3.0          | 2.0.0-pre.1       | minor   | yes           | filter        | 1.4.0-filter.0 |
+
+### Pre-release Promotion
+
+This feature is use for promoting a pre-release to an offical release that is intended to go out
+into production. In order use this feature will you have to provide `tag-release` with the
+`--promote` as a command-line flag.
+
+```
+Usage:
+   $ tag-release --promote
+
+Example:
+
+   $ tag-release --promote
+   ? Select the pre-release you wish to promote: (Use arrow keys)
+   > v1.1.1-blah.0
+     v2.0.0-another.1
+     v3.0.0-this.5
+```
+
+After selecting the tag you wish to promote it will attempt remove all pre-release commits from history
+and rebase it with master. If conflicts arise you will be promoted to fix the conflicts and then continue
+with the promotion process by running `tag-release --continue`. This cycle will continue until all conflicts
+are resolve and then it will flow as a normal release from that point on.
+
+The `--promote` feature also allows for an optional command-line argument of a tag in the follow form:
+
+```
+Example:
+
+   $ tag-release --promote v1.1.1-feature.2
+   $ tag-release --promote 1.1.1-feature.2 # v is optional for tag
+```
+
+This will skip the selection process of a tag you wish to promote and it will flow the same flow as the
+normal `--promote` command-line argument above.
 
 ### GitHub Integration
 
