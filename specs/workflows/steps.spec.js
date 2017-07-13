@@ -16,6 +16,14 @@ jest.mock( "github-api", () => {
 	return jest.fn();
 } );
 
+jest.mock( "remove-words", () => {
+	return jest.fn( arg => arg.split( " " ) );
+} );
+
+jest.mock( "when/sequence", () => {
+	return jest.fn( () => Promise.resolve() );
+} );
+
 import chalk from "chalk"; // eslint-disable-line no-unused-vars
 import editor from "editor"; // eslint-disable-line no-unused-vars
 import logger from "better-console";
@@ -24,6 +32,8 @@ import GitHub from "github-api";
 import util from "../../src/utils";
 import git from "../../src/git";
 import * as run from "../../src/workflows/steps";
+import sequence from "when/sequence";
+import removeWords from "remove-words"; // eslint-disable-line no-unused-vars
 
 describe( "shared workflow steps", () => {
 	let state = {};
@@ -1413,6 +1423,352 @@ describe( "shared workflow steps", () => {
 			git.checkConflictMarkers = jest.fn( () => Promise.resolve() );
 			return run.verifyConflictResolution().then( () => {
 				expect( git.checkConflictMarkers ).toHaveBeenCalledTimes( 1 );
+			} );
+		} );
+	} );
+
+	describe( "getPackageScope", () => {
+		it( "should set CLI flag to default scope", () => {
+			state.qa = true;
+			return run.getPackageScope( state ).then( () => {
+				expect( state.qa ).toEqual( "@lk" );
+			} );
+		} );
+
+		it( "should set CLI flag to provided scope when passed by user and add @ when not provided", () => {
+			state.qa = "aoe";
+			return run.getPackageScope( state ).then( () => {
+				expect( state.qa ).toEqual( "@aoe" );
+			} );
+		} );
+
+		it( "should set CLI flag to provided scope when passed by user", () => {
+			state.qa = "@aoe";
+			return run.getPackageScope( state ).then( () => {
+				expect( state.qa ).toEqual( "@aoe" );
+			} );
+		} );
+	} );
+
+	describe( "getScopedRepos", () => {
+		const originalProcessExit = process.exit;
+
+		beforeEach( () => {
+			state.configPath = "./package.json";
+			state.qa = "@lk";
+			util.readJSONFile = jest.fn( () => ( {
+				devDependencies: { "@lk/over-watch": "1.1.1" },
+				dependencies: { "@lk/watch-over": "1.1.1" }
+			} ) );
+			process.exit = jest.fn( () => {} );
+		} );
+
+		afterEach( () => {
+			process.exit = originalProcessExit;
+		} );
+
+		it( "should call `util.readJSONFile`", () => {
+			return run.getScopedRepos( state ).then( () => {
+				expect( util.readJSONFile ).toHaveBeenCalledTimes( 1 );
+				expect( util.readJSONFile ).toHaveBeenCalledWith( "./package.json" );
+			} );
+		} );
+
+		it( "should resolve with repos within scope from config", () => {
+			return run.getScopedRepos( state ).then( repos => {
+				expect( repos ).toEqual( [ "over-watch", "watch-over" ] );
+			} );
+		} );
+
+		it( "should advise when no dependencies or devDepdencies in package.json", () => {
+			util.advise = jest.fn( () => Promise.resolve() );
+			util.readJSONFile = jest.fn( () => ( {} ) );
+			state.qa = "@aoe";
+
+			return run.getScopedRepos( state ).then( () => {
+				expect( util.advise ).toHaveBeenCalledTimes( 1 );
+				expect( util.advise ).toHaveBeenCalledWith( "noPackagesInScope" );
+				expect( process.exit ).toHaveBeenCalledTimes( 1 );
+				expect( process.exit ).toHaveBeenCalledWith( 0 );
+			} );
+		} );
+
+		it( "should advise when no repos are under scope within config and exit", () => {
+			util.advise = jest.fn( () => Promise.resolve() );
+			state.qa = "@aoe";
+
+			return run.getScopedRepos( state ).then( () => {
+				expect( util.advise ).toHaveBeenCalledTimes( 1 );
+				expect( util.advise ).toHaveBeenCalledWith( "noPackagesInScope" );
+				expect( process.exit ).toHaveBeenCalledTimes( 1 );
+				expect( process.exit ).toHaveBeenCalledWith( 0 );
+			} );
+		} );
+
+		it( "should advise when the call to `util.readJSONFile` fails", () => {
+			util.advise = jest.fn( () => Promise.resolve() );
+			util.readJSONFile = jest.fn( () => {
+				throw new Error( "nope" );
+			} );
+
+			return run.getScopedRepos( state ).then( () => {
+				expect( util.readJSONFile ).toHaveBeenCalledTimes( 1 );
+				expect( util.advise ).toHaveBeenCalledTimes( 1 );
+				expect( util.advise ).toHaveBeenCalledWith( "updateVersion" );
+			} );
+		} );
+	} );
+
+	describe( "askReposToUpdate", () => {
+		beforeEach( () => {
+			state.qa = "@lk";
+			util.readJSONFile = jest.fn( () => ( {
+				devDependencies: { "@lk/over-watch": "1.1.1" },
+				dependencies: { "@lk/watch-over": "1.1.1" }
+			} ) );
+			util.prompt = jest.fn( () => Promise.resolve( { packagesToPromote: "over-watch" } ) );
+		} );
+
+		it( "should call `util.prompt` with the appropriate arguments", () => {
+			return run.askReposToUpdate( state ).then( () => {
+				expect( util.prompt ).toHaveBeenCalledTimes( 1 );
+				expect( util.prompt ).toHaveBeenCalledWith( [ {
+					type: "checkbox",
+					name: "packagesToPromote",
+					message: "Select the package(s) you wish to update:",
+					choices: [ "over-watch", "watch-over" ]
+				} ] );
+			} );
+		} );
+
+		it( "should persist the packagesToPromote to the workflow state", () => {
+			return run.askReposToUpdate( state ).then( () => {
+				expect( state ).toHaveProperty( "packages" );
+				expect( state.packages ).toEqual( "over-watch" );
+			} );
+		} );
+	} );
+
+	describe( "askVersion", () => {
+		beforeEach( () => {
+			util.prompt = jest.fn( () => Promise.resolve( { pkg: "over-watch", version: "1.1.1" } ) );
+		} );
+
+		it( "should prompt the user for package version", () => {
+			return run.askVersion( "over-watch" )().then( () => {
+				expect( util.prompt ).toHaveBeenCalledTimes( 1 );
+				expect( util.prompt ).toHaveBeenCalledWith( [ {
+					type: "input",
+					name: "version",
+					message: "What version do you want to update over-watch to:"
+				} ] );
+			} );
+		} );
+	} );
+
+	describe( "askVersions", () => {
+		beforeEach( () => {
+			state.packages = [ "over-watch", "watch-over" ];
+			util.prompt = jest.fn( () => Promise.resolve( { pkg: "over-watch", version: "1.1.1" } ) );
+		} );
+
+		it( "should blah", () => {
+			return run.askVersions( state ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 1 );
+				expect( sequence ).toHaveBeenCalledWith( expect.any( Array ) );
+			} );
+		} );
+
+		it( "should persist the dependencies to the workflow state", () => {
+			return run.askVersions( state ).then( () => {
+				expect( state ).toHaveProperty( "dependencies" );
+				expect( state.dependencies ).toEqual( undefined );
+			} );
+		} );
+	} );
+
+	describe( "askChangeType", () => {
+		beforeEach( () => {
+			util.prompt = jest.fn( () => Promise.resolve( { changeType: "feature" } ) );
+		} );
+
+		it( "should prompt the user for change type", () => {
+			return run.askChangeType( state ).then( () => {
+				expect( util.prompt ).toHaveBeenCalledTimes( 1 );
+				expect( util.prompt ).toHaveBeenCalledWith( [ {
+					type: "list",
+					name: "changeType",
+					message: "What type of change is this work",
+					choices: [ "feature", "defect", "rework" ]
+				} ] );
+			} );
+		} );
+
+		it( "should persist the given change type to the workflow state", () => {
+			return run.askChangeType( state ).then( () => {
+				expect( state ).toHaveProperty( "changeType" );
+				expect( state.changeType ).toEqual( "feature" );
+			} );
+		} );
+	} );
+
+	describe( "askChangeReason", () => {
+		beforeEach( () => {
+			util.prompt = jest.fn( () => Promise.resolve( { changeReason: "this is a reason" } ) );
+		} );
+
+		it( "should prompt the user for change reason", () => {
+			return run.askChangeReason( state ).then( () => {
+				expect( util.prompt ).toHaveBeenCalledTimes( 1 );
+				expect( util.prompt ).toHaveBeenCalledWith( [ {
+					type: "input",
+					name: "changeReason",
+					message: "What is the reason for this change"
+				} ] );
+			} );
+		} );
+
+		it( "should persist the given change reason to the workflow state", () => {
+			return run.askChangeReason( state ).then( () => {
+				expect( state ).toHaveProperty( "changeReason" );
+				expect( state.changeReason ).toEqual( "this is a reason" );
+			} );
+		} );
+	} );
+
+	describe( "gitCheckoutBranch", () => {
+		beforeEach( () => {
+			git.checkoutBranch = jest.fn( () => Promise.resolve() );
+		} );
+
+		it( "should call `git.checkoutBranch` with the appropriate argument", () => {
+			state.changeType = "feature";
+			state.changeReason = "this is a reason";
+			return run.gitCheckoutBranch( state ).then( () => {
+				expect( git.checkoutBranch ).toHaveBeenCalledTimes( 1 );
+				expect( git.checkoutBranch ).toHaveBeenCalledWith( "feature-this-is-a-reason" );
+			} );
+		} );
+	} );
+
+	describe( "updateDependencies", () => {
+		beforeEach( () => {
+			state = {
+				configPath: "./package.json",
+				qa: "@lk",
+				dependencies: [ {
+					pkg: "over-watch",
+					version: "1.1.1"
+				}, {
+					pkg: "watch-over",
+					version: "2.2.2"
+				} ]
+			};
+			util.readJSONFile = jest.fn( () => ( {
+				devDependencies: { "@lk/over-watch": "1.1.1" },
+				dependencies: { "@lk/watch-over": "1.1.1" }
+			} ) );
+			util.writeJSONFile = jest.fn( () => {} );
+		} );
+
+		it( "should call `util.readJSONFile`", () => {
+			return run.updateDependencies( state ).then( () => {
+				expect( util.readJSONFile ).toHaveBeenCalledTimes( 1 );
+				expect( util.readJSONFile ).toHaveBeenCalledWith( state.configPath );
+			} );
+		} );
+
+		it( "should call `util.writeJSONFile`", () => {
+			return run.updateDependencies( state ).then( () => {
+				expect( util.writeJSONFile ).toHaveBeenCalledTimes( 1 );
+				expect( util.writeJSONFile ).toHaveBeenCalledWith( state.configPath, {
+					dependencies: {
+						"@lk/watch-over": "2.2.2"
+					},
+					devDependencies: {
+						"@lk/over-watch": "1.1.1"
+					} } );
+			} );
+		} );
+
+		it( "should advise when the call to `util.readJSONFile` fails", () => {
+			util.advise = jest.fn( () => Promise.resolve() );
+			util.readJSONFile = jest.fn( () => {
+				throw new Error( "nope" );
+			} );
+
+			return run.updateDependencies( state ).then( () => {
+				expect( util.readJSONFile ).toHaveBeenCalledTimes( 1 );
+				expect( util.advise ).toHaveBeenCalledTimes( 1 );
+				expect( util.advise ).toHaveBeenCalledWith( "updateVersion" );
+			} );
+		} );
+	} );
+
+	describe( "gitCommitBumpMessage", () => {
+		beforeEach( () => {
+			git.commit = jest.fn( () => Promise.resolve() );
+		} );
+
+		it( "should call `git.commit` with the appropriate argument", () => {
+			state.dependencies = [ {
+				pkg: "over-watch",
+				version: "1.1.1"
+			}, {
+				pkg: "watch-over",
+				version: "2.2.2"
+			} ];
+			state.changeReason = "this is my reason";
+			return run.gitCommitBumpMessage( state ).then( () => {
+				expect( git.commit ).toHaveBeenCalledTimes( 1 );
+				expect( git.commit ).toHaveBeenCalledWith( "Bumped over-watch to 1.1.1, watch-over to 2.2.2: this is my reason" );
+			} );
+		} );
+	} );
+
+	describe( "gitCreateUpstreamBranch", () => {
+		beforeEach( () => {
+			git.createUpstreamBranch = jest.fn( () => Promise.resolve() );
+		} );
+
+		it( "should call `git.createUpstreamBranch` with the appropriate argument", () => {
+			state.branch = "feature-this-is-a-reason";
+			return run.gitCreateUpstreamBranch( state ).then( () => {
+				expect( git.createUpstreamBranch ).toHaveBeenCalledTimes( 1 );
+				expect( git.createUpstreamBranch ).toHaveBeenCalledWith( "feature-this-is-a-reason" );
+			} );
+		} );
+	} );
+
+	describe( "verifyPackagesToPromote", () => {
+		const originalProcessExit = process.exit;
+
+		beforeEach( () => {
+			state.packages = [ "over-watch", "watch-over" ];
+			process.exit = jest.fn( () => {} );
+		} );
+
+		afterEach( () => {
+			process.exit = originalProcessExit;
+		} );
+
+		it( "should resolve when there are packages", () => {
+			util.advise = jest.fn( () => Promise.resolve() );
+			return run.verifyPackagesToPromote( state ).then( repos => {
+				expect( util.advise ).toHaveBeenCalledTimes( 0 );
+				expect( process.exit ).toHaveBeenCalledTimes( 0 );
+			} );
+		} );
+
+		it( "should advise when no packages to promote and exit", () => {
+			util.advise = jest.fn( () => Promise.resolve() );
+			state.packages = [];
+
+			return run.verifyPackagesToPromote( state ).then( () => {
+				expect( util.advise ).toHaveBeenCalledTimes( 1 );
+				expect( util.advise ).toHaveBeenCalledWith( "noPackages" );
+				expect( process.exit ).toHaveBeenCalledTimes( 1 );
+				expect( process.exit ).toHaveBeenCalledWith( 0 );
 			} );
 		} );
 	} );

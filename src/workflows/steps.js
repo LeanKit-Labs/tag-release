@@ -4,6 +4,8 @@ import semver from "semver";
 import chalk from "chalk";
 import logger from "better-console";
 import GitHub from "github-api";
+import sequence from "when/sequence";
+import removeWords from "remove-words";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 
@@ -467,4 +469,156 @@ export function setPromote( state ) {
 
 export function verifyConflictResolution() {
 	return git.checkConflictMarkers();
+}
+
+export function getPackageScope( state ) {
+	if ( state.qa && typeof state.qa === "boolean" ) {
+		state.qa = "@lk";
+	} else if ( state.qa && state.qa.charAt( 0 ) !== "@" ) {
+		state.qa = `@${ state.qa }`;
+	}
+
+	return Promise.resolve();
+}
+
+export function getScopedRepos( state ) {
+	const { configPath, qa: scope } = state;
+	try {
+		let content = {};
+		content = util.readJSONFile( configPath );
+
+		const getScopedDependencies = ( dependencies = {}, packageScope ) =>
+			Object.keys( dependencies ).filter( key => key.includes( packageScope ) );
+
+		let repos = getScopedDependencies( content.devDependencies, scope );
+		repos = [ ...repos, ...getScopedDependencies( content.dependencies, scope ) ];
+		repos = repos.map( key => key.replace( `${ scope }/`, "" ) );
+
+		if ( repos.length === 0 ) {
+			util.advise( "noPackagesInScope" );
+			process.exit( 0 ); // eslint-disable-line no-process-exit
+		}
+
+		return Promise.resolve( repos );
+	} catch ( err ) {
+		util.advise( "updateVersion" );
+	}
+
+	return Promise.resolve();
+}
+
+export function askReposToUpdate( state ) {
+	return getScopedRepos( state ).then( packages => {
+		return util.prompt( [ {
+			type: "checkbox",
+			name: "packagesToPromote",
+			message: "Select the package(s) you wish to update:",
+			choices: packages
+		} ] ).then( ( { packagesToPromote } ) => {
+			state.packages = packagesToPromote;
+			return Promise.resolve();
+		} );
+	} );
+}
+
+export function askVersion( pkg ) {
+	return () => util.prompt( [ {
+		type: "input",
+		name: "version",
+		message: `What version do you want to update ${ pkg } to:`
+	} ] ).then( ( { version } ) => {
+		return Promise.resolve( { pkg, version } );
+	} );
+}
+
+export function askVersions( state ) {
+	const { packages } = state;
+	const prompts = packages.map( pkg => askVersion( pkg ) );
+
+	return sequence( prompts ).then( dependencies => {
+		state.dependencies = dependencies;
+		return Promise.resolve();
+	} );
+}
+
+export function askChangeType( state ) {
+	return util.prompt( [ {
+		type: "list",
+		name: "changeType",
+		message: "What type of change is this work",
+		choices: [ "feature", "defect", "rework" ]
+	} ] ).then( ( { changeType } ) => {
+		state.changeType = changeType;
+		return Promise.resolve();
+	} );
+}
+
+export function askChangeReason( state ) {
+	return util.prompt( [ {
+		type: "input",
+		name: "changeReason",
+		message: "What is the reason for this change"
+	} ] ).then( ( { changeReason } ) => {
+		state.changeReason = changeReason;
+		return Promise.resolve();
+	} );
+}
+
+export function gitCheckoutBranch( state ) {
+	const branch = `${ state.changeType }-${ removeWords( state.changeReason ).join( "-" ) }`;
+	return git.checkoutBranch( branch );
+}
+
+export function updateDependencies( state ) {
+	const { dependencies, configPath, qa: scope } = state;
+	let content = {};
+	try {
+		content = util.readJSONFile( configPath );
+
+		dependencies.forEach( item => {
+			const key = `${ scope }/${ item.pkg }`;
+			if ( content.devDependencies && key in content.devDependencies ) {
+				content.devDependencies[ key ] = item.version;
+			}
+			if ( content.dependencies && key in content.dependencies ) {
+				content.dependencies[ key ] = item.version;
+			}
+		} );
+
+		util.writeJSONFile( configPath, content );
+	} catch ( err ) {
+		util.advise( "updateVersion" );
+	}
+
+	return Promise.resolve();
+}
+
+export function gitCommitBumpMessage( state ) {
+	const { dependencies, changeReason } = state;
+	const arr = [];
+	dependencies.forEach( item => {
+		arr.push( `${ item.pkg } to ${ item.version }` );
+	} );
+
+	const comment = `Bumped ${ arr.join( ", " ) }: ${ changeReason }`;
+
+	return git.commit( comment );
+}
+
+export function gitCreateUpstreamBranch( state ) {
+	return git.createUpstreamBranch( state.branch );
+}
+
+export function verifyPackagesToPromote( state ) {
+	const { packages } = state;
+	if ( packages && packages.length === 0 ) {
+		util.advise( "noPackages" );
+		process.exit( 0 ); // eslint-disable-line no-process-exit
+	}
+
+	return Promise.resolve();
+}
+
+export function promptQANextReleaseUpdate( { log } ) {
+	logger.log( `${ chalk.yellow.underline( "In a follow-up release you will be able to select the versions from a list, but until then please manually enter them" ) }` );
 }

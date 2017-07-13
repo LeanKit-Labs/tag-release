@@ -40,6 +40,7 @@ Options:
   --reset                        Reset repo to upstream master/develop branches
 	--promote [tag]                Promotes specified pre-release tag to an offical release
 	--continue                     Continues the rebase process of a tag promotion
+  --qa [scope]                   Create initial upstream branch for lightning
 
 Examples:
 
@@ -58,6 +59,8 @@ Examples:
    $ tag-release --promote
    $ tag-release --promote v1.1.1-my-tagged-version.0
    $ tag-release --continue
+   $ tag-release --qa
+   $ tag-release --qa aoe
 ```
 
 ### Pre-releases

@@ -22,12 +22,17 @@ jest.mock( "../src/workflows/continue", () => {
 	return "continue";
 } );
 
+jest.mock( "../src/workflows/qa", () => {
+	return "qa";
+} );
+
 import sequence from "when/sequence";
 import defaultWorkflow from "../src/workflows/default";
 import prereleaseWorkflow from "../src/workflows/pre-release";
 import resetWorkflow from "../src/workflows/reset";
 import promoteWorkflow from "../src/workflows/promote";
 import continueWorkflow from "../src/workflows/continue";
+import qaWorkflow from "../src/workflows/qa";
 import tagRelease from "../src/tag-release";
 
 describe( "tag-release", () => {
@@ -70,5 +75,11 @@ describe( "tag-release", () => {
 		tagRelease( { continue: true } );
 		expect( sequence ).toHaveBeenCalledTimes( 1 );
 		expect( sequence ).toHaveBeenCalledWith( continueWorkflow, { continue: true } );
+	} );
+
+	it( "should run the qa workflow when when the CLI flag is passed", () => {
+		tagRelease( { qa: true } );
+		expect( sequence ).toHaveBeenCalledTimes( 1 );
+		expect( sequence ).toHaveBeenCalledWith( qaWorkflow, { qa: true } );
 	} );
 } );
