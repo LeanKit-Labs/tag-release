@@ -36,7 +36,7 @@ commander
 	.option( "--reset", "Reset repo to upstream master/develop branches." )
 	.option( "--promote [tag]", "Promotes specified pre-release tag to an offical release." )
 	.option( "--continue", "Continues the rebase process of a tag promotion." )
-	.option( "--qa [namespace]", "Create initial upstream branch for lightning." );
+	.option( "--qa [scope]", "Create initial upstream branch for lightning." );
 
 commander.on( "--help", () => {
 	console.log( "" );

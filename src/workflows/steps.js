@@ -482,19 +482,29 @@ export function getPackageScope( state ) {
 }
 
 export function getScopedRepos( state ) {
-	const { configPath } = state;
-	let content = {};
+	const { configPath, qa: scope } = state;
 	try {
+		let content = {};
 		content = util.readJSONFile( configPath );
+
+		const getScopedDependencies = ( dependencies = {}, packageScope ) =>
+			Object.keys( dependencies ).filter( key => key.includes( packageScope ) );
+
+		let repos = getScopedDependencies( content.devDependencies, scope );
+		repos = [ ...repos, ...getScopedDependencies( content.dependencies, scope ) ];
+		repos = repos.map( key => key.replace( `${ scope }/`, "" ) );
+
+		if ( repos.length === 0 ) {
+			util.advise( "noPackagesInScope" );
+			process.exit( 0 ); // eslint-disable-line no-process-exit
+		}
+
+		return Promise.resolve( repos );
 	} catch ( err ) {
 		util.advise( "updateVersion" );
 	}
 
-	let repos = Object.keys( content.devDependencies ).filter( key => key.includes( state.qa ) );
-	repos = repos.concat( Object.keys( content.dependencies ).filter( key => key.includes( state.qa ) ) );
-	repos = repos.map( key => key.slice( ( state.qa.length + 1 ), key.length ) );
-
-	return Promise.resolve( repos );
+	return Promise.resolve();
 }
 
 export function askReposToUpdate( state ) {
@@ -522,7 +532,8 @@ export function askVersion( pkg ) {
 }
 
 export function askVersions( state ) {
-	const prompts = state.packages.map( pkg => askVersion( pkg ) );
+	const { packages } = state;
+	const prompts = packages.map( pkg => askVersion( pkg ) );
 
 	return sequence( prompts ).then( dependencies => {
 		state.dependencies = dependencies;
@@ -559,40 +570,55 @@ export function gitCheckoutBranch( state ) {
 }
 
 export function updateDependencies( state ) {
-	const { dependencies, configPath } = state;
+	const { dependencies, configPath, qa: scope } = state;
 	let content = {};
 	try {
 		content = util.readJSONFile( configPath );
+
+		dependencies.forEach( item => {
+			const key = `${ scope }/${ item.pkg }`;
+			if ( content.devDependencies && key in content.devDependencies ) {
+				content.devDependencies[ key ] = item.version;
+			}
+			if ( content.dependencies && key in content.dependencies ) {
+				content.dependencies[ key ] = item.version;
+			}
+		} );
+
+		util.writeJSONFile( configPath, content );
 	} catch ( err ) {
 		util.advise( "updateVersion" );
 	}
-
-	dependencies.forEach( item => {
-		const key = `${ state.qa }/${ item.pkg }`;
-		if ( key in content.devDependencies ) {
-			content.devDependencies[ key ] = item.version;
-		}
-		if ( key in content.dependencies ) {
-			content.dependencies[ key ] = item.version;
-		}
-	} );
-
-	util.writeJSONFile( configPath, content );
 
 	return Promise.resolve();
 }
 
 export function gitCommitBumpMessage( state ) {
+	const { dependencies, changeReason } = state;
 	const arr = [];
-	state.dependencies.forEach( item => {
+	dependencies.forEach( item => {
 		arr.push( `${ item.pkg } to ${ item.version }` );
 	} );
 
-	const comment = `Bumped ${ arr.join( ", " ) }: ${ state.changeReason }`;
+	const comment = `Bumped ${ arr.join( ", " ) }: ${ changeReason }`;
 
 	return git.commit( comment );
 }
 
 export function gitCreateUpstreamBranch( state ) {
 	return git.createUpstreamBranch( state.branch );
+}
+
+export function verifyPackagesToPromote( state ) {
+	const { packages } = state;
+	if ( packages && packages.length === 0 ) {
+		util.advise( "noPackages" );
+		process.exit( 0 ); // eslint-disable-line no-process-exit
+	}
+
+	return Promise.resolve();
+}
+
+export function promptQANextReleaseUpdate( { log } ) {
+	logger.log( `${ chalk.yellow.underline( "In a follow-up release you will be able to select the versions from a list, but until then please manually enter them" ) }` );
 }

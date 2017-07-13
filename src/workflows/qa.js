@@ -4,6 +4,8 @@ export default [
 	run.gitFetchUpstream,
 	run.getPackageScope,
 	run.askReposToUpdate,
+	run.verifyPackagesToPromote,
+	run.promptQANextReleaseUpdate,
 	run.askVersions,
 	run.askChangeType,
 	run.askChangeReason,

@@ -60,7 +60,9 @@ To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue' to continue the tag promotion.`,
 	gitCheckConflictMarkers: `We detected the presence of conflict markers: '<<<<<<<', '=======', and/or '>>>>>>>'
 
-Please fix all conflict markers with the current conflict before running 'tag-release --continue'.`
+Please fix all conflict markers with the current conflict before running 'tag-release --continue'.`,
+	noPackagesInScope: `It appears there are no packages under the current scope. Please verify the scope or that you are running --qa from a valid repository.`,
+	noPackages: `It appears that there are no packages to promote. Please make a selection using the spacebar and finalizing your selection with enter.`
 };
 
 const MAXIMUM_WIDTH = 50;

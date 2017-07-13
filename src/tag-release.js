@@ -1,3 +1,5 @@
+/* eslint-disable complexity */
+
 import sequence from "when/sequence";
 import defaultWorkflow from "./workflows/default";
 import prereleaseWorkflow from "./workflows/pre-release";
