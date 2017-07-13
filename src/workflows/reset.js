@@ -11,5 +11,6 @@ export default [
 	run.gitRemovePromotionBranches,
 	run.verifyDevelopBranch,
 	run.gitCheckoutDevelop,
-	run.gitResetDevelop
+	run.gitResetDevelop,
+	run.cleanUpTmpFiles
 ];

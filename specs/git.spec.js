@@ -15,6 +15,7 @@ describe( "git", () => {
 		beforeEach( () => {
 			util.advise = jest.fn();
 			util.writeFile = jest.fn();
+			util.deleteFile = jest.fn();
 		} );
 
 		it( "should run `git` with the given args", () => {
@@ -111,8 +112,8 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "merge upstream/test-branch --ff-only" }
 			},
 			rebase: {
-				args: "upstream/test-branch",
-				expectedRunCommandArgs: { args: "rebase upstream/test-branch" }
+				args: { branch: "upstream/test-branch" },
+				expectedRunCommandArgs: { args: "rebase upstream/test-branch", showError: true }
 			},
 			mergeMaster: {
 				expectedRunCommandArgs: { args: "merge master --ff-only", failHelpKey: "gitMergeMaster" }
@@ -147,6 +148,10 @@ describe( "git", () => {
 			commit: {
 				args: "This is a test commit",
 				expectedRunCommandArgs: { args: `commit -m "This is a test commit"` }
+			},
+			amend: {
+				args: "This is a test comment",
+				expectedRunCommandArgs: { args: `commit --amend -m "This is a test comment"` }
 			},
 			tag: {
 				args: "v1.0.0",
@@ -202,7 +207,7 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: `log upstream/master..HEAD --pretty=format:"%h %s" --no-merges` }
 			},
 			rebaseUpstreamMaster: {
-				expectedRunCommandArgs: { args: "rebase upstream/master" }
+				expectedRunCommandArgs: { args: "rebase upstream/master", showError: true }
 			},
 			getBranchList: {
 				expectedRunCommandArgs: { args: "branch", logMessage: `Getting branch list` }
@@ -222,7 +227,21 @@ describe( "git", () => {
 			},
 			checkoutBranch: {
 				args: "feature-branch",
-				expectedRunCommandArgs: { args: "checkout -b feature-branch upstream/develop" }
+				expectedRunCommandArgs: { args: `checkout feature-branch` }
+			},
+			rebaseUpstreamBranch: {
+				args: "feature-branch",
+				expectedRunCommandArgs: { args: `rebase upstream/feature-branch`, showError: true }
+			},
+			rebaseUpstreamDevelop: {
+				expectedRunCommandArgs: { args: `rebase upstream/develop`, failHelpKey: `gitRebaseInteractive`, showError: false }
+			},
+			getLatestCommitMessage: {
+				expectedRunCommandArgs: { args: `log --format=%B -n 1` }
+			},
+			checkoutAndCreateBranch: {
+				args: "feature-branch",
+				expectedRunCommandArgs: { args: `checkout -b feature-branch upstream/develop` }
 			}
 		};
 
@@ -309,10 +328,17 @@ describe( "git", () => {
 				} );
 			} );
 
-			it( `should call "checkoutBranch" with provided tracking`, () => {
-				return git.checkoutBranch( "feature-branch", "tracking-branch" ).then( () => {
+			it( `should call "checkoutAndCreateBranch" with provided tracking`, () => {
+				return git.checkoutAndCreateBranch( "feature-branch", "tracking-branch" ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
 					expect( git.runCommand ).toHaveBeenCalledWith( { args: "checkout -b feature-branch upstream/tracking-branch" } );
+				} );
+			} );
+
+			it( `should call "git.runCommand" with provided failHelpKey when passed to "git.rebase"`, () => {
+				return git.rebase( { branch: "feature-branch", failHelpKey: "test-key" } ).then( () => {
+					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "rebase feature-branch", failHelpKey: "test-key", showError: true } );
 				} );
 			} );
 
@@ -391,6 +417,24 @@ pick this is commit 2
 				} );
 				afterEach( () => {
 					writeSpy.mockRestore();
+				} );
+			} );
+
+			describe( "cleanUp", () => {
+				let joinSpy, deleteSpy;
+				beforeEach( () => {
+					joinSpy = jest.spyOn( path, "join" ).mockImplementation( () => "my_path/" );
+					deleteSpy = jest.spyOn( util, "deleteFile" ).mockImplementation( () => "" );
+				} );
+				it( "should call 'git.runCommand' with appropriate arguments", () => {
+					return git.cleanUp().then( () => {
+						expect( deleteSpy ).toHaveBeenCalledTimes( 1 );
+						expect( deleteSpy ).toHaveBeenCalledWith( `my_path/` );
+					} );
+				} );
+				afterEach( () => {
+					joinSpy.mockRestore();
+					deleteSpy.mockRestore();
 				} );
 			} );
 		} );
