@@ -37,10 +37,16 @@ export default {
 		return fs.writeFileSync( path, content, "utf-8" );
 	},
 	writeJSONFile( path, content ) {
-		const file = fs.readFileSync( path, "utf-8" );
-		const indent = detectIndent( file ).indent || "  ";
+		let indent = "  ";
+		if ( fs.existsSync( path ) ) {
+			const file = fs.readFileSync( path, "utf-8" );
+			indent = detectIndent( file ).indent || "  ";
+		}
 		content = `${ JSON.stringify( content, null, indent ) }\n`;
 		return this.writeFile( path, content );
+	},
+	deleteFile( path ) {
+		return fs.existsSync( path ) ? fs.unlink( path ) : Promise.resolve();
 	},
 	exec( command ) {
 		return new Promise( ( resolve, reject ) =>
@@ -262,10 +268,15 @@ export default {
 		} );
 	},
 	advise( text, { exit = true } = {} ) {
-		logger.log( cowsay.say( {
-			text: advise( text ),
-			f: require( "path" ).resolve( __dirname, "clippy.cow" ) // eslint-disable-line
-		} ) );
+		try {
+			logger.log( cowsay.say( {
+				text: advise( text ),
+				f: require( "path" ).resolve( __dirname, "clippy.cow" ) // eslint-disable-line
+			} ) );
+		} catch ( error ) {
+			console.log( error ); // eslint-disable-line no-console
+			process.exit( 0 ); // eslint-disable-line no-process-exit
+		}
 
 		if ( exit ) {
 			process.exit( 0 ); // eslint-disable-line no-process-exit

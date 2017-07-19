@@ -3,7 +3,7 @@
   "sourceMaps": "inline",
   "env": {
     "test": {
-      "plugins": [ "babel-plugin-rewire" ]
+      "plugins": [ "captains-log" ]
     }
   }
 }

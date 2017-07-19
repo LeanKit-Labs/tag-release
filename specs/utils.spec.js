@@ -18,7 +18,9 @@ jest.mock( "fs", () => ( {
 	writeFileSync: jest.fn(),
 	unlinkSync: jest.fn(),
 	ReadStream: jest.fn(),
-	WriteStream: jest.fn()
+	WriteStream: jest.fn(),
+	existsSync: jest.fn().mockReturnValue( true ),
+	unlink: jest.fn()
 } ) );
 
 jest.mock( "inquirer", () => ( {
@@ -191,6 +193,10 @@ describe( "utils", () => {
 			util.writeFile = jest.fn();
 		} );
 
+		afterEach( () => {
+			fs.existsSync = jest.fn().mockReturnValue( true );
+		} );
+
 		it( "should read from the given file", () => {
 			util.writeJSONFile( file, contents );
 			expect( fs.readFileSync ).toHaveBeenCalledTimes( 1 );
@@ -220,6 +226,30 @@ describe( "utils", () => {
 			util.writeJSONFile( file, contents );
 			expect( JSON.stringify ).toHaveBeenCalledTimes( 1 );
 			expect( JSON.stringify ).toHaveBeenCalledWith( { one: "1", two: "2", three: "3" }, null, "  " );
+		} );
+
+		it( "should use default indent of 2 spaces when JSON files doesn't exist to read from", () => {
+			JSON.stringify = jest.fn();
+			fs.existsSync = jest.fn().mockReturnValue( false );
+
+			util.writeJSONFile( file, contents );
+			expect( JSON.stringify ).toHaveBeenCalledTimes( 1 );
+			expect( JSON.stringify ).toHaveBeenCalledWith( { one: "1", two: "2", three: "3" }, null, "  " );
+		} );
+	} );
+
+	describe( "deleteFile", () => {
+		const path = "./some_unknown_path/.test.txt";
+		it( "should delete given file", () => {
+			util.deleteFile( path );
+			expect( fs.unlink ).toHaveBeenCalledTimes( 1 );
+			expect( fs.unlink ).toHaveBeenCalledWith( path );
+		} );
+
+		it( "should return if given file doesn't exist", () => {
+			fs.existsSync = jest.fn().mockReturnValue( false );
+			util.deleteFile( path );
+			expect( fs.unlink ).toHaveBeenCalledTimes( 0 );
 		} );
 	} );
 
@@ -863,6 +893,16 @@ describe( "utils", () => {
 		it( "should call `process.exit` by default when no exit flag is passed", () => {
 			util.advise( "hello world" );
 			expect( process.exit ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( "should call `process.exit` when cowsay fails", () => {
+			cowsay.say = jest.fn( () => {
+				throw new Error( "nope" );
+			} );
+			console.log = jest.fn( () => {} ); // eslint-disable-line no-console
+			util.advise( "hello world", { exit: false } );
+			expect( process.exit ).toHaveBeenCalledTimes( 1 );
+			expect( console.log ).toHaveBeenCalledTimes( 1 ); // eslint-disable-line no-console
 		} );
 	} );
 } );
