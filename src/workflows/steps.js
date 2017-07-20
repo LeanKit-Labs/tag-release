@@ -536,20 +536,25 @@ export function askReposToUpdate( state ) {
 	} );
 }
 
-export function askVersion( dependency ) {
+export function askVersion( state, dependency ) {
 	const { pkg, version } = dependency;
-	return () => util.prompt( [ {
-		type: "input",
-		name: "vers",
-		message: `Update ${ chalk.yellow( pkg ) } from ${ chalk.yellow( version ) } to:`
-	} ] ).then( ( { vers } ) => {
-		return Promise.resolve( { pkg, version: vers } );
-	} );
+	return () => {
+		return getTagsFromRepo( state, pkg ).then( tags => {
+			return util.prompt( [ {
+				type: "list",
+				name: "tag",
+				message: `Update ${ chalk.yellow( pkg ) } from ${ chalk.yellow( version ) } to:`,
+				choices: tags
+			} ] ).then( ( { tag } ) => {
+				return Promise.resolve( { pkg, version: tag } );
+			} );
+		} );
+	};
 }
 
 export function askVersions( state ) {
 	const { dependencies } = state;
-	const prompts = dependencies.map( dependency => askVersion( dependency ) );
+	const prompts = dependencies.map( dependency => askVersion( state, dependency ) );
 
 	return sequence( prompts ).then( deps => {
 		state.dependencies = deps;
@@ -649,10 +654,6 @@ export function verifyPackagesToPromote( state ) {
 	return Promise.resolve();
 }
 
-export function promptQANextReleaseUpdate( { log } ) {
-	logger.log( `${ chalk.yellow.underline( "In a follow-up release you will be able to select the versions from a list, but until then please manually enter them" ) }` );
-}
-
 export function gitRebaseUpstreamBranch( state ) {
 	const { branch } = state;
 	return git.rebaseUpstreamBranch( branch );
@@ -664,7 +665,7 @@ export function gitRebaseUpstreamDevelop() {
 
 export function getReposFromBumpCommit( state ) {
 	return git.getLatestCommitMessage().then( msg => {
-		const [ , versions, reason ] = msg.match( /Bumped (.*): (.*)/ ) || [];
+		const [ , versions = "", reason = "" ] = msg.match( /Bumped (.*): (.*)/ ) || [];
 		const repoVersion = /([\w-]+) to ([\d.]+)/;
 		const results = versions.split( "," ).reduce( ( memo, bump ) => {
 			const [ , repo, version ] = repoVersion.exec( bump ) || [];
@@ -775,4 +776,18 @@ export function promptBranchName( state ) {
 
 export function gitCheckoutBranch( state ) {
 	return git.checkoutBranch( state.branch );
+}
+
+export function getTagsFromRepo( state, repositoryName ) {
+	const { github: { owner: repositoryOwner }, token } = state;
+	const github = new GitHub( { token } );
+
+	const repository = github.getRepo( repositoryOwner, repositoryName );
+
+	return repository.listTags().then( response => {
+		const tags = response.data.map( item => {
+			return item.name.slice( 1, item.name.length ); // slice off the 'v' that is returned in the tag
+		} );
+		return tags;
+	} ).catch( err => logger.log( chalk.red( err ) ) );
 }
