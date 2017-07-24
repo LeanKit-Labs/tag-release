@@ -1625,17 +1625,55 @@ describe( "shared workflow steps", () => {
 	} );
 
 	describe( "askVersion", () => {
+		let getRepo = jest.fn();
+		let listTags = jest.fn();
+
+		const mockListTags = ( shouldResolve = true ) => {
+			if ( shouldResolve ) {
+				listTags = jest.fn( () => Promise.resolve( {
+					data: [ {
+						name: "v1.1.1"
+					}, {
+						name: "v2.0.0-feature.1"
+					}, {
+						name: "v3.0.0-blah.0"
+					} ]
+				} ) );
+
+				return listTags;
+			}
+
+			listTags = jest.fn( () => Promise.reject( "listTags fail" ) );
+
+			return listTags;
+		};
+
+		const mockGitHub = ( listTagsShouldResolve = true ) => {
+			listTags = mockListTags( listTagsShouldResolve );
+			getRepo = jest.fn( () => ( {
+				listTags
+			} ) );
+
+			return jest.fn( () => ( { getRepo } ) );
+		};
+
 		beforeEach( () => {
+			state = {
+				github: { owner: "someone-awesome", name: "something-awesome" },
+				token: "z8259r"
+			};
 			util.prompt = jest.fn( () => Promise.resolve( { pkg: "over-watch", version: "1.1.1" } ) );
+			GitHub.mockImplementation( mockGitHub() );
 		} );
 
 		it( "should prompt the user for package version", () => {
-			return run.askVersion( { pkg: "over-watch", version: "1.1.1" } )().then( () => {
+			return run.askVersion( state, { pkg: "over-watch", version: "1.1.1" } )().then( () => {
 				expect( util.prompt ).toHaveBeenCalledTimes( 1 );
 				expect( util.prompt ).toHaveBeenCalledWith( [ {
-					type: "input",
-					name: "vers",
-					message: `Update over-watch from 1.1.1 to:`
+					type: "list",
+					name: "tag",
+					message: `Update over-watch from 1.1.1 to:`,
+					choices: [ "1.1.1", "2.0.0-feature.1", "3.0.0-blah.0" ]
 				} ] );
 			} );
 		} );
@@ -1948,6 +1986,25 @@ describe( "shared workflow steps", () => {
 				expect( state.changeReason ).toEqual( "Users needed a change" );
 			} );
 		} );
+
+		it( "should use empty array and string when no matches are found in commit message", () => {
+			git.getLatestCommitMessage = jest.fn( () => {
+				return Promise.resolve( "Some random commit message" );
+			} );
+			return run.getReposFromBumpCommit( state ).then( () => {
+				expect( state ).toHaveProperty( "packages" );
+				expect( state ).toHaveProperty( "changeReason" );
+				expect( state.packages ).toEqual( [] );
+				expect( state.changeReason ).toEqual( "" );
+			} );
+		} );
+
+		it( "should persist the `packages` on the state", () => {
+			return run.getReposFromBumpCommit( state ).then( () => {
+				expect( state ).toHaveProperty( "packages" );
+				expect( state.packages ).toEqual( [ "web-board-slice", "web-card-slice", "web-common-ui" ] );
+			} );
+		} );
 	} );
 
 	describe( "gitAmendCommitBumpMessage", () => {
@@ -2230,6 +2287,79 @@ describe( "shared workflow steps", () => {
 			return run.promptBranchName( state ).then( () => {
 				expect( state ).toHaveProperty( "branch" );
 				expect( state.branch ).toEqual( "feature-magic" );
+			} );
+		} );
+	} );
+
+	describe( "getTagsFromRepo", () => {
+		let getRepo = jest.fn();
+		let listTags = jest.fn();
+
+		const mockListTags = ( shouldResolve = true ) => {
+			if ( shouldResolve ) {
+				listTags = jest.fn( () => Promise.resolve( {
+					data: [ {
+						name: "v1.1.1"
+					}, {
+						name: "v2.0.0-feature.1"
+					}, {
+						name: "v3.0.0-blah.0"
+					} ]
+				} ) );
+
+				return listTags;
+			}
+
+			listTags = jest.fn( () => Promise.reject( "listTags fail" ) );
+
+			return listTags;
+		};
+
+		const mockGitHub = ( listTagsShouldResolve = true ) => {
+			listTags = mockListTags( listTagsShouldResolve );
+			getRepo = jest.fn( () => ( {
+				listTags
+			} ) );
+
+			return jest.fn( () => ( { getRepo } ) );
+		};
+
+		beforeEach( () => {
+			state = {
+				github: { owner: "someone-awesome", name: "something-awesome" },
+				token: "z8259r"
+			};
+			GitHub.mockImplementation( mockGitHub() );
+		} );
+
+		it( "should create a new GitHub client instance given a valid auth token", () => {
+			return run.getTagsFromRepo( state, "my-secret-repo" ).then( () => {
+				expect( GitHub ).toHaveBeenCalledTimes( 1 );
+				expect( GitHub ).toHaveBeenCalledWith( { token: "z8259r" } );
+			} );
+		} );
+
+		it( "should create an instance of a repository object with the previously fetched repository owner and passed in name", () => {
+			return run.getTagsFromRepo( state, "my-secret-repo" ).then( () => {
+				expect( getRepo ).toHaveBeenCalledTimes( 1 );
+				expect( getRepo ).toHaveBeenCalledWith( "someone-awesome", "my-secret-repo" );
+			} );
+		} );
+
+		it( "should call the GitHub API to get a list of tags from the repository", () => {
+			return run.getTagsFromRepo( state, "my-secret-repo" ).then( result => {
+				expect( listTags ).toHaveBeenCalledTimes( 1 );
+				expect( result ).toEqual( [ "1.1.1", "2.0.0-feature.1", "3.0.0-blah.0" ] );
+			} );
+		} );
+
+		it( "should log an error to the console when the call to the API to get a list of tags fails", () => {
+			logger.log = jest.fn();
+			GitHub.mockImplementation( mockGitHub( false ) );
+
+			return run.getTagsFromRepo( state ).then( () => {
+				expect( logger.log ).toHaveBeenCalledTimes( 1 );
+				expect( logger.log ).toHaveBeenCalledWith( "listTags fail" );
 			} );
 		} );
 	} );
