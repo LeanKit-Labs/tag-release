@@ -57,10 +57,19 @@ tag-release needs an upstream remote in order to work correctly. You can double 
 To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`,
 	gitRebaseInteractive: `It looks like there was some conflict(s) while trying to rebase with upstream/master.
 
-Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue' to continue the tag promotion.`,
+Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue'. Tag-release
+will handle adding the conflicting files and continuing with the rebase.`,
 	gitCheckConflictMarkers: `We detected the presence of conflict markers: '<<<<<<<', '=======', and/or '>>>>>>>'
 
-Please fix all conflict markers with the current conflict before running 'tag-release --continue'.`
+Please fix all conflict markers with the current conflict before running 'tag-release --continue'.`,
+	noPackagesInScope: `It appears there are no packages under the current scope. Please verify the scope or that you are running 'tag-release --qa' from a valid repository.`,
+	noPackages: `It appears that there are no packages to promote. Please make a selection using the spacebar and finalizing your selection with enter.`,
+	saveState: `It appears something went wrong attempting to save state.
+
+You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
+	gitMergeUpstreamBranch: `It appears that when trying to merge with the upstream branch something went wrong.
+
+Either you don't have an upstream with the same name as your local, or we weren't able to 'merge --ff-only' on your local branch with the upstream.`
 };
 
 const MAXIMUM_WIDTH = 50;

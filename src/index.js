@@ -35,7 +35,9 @@ commander
 	.option( "-i, --identifier <identifier>", "Identifier used for pre-release" )
 	.option( "--reset", "Reset repo to upstream master/develop branches." )
 	.option( "--promote [tag]", "Promotes specified pre-release tag to an offical release." )
-	.option( "--continue", "Continues the rebase process of a tag promotion." );
+	.option( "--continue", "Continues the rebase process of a tag promotion." )
+	.option( "--qa [scope]", "Create initial upstream branch for lightning." )
+	.option( "--pr [scope]", "Update lightning branch and create a PR to develop." );
 
 commander.on( "--help", () => {
 	console.log( "" );
@@ -53,6 +55,10 @@ commander.on( "--help", () => {
 	console.log( "    $ tag-release --promote" );
 	console.log( "    $ tag-release --promote v1.1.1-my-tagged-version.0" );
 	console.log( "    $ tag-release --continue" );
+	console.log( "    $ tag-release --qa" );
+	console.log( "    $ tag-release --qa aoe" );
+	console.log( "    $ tag-release --pr" );
+	console.log( "    $ tag-release --pr aoe" );
 	console.log( "" );
 } );
 

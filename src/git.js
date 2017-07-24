@@ -5,7 +5,7 @@ import semver from "semver";
 const DEFAULT_PRERELEASE_TAG_LIST_LIMIT = 10;
 
 const git = {
-	runCommand( { args, showOutput = true, logMessage, failHelpKey = "gitCommandFailed", exitOnFail = false, showError = true, fullCommand = false } ) {
+	runCommand( { args, showOutput = true, logMessage, failHelpKey = "gitCommandFailed", exitOnFail = true, showError = true, fullCommand = false } ) {
 		const command = fullCommand ? `${ args }` : `git ${ args }`;
 
 		if ( !showOutput ) {
@@ -57,14 +57,18 @@ const git = {
 		return git.checkout( "develop", "gitCheckoutDevelop" );
 	},
 
+	checkoutBranch( branch ) {
+		return git.checkout( branch );
+	},
+
 	merge( branch, fastForwardOnly = true, failHelpKey ) {
 		const args = `merge ${ branch }${ fastForwardOnly ? " --ff-only" : " --no-ff" }`;
 		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey } : { args } );
 	},
 
-	rebase( branch ) {
+	rebase( { branch, failHelpKey, showError = true } ) {
 		const args = `rebase ${ branch }`;
-		return git.runCommand( { args } );
+		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey, showError } : { args, showError } );
 	},
 
 	mergeMaster() {
@@ -142,6 +146,11 @@ const git = {
 		return git.runCommand( { args } );
 	},
 
+	amend( comment ) {
+		const args = `commit --amend -m "${ comment }"`;
+		return git.runCommand( { args } );
+	},
+
 	tag( tag, annotation ) {
 		const args = `tag -a ${ tag } -m ${ annotation || tag }`;
 		return git.runCommand( { args } );
@@ -190,9 +199,14 @@ const git = {
 		} );
 	},
 
-	createLocalBranch( branch ) {
-		const args = `branch ${ branch } upstream/${ branch }`;
+	createLocalBranch( branch, tracking = branch ) {
+		const args = `branch ${ branch } upstream/${ tracking }`;
 		return git.runCommand( { args, logMessage: `Creating local branch "${ branch }"` } );
+	},
+
+	createUpstreamBranch( branch ) {
+		const args = `push upstream ${ branch }`;
+		return git.runCommand( { args, logMessage: `Creating upstream branch "${ branch }"` } );
 	},
 
 	resetBranch( branch ) {
@@ -231,7 +245,7 @@ const git = {
 	},
 
 	rebaseUpstreamMaster() {
-		return git.rebase( "upstream/master" );
+		return git.rebase( { branch: "upstream/master" } );
 	},
 
 	getBranchList() {
@@ -269,6 +283,30 @@ const git = {
 	checkConflictMarkers() {
 		const args = `diff --check`;
 		return git.runCommand( { args, logMessage: "Verifying conflict resolution", failHelpKey: "gitCheckConflictMarkers", showError: false } );
+	},
+
+	checkoutAndCreateBranch( branch, tracking = "develop" ) {
+		const args = `checkout -b ${ branch } upstream/${ tracking }`;
+		return git.runCommand( { args } );
+	},
+
+	rebaseUpstreamBranch( branch ) {
+		return git.rebase( { branch: `upstream/${ branch }` } );
+	},
+
+	rebaseUpstreamDevelop() {
+		return git.rebase( { branch: "upstream/develop", failHelpKey: "gitRebaseInteractive", showError: false } );
+	},
+
+	getLatestCommitMessage() {
+		const args = `log --format=%B -n 1`;
+		return git.runCommand( { args } );
+	},
+
+	cleanUp() {
+		util.deleteFile( path.join( __dirname, ".commits-to-rebase.txt" ) );
+
+		return Promise.resolve();
 	}
 
 };

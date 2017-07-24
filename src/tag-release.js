@@ -1,13 +1,26 @@
+/* eslint-disable complexity */
+
 import sequence from "when/sequence";
 import defaultWorkflow from "./workflows/default";
 import prereleaseWorkflow from "./workflows/pre-release";
 import resetWorkflow from "./workflows/reset";
-import promoteWorkflow from "./workflows/promote";
+import promoteWorkflow, { keepTheBallRolling as promoteContinue } from "./workflows/promote";
 import continueWorkflow from "./workflows/continue";
+import qaWorkflow from "./workflows/qa";
+import prWorkflow, { keepTheBallRolling as prContinue } from "./workflows/pr";
 
 export default state => {
-	let workflow = defaultWorkflow;
+	if ( state.continue ) {
+		return sequence( continueWorkflow, state ).then( () => {
+			if ( state.branch.includes( "promote-release" ) ) {
+				return sequence( promoteContinue, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
+			}
 
+			return sequence( prContinue, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
+		} );
+	}
+
+	let workflow = defaultWorkflow;
 	if ( state.prerelease ) {
 		workflow = prereleaseWorkflow;
 	}
@@ -20,9 +33,13 @@ export default state => {
 		workflow = promoteWorkflow;
 	}
 
-	if ( state.continue ) {
-		workflow = continueWorkflow;
+	if ( state.qa ) {
+		workflow = qaWorkflow;
 	}
 
-	sequence( workflow, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
+	if ( state.pr ) {
+		workflow = prWorkflow;
+	}
+
+	return sequence( workflow, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
 };

@@ -32,5 +32,35 @@ export default [
 	run.gitPushUpstreamDevelop,
 	run.gitPushOriginMaster,
 	run.githubUpstream,
-	run.githubRelease
+	run.githubRelease,
+	run.cleanUpTmpFiles
+];
+
+export const keepTheBallRolling = [
+	run.setPromote,
+	run.checkHasDevelopBranch,
+	run.gitCheckoutMaster,
+	run.gitMergeUpstreamMaster,
+	run.gitMergePromotionBranch,
+	run.getCurrentBranchVersion,
+	run.gitMergeUpstreamDevelop,
+	run.gitShortLog,
+	run.previewLog,
+	run.askSemverJump,
+	run.updateLog,
+	run.updateVersion,
+	run.updateChangelog,
+	run.gitDiff,
+	run.gitAdd,
+	run.gitCommit,
+	run.gitTag,
+	run.gitPushUpstreamMaster,
+	run.npmPublish,
+	run.gitCheckoutDevelop,
+	run.gitMergeMaster,
+	run.gitPushUpstreamDevelop,
+	run.gitPushOriginMaster,
+	run.githubUpstream,
+	run.githubRelease,
+	run.cleanUpTmpFiles
 ];
