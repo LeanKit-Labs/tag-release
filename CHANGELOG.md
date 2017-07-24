@@ -1,5 +1,10 @@
 ## 5.x
 
+### 5.2.0
+
+* Added --pr feature to update lightning-ui and create a PR to develop for change
+* Added --qa feature to create intial upstream branch for lightning
+
 ### 5.1.1
 
 * Updated README.md for --promote feature and fixed --version command
