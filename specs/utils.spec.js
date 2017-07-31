@@ -37,7 +37,7 @@ jest.mock( "detect-indent", () => {
 
 jest.mock( "request", () => ( {
 	post: jest.fn( ( arg, cb ) => {
-		cb( null, [ {
+		cb( null, {
 			statusCode: 201,
 			headers: {
 				"x-github-otp": "required;"
@@ -46,7 +46,7 @@ jest.mock( "request", () => ( {
 				token: "1234567890",
 				message: "it worked"
 			}
-		} ], {
+		}, {
 			token: "1234567890",
 			message: "it worked"
 		} );
@@ -582,9 +582,9 @@ describe( "utils", () => {
 
 		it( "should call `githubUnauthorized` if the response statusCode is 401", () => {
 			request.post = jest.fn( ( arg, cb ) => {
-				cb( null, [ {
+				cb( null, {
 					statusCode: 401
-				} ] );
+				} );
 			} );
 
 			return util.createGitHubAuthToken( "username", "password" ).then( () => {
@@ -594,11 +594,11 @@ describe( "utils", () => {
 
 		it( "should log a message and errors for any other response statusCode", () => {
 			request.post = jest.fn( ( arg, cb ) => {
-				cb( null, [ {
+				cb( null, {
 					statusCode: 422,
 					body: { message: "nope" },
 					errors: [ { message: "something bad happened" } ]
-				} ], {
+				}, {
 					message: "nope"
 				} );
 			} );
