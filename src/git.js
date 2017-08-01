@@ -67,7 +67,7 @@ const git = {
 	},
 
 	rebase( { branch, failHelpKey, showError = true } ) {
-		const args = `rebase ${ branch }`;
+		const args = `rebase ${ branch } --preserve-merges`;
 		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey, showError } : { args, showError } );
 	},
 
@@ -222,7 +222,7 @@ const git = {
 	generateRebaseCommitLog( tag ) {
 		tag = tag.slice( 1, tag.lastIndexOf( "." ) ); // remove the 'v' and version of pre-release that it is eg. .0, .1, .2, etc...
 
-		const args = `log upstream/master..HEAD --pretty=format:"%h %s" --no-merges`;
+		const args = `log upstream/master..HEAD --pretty=format:"%h %s"`;
 		return git.runCommand( { args } ).then( result => {
 			let commits = result.split( "\n" );
 
@@ -240,7 +240,7 @@ const git = {
 	},
 
 	removePreReleaseCommits() {
-		const args = `GIT_SEQUENCE_EDITOR="cat ${ path.join( __dirname, ".commits-to-rebase.txt" ) } >" git rebase -i upstream/master`;
+		const args = `GIT_SEQUENCE_EDITOR="cat ${ path.join( __dirname, ".commits-to-rebase.txt" ) } >" git rebase -i -p upstream/master`;
 		return git.runCommand( { args, logMessage: "Removing pre-release commit history", failHelpKey: "gitRebaseInteractive", showError: false, fullCommand: true } );
 	},
 
