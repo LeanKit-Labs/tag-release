@@ -1,6 +1,6 @@
 {
   "name": "tag-release",
-  "version": "5.3.0-qa-deux.0",
+  "version": "5.3.0-qa-deux.1",
   "description": "Automatically Tag and Release Repositories",
   "main": "index.js",
   "bin": {
