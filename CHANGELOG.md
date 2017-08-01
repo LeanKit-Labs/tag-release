@@ -1,5 +1,11 @@
 ## 5.x
 
+### 5.2.1
+
+* Fixed issue with merge commits being removed with rebases
+* Fixed issue with Github auth
+* Get tags from repo for version bump using --qa feature instead of manual entry
+
 ### 5.2.0
 
 * Added --pr feature to update lightning-ui and create a PR to develop for change
