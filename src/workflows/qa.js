@@ -2,6 +2,10 @@ import * as run from "./steps";
 
 export default [
 	run.gitFetchUpstream,
+	run.getReposFromBumpCommit
+];
+
+export const qaDefault = [
 	run.checkHasDevelopBranch,
 	run.gitCheckoutDevelop,
 	run.gitRebaseUpstreamDevelop,
@@ -22,4 +26,17 @@ export default [
 	run.gitAdd,
 	run.gitCommitBumpMessage,
 	run.gitPushUpstreamFeatureBranch
+];
+
+export const qaUpdate = [
+	run.getPackageScope,
+	run.getFeatureBranch,
+	run.getCurrentDependencyVersions,
+	run.githubUpstream,
+	run.askVersions,
+	run.updateDependencies,
+	run.gitDiff,
+	run.gitAdd,
+	run.gitAmendCommitBumpMessage,
+	run.gitForcePushUpstreamFeatureBranch
 ];

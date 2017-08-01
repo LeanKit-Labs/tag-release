@@ -26,7 +26,11 @@ jest.mock( "../src/workflows/continue", () => {
 } );
 
 jest.mock( "../src/workflows/qa", () => {
-	return "qa";
+	return {
+		default: "qa",
+		qaDefault: "qaDefault",
+		qaUpdate: "qaUpdate"
+	};
 } );
 
 jest.mock( "../src/workflows/pr", () => {
@@ -42,7 +46,7 @@ import prereleaseWorkflow from "../src/workflows/pre-release";
 import resetWorkflow from "../src/workflows/reset";
 import promoteWorkflow, { keepTheBallRolling as promoteContinue } from "../src/workflows/promote";
 import continueWorkflow from "../src/workflows/continue";
-import qaWorkflow from "../src/workflows/qa";
+import qaWorkflow, { qaDefault, qaUpdate } from "../src/workflows/qa";
 import prWorkflow, { keepTheBallRolling as prContinue } from "../src/workflows/pr";
 import tagRelease from "../src/tag-release";
 
@@ -110,10 +114,26 @@ describe( "tag-release", () => {
 		} );
 	} );
 
-	it( "should run the qa workflow when the CLI flag is passed", () => {
-		tagRelease( { qa: true } ).then( () => {
-			expect( sequence ).toHaveBeenCalledTimes( 1 );
-			expect( sequence ).toHaveBeenCalledWith( qaWorkflow, { qa: true } );
+	describe( "qa", () => {
+		it( "should run the qa workflow when the CLI flag is passed", () => {
+			tagRelease( { qa: true } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( qaWorkflow, { qa: true } );
+			} );
+		} );
+
+		it( "should run the default qa workflow when the CLI flag is passed and there is no packages", () => {
+			tagRelease( { qa: true, packages: [] } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( qaDefault, { qa: true, packages: [] } );
+			} );
+		} );
+
+		it( "should run the update qa workflow when the CLI flag is passed and there are packages", () => {
+			tagRelease( { qa: true, packages: [ "my-repo", "my-other-repo" ] } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( qaUpdate, { qa: true, packages: [ "my-repo", "my-other-repo" ] } );
+			} );
 		} );
 	} );
 
