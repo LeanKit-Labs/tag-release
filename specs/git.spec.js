@@ -113,7 +113,7 @@ describe( "git", () => {
 			},
 			rebase: {
 				args: { branch: "upstream/test-branch" },
-				expectedRunCommandArgs: { args: "rebase upstream/test-branch", showError: true }
+				expectedRunCommandArgs: { args: "rebase upstream/test-branch --preserve-merges", showError: true }
 			},
 			mergeMaster: {
 				expectedRunCommandArgs: { args: "merge master --ff-only", failHelpKey: "gitMergeMaster" }
@@ -204,10 +204,10 @@ describe( "git", () => {
 			},
 			generateRebaseCommitLog: {
 				args: "v1.1.1-blah.0",
-				expectedRunCommandArgs: { args: `log upstream/master..HEAD --pretty=format:"%h %s" --no-merges` }
+				expectedRunCommandArgs: { args: `log upstream/master..HEAD --pretty=format:"%h %s"` }
 			},
 			rebaseUpstreamMaster: {
-				expectedRunCommandArgs: { args: "rebase upstream/master", showError: true }
+				expectedRunCommandArgs: { args: "rebase upstream/master --preserve-merges", showError: true }
 			},
 			getBranchList: {
 				expectedRunCommandArgs: { args: "branch", logMessage: `Getting branch list` }
@@ -231,10 +231,10 @@ describe( "git", () => {
 			},
 			rebaseUpstreamBranch: {
 				args: "feature-branch",
-				expectedRunCommandArgs: { args: `rebase upstream/feature-branch`, showError: true }
+				expectedRunCommandArgs: { args: `rebase upstream/feature-branch --preserve-merges`, showError: true }
 			},
 			rebaseUpstreamDevelop: {
-				expectedRunCommandArgs: { args: `rebase upstream/develop`, failHelpKey: `gitRebaseInteractive`, showError: false }
+				expectedRunCommandArgs: { args: `rebase upstream/develop --preserve-merges`, failHelpKey: `gitRebaseInteractive`, showError: false }
 			},
 			getLatestCommitMessage: {
 				expectedRunCommandArgs: { args: `log --format=%B -n 1` }
@@ -338,7 +338,7 @@ describe( "git", () => {
 			it( `should call "git.runCommand" with provided failHelpKey when passed to "git.rebase"`, () => {
 				return git.rebase( { branch: "feature-branch", failHelpKey: "test-key" } ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "rebase feature-branch", failHelpKey: "test-key", showError: true } );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "rebase feature-branch --preserve-merges", failHelpKey: "test-key", showError: true } );
 				} );
 			} );
 
@@ -351,7 +351,7 @@ describe( "git", () => {
 				it( "should call 'git.runCommand' with appropriate arguments", () => {
 					return git.removePreReleaseCommits().then( () => {
 						expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-						expect( git.runCommand ).toHaveBeenCalledWith( { args: "GIT_SEQUENCE_EDITOR=\"cat my_path/ >\" git rebase -i upstream/master", failHelpKey: "gitRebaseInteractive", fullCommand: true, logMessage: "Removing pre-release commit history", showError: false } );
+						expect( git.runCommand ).toHaveBeenCalledWith( { args: "GIT_SEQUENCE_EDITOR=\"cat my_path/ >\" git rebase -i -p upstream/master", failHelpKey: "gitRebaseInteractive", fullCommand: true, logMessage: "Removing pre-release commit history", showError: false } );
 					} );
 				} );
 				afterEach( () => {

@@ -151,17 +151,16 @@ export default {
 					reject( err );
 				}
 
-				response = response[ 0 ];
 				const { statusCode, errors } = response;
 
 				if ( statusCode === CREATED ) {
 					resolve( body.token );
 				} else if ( statusCode === UNAUTHORIZED ) {
 					resolve( this.githubUnauthorized( username, password, response ) );
+				} else {
+					// for any other HTTP status code...
+					logger.log( body.message );
 				}
-
-				// for any other HTTP status code...
-				logger.log( body.message );
 
 				if ( errors && errors.length ) {
 					errors.forEach( error => logger.log( error.message ) );
