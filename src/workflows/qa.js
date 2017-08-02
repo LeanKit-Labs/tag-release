@@ -31,6 +31,7 @@ export const qaDefault = [
 export const qaUpdate = [
 	run.getPackageScope,
 	run.getFeatureBranch,
+	run.abortIfDevelopOrMaster,
 	run.getCurrentDependencyVersions,
 	run.githubUpstream,
 	run.askVersions,
