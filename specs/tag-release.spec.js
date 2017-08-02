@@ -116,9 +116,9 @@ describe( "tag-release", () => {
 
 	describe( "qa", () => {
 		it( "should run the qa workflow when the CLI flag is passed", () => {
-			tagRelease( { qa: true } ).then( () => {
+			tagRelease( { qa: true, packages: [] } ).then( () => {
 				expect( sequence ).toHaveBeenCalledTimes( 2 );
-				expect( sequence ).toHaveBeenCalledWith( qaWorkflow, { qa: true } );
+				expect( sequence ).toHaveBeenCalledWith( qaWorkflow, { qa: true, packages: [] } );
 			} );
 		} );
 
