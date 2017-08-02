@@ -6,7 +6,7 @@ import prereleaseWorkflow from "./workflows/pre-release";
 import resetWorkflow from "./workflows/reset";
 import promoteWorkflow, { keepTheBallRolling as promoteContinue } from "./workflows/promote";
 import continueWorkflow from "./workflows/continue";
-import qaWorkflow from "./workflows/qa";
+import qaWorkflow, { qaDefault, qaUpdate } from "./workflows/qa";
 import prWorkflow, { keepTheBallRolling as prContinue } from "./workflows/pr";
 
 export default state => {
@@ -17,6 +17,16 @@ export default state => {
 			}
 
 			return sequence( prContinue, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
+		} );
+	}
+
+	if ( state.qa ) {
+		return sequence( qaWorkflow, state ).then( () => {
+			if ( state.packages.length ) {
+				return sequence( qaUpdate, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
+			}
+
+			return sequence( qaDefault, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
 		} );
 	}
 
@@ -31,10 +41,6 @@ export default state => {
 
 	if ( state.promote ) {
 		workflow = promoteWorkflow;
-	}
-
-	if ( state.qa ) {
-		workflow = qaWorkflow;
 	}
 
 	if ( state.pr ) {
