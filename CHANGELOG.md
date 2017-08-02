@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.3.0
+
+* Added the ability to update a --qa created feature branch
+
 ### 5.2.1
 
 * Fixed issue with merge commits being removed with rebases
