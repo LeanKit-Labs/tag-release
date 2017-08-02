@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.3.1
+
+* Band-Aided possible issue force pushing develop when using --qa
+
 ### 5.3.0
 
 * Added the ability to update a --qa created feature branch
