@@ -21,9 +21,8 @@ export default state => {
 	}
 
 	if ( state.qa ) {
-		// workflow = qaWorkflow;
 		return sequence( qaWorkflow, state ).then( () => {
-			if ( state.packages && state.packages.length !== 0 ) {
+			if ( state.packages.length ) {
 				return sequence( qaUpdate, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
 			}
 
