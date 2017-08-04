@@ -791,11 +791,3 @@ export function getTagsFromRepo( state, repositoryName ) {
 		return tags;
 	} ).catch( err => logger.log( chalk.red( err ) ) );
 }
-
-export function abortIfDevelopOrMaster( state ) {
-	if ( state.branch === "develop" || state.branch === "master" ) {
-		util.advise( "abortIfDevelopOrMaster" );
-	}
-
-	return Promise.resolve();
-}

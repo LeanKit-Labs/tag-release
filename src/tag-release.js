@@ -22,7 +22,8 @@ export default state => {
 
 	if ( state.qa ) {
 		return sequence( qaWorkflow, state ).then( () => {
-			if ( state.packages.length ) {
+			const onFeatureBranch = ( state.branch !== "develop" && state.branch !== "master" );
+			if ( state.packages.length && onFeatureBranch ) {
 				return sequence( qaUpdate, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
 			}
 

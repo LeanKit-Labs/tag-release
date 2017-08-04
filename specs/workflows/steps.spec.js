@@ -2363,30 +2363,4 @@ describe( "shared workflow steps", () => {
 			} );
 		} );
 	} );
-
-	describe( "abortIfDevelopOrMaster", () => {
-		beforeEach( () => {
-			util.advise = jest.fn( () => {} );
-		} );
-
-		it( "should advise when on develop branch", () => {
-			return run.abortIfDevelopOrMaster( { branch: "develop" } ).then( result => {
-				expect( util.advise ).toHaveBeenCalledTimes( 1 );
-				expect( util.advise ).toHaveBeenCalledWith( "abortIfDevelopOrMaster" );
-			} );
-		} );
-
-		it( "should advise when on master branch", () => {
-			return run.abortIfDevelopOrMaster( { branch: "master" } ).then( result => {
-				expect( util.advise ).toHaveBeenCalledTimes( 1 );
-				expect( util.advise ).toHaveBeenCalledWith( "abortIfDevelopOrMaster" );
-			} );
-		} );
-
-		it( "shouldn't advise when on feature branch", () => {
-			return run.abortIfDevelopOrMaster( { branch: "feature-branch" } ).then( result => {
-				expect( util.advise ).toHaveBeenCalledTimes( 0 );
-			} );
-		} );
-	} );
 } );
