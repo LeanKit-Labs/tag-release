@@ -1,5 +1,5 @@
-import git from "../git";
-import util from "../utils";
+import git from "../../git";
+import util from "../../utils";
 import semver from "semver";
 import chalk from "chalk";
 import logger from "better-console";
@@ -488,10 +488,6 @@ export function setPromote( state ) {
 	return Promise.resolve();
 }
 
-export function verifyConflictResolution() {
-	return git.checkConflictMarkers();
-}
-
 export function getPackageScope( state ) {
 	const defaultOrProvidedScope = flag => {
 		return flag.charAt( 0 ) === "@" ? `${ flag }` : `@${ flag }`;
@@ -667,7 +663,7 @@ export function gitRebaseUpstreamBranch( state ) {
 	return git.rebaseUpstreamBranch( branch );
 }
 
-export function gitRebaseUpstreamDevelop() {
+export function gitRebaseUpstreamDevelop( state ) {
 	return git.rebaseUpstreamDevelop();
 }
 

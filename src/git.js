@@ -5,11 +5,23 @@ import semver from "semver";
 const DEFAULT_PRERELEASE_TAG_LIST_LIMIT = 10;
 
 const git = {
-	runCommand( { args, showOutput = true, logMessage, failHelpKey = "gitCommandFailed", exitOnFail = true, showError = true, fullCommand = false } ) {
+	runCommand( { args, showOutput = true, logMessage, failHelpKey = "gitCommandFailed", exitOnFail = true, showError = true, fullCommand = false, onError, state = { pr: false } } ) {
 		const command = fullCommand ? `${ args }` : `git ${ args }`;
 
 		if ( !showOutput ) {
 			return util.exec( command );
+		}
+
+		if ( !onError ) {
+			onError = err => {
+				util.advise( failHelpKey, { exit: exitOnFail } );
+
+				if ( !showError ) {
+					return () => Promise.reject();
+				}
+
+				return () => Promise.reject( err );
+			};
 		}
 
 		util.log.begin( logMessage || command );
@@ -20,13 +32,8 @@ const git = {
 			} )
 			.catch( err => {
 				util.log.end();
-				util.advise( failHelpKey, { exit: exitOnFail } );
 
-				if ( !showError ) {
-					return Promise.reject();
-				}
-
-				return Promise.reject( err );
+				return onError( err )();
 			} );
 	},
 
@@ -66,9 +73,9 @@ const git = {
 		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey } : { args } );
 	},
 
-	rebase( { branch, failHelpKey, showError = true } ) {
+	rebase( { branch, failHelpKey, showError = true, onError = () => {}, state = {} } ) {
 		const args = `rebase ${ branch } --preserve-merges`;
-		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey, showError } : { args, showError } );
+		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey, showError, onError, state } : { args, showError, onError, state } );
 	},
 
 	mergeMaster() {
@@ -302,6 +309,11 @@ const git = {
 		util.deleteFile( path.join( __dirname, ".commits-to-rebase.txt" ) );
 
 		return Promise.resolve();
+	},
+
+	status( showOutput = true ) {
+		const args = "status";
+		return git.runCommand( { args, showOutput } );
 	}
 
 };

@@ -38,7 +38,7 @@ import semver from "semver";
 import GitHub from "github-api";
 import util from "../../src/utils";
 import git from "../../src/git";
-import * as run from "../../src/workflows/steps";
+import * as run from "../../src/workflows/steps/index";
 import sequence from "when/sequence";
 import path from "path";
 
