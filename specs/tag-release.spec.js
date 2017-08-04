@@ -129,10 +129,31 @@ describe( "tag-release", () => {
 			} );
 		} );
 
+		it( "should run the default qa workflow when the CLI flag is passed, on develop and there are packages", () => {
+			tagRelease( { qa: true, packages: [ "my-repo", "my-other-repo" ], branch: "develop" } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( qaDefault, { qa: true, packages: [ "my-repo", "my-other-repo" ], branch: "develop" } );
+			} );
+		} );
+
+		it( "should run the default qa workflow when the CLI flag is passed, on master and there are packages", () => {
+			tagRelease( { qa: true, packages: [ "my-repo", "my-other-repo" ], branch: "master" } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( qaDefault, { qa: true, packages: [ "my-repo", "my-other-repo" ], branch: "master" } );
+			} );
+		} );
+
 		it( "should run the update qa workflow when the CLI flag is passed and there are packages", () => {
 			tagRelease( { qa: true, packages: [ "my-repo", "my-other-repo" ] } ).then( () => {
 				expect( sequence ).toHaveBeenCalledTimes( 2 );
 				expect( sequence ).toHaveBeenCalledWith( qaUpdate, { qa: true, packages: [ "my-repo", "my-other-repo" ] } );
+			} );
+		} );
+
+		it( "should run the update qa workflow when the CLI flag is passed, there are packages, and you are on a feature branch", () => {
+			tagRelease( { qa: true, packages: [ "my-repo", "my-other-repo" ], branch: "feature-branch" } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( qaUpdate, { qa: true, packages: [ "my-repo", "my-other-repo" ], branch: "feature-branch" } );
 			} );
 		} );
 	} );

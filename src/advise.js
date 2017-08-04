@@ -69,8 +69,7 @@ Please fix all conflict markers with the current conflict before running 'tag-re
 You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
 	gitMergeUpstreamBranch: `It appears that when trying to merge with the upstream branch something went wrong.
 
-Either you don't have an upstream with the same name as your local, or we weren't able to 'merge --ff-only' on your local branch with the upstream.`,
-	abortIfDevelopOrMaster: `It appears you are attempting to run '--qa' from develop or master and your latest commit contains a bump commit.`
+Either you don't have an upstream with the same name as your local, or we weren't able to 'merge --ff-only' on your local branch with the upstream.`
 };
 
 const MAXIMUM_WIDTH = 50;
