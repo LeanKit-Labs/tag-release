@@ -48,10 +48,15 @@ export function checkHasDevelopBranch( state ) {
 	} );
 }
 
-export function askPrereleaseIdentifier( state ) {
+export function setPrereleaseIdentifier( state ) {
 	const { identifier } = state;
 
+	const cleanIdentifier = targetIdentifier => {
+		return targetIdentifier.replace( /^(defect|feature|rework)-/, "" );
+	};
+
 	if ( identifier && identifier.length ) {
+		state.identifier = cleanIdentifier( state.identifier );
 		return Promise.resolve();
 	}
 
@@ -60,7 +65,7 @@ export function askPrereleaseIdentifier( state ) {
 		name: "prereleaseIdentifier",
 		message: "Pre-release Identifier:"
 	} ] ).then( response => {
-		state.identifier = response.prereleaseIdentifier;
+		state.identifier = cleanIdentifier( response.prereleaseIdentifier );
 		return Promise.resolve();
 	} );
 }
