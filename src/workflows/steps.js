@@ -640,10 +640,6 @@ export function gitCommitBumpMessage( state ) {
 	return git.commit( state.bumpComment );
 }
 
-export function gitCreateUpstreamBranch( state ) {
-	return git.createUpstreamBranch( state.branch );
-}
-
 export function verifyPackagesToPromote( state ) {
 	const { packages } = state;
 	if ( packages && packages.length === 0 ) {
