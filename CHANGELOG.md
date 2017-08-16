@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.3.2
+
+* Fixed issue when running --qa from develop and master branch
+
 ### 5.3.1
 
 * Band-Aided possible issue force pushing develop when using --qa
