@@ -1887,20 +1887,6 @@ describe( "shared workflow steps", () => {
 		} );
 	} );
 
-	describe( "gitCreateUpstreamBranch", () => {
-		beforeEach( () => {
-			git.createUpstreamBranch = jest.fn( () => Promise.resolve() );
-		} );
-
-		it( "should call `git.createUpstreamBranch` with the appropriate argument", () => {
-			state.branch = "feature-this-is-a-reason";
-			return run.gitCreateUpstreamBranch( state ).then( () => {
-				expect( git.createUpstreamBranch ).toHaveBeenCalledTimes( 1 );
-				expect( git.createUpstreamBranch ).toHaveBeenCalledWith( "feature-this-is-a-reason" );
-			} );
-		} );
-	} );
-
 	describe( "verifyPackagesToPromote", () => {
 		const originalProcessExit = process.exit;
 

@@ -204,11 +204,6 @@ const git = {
 		return git.runCommand( { args, logMessage: `Creating local branch "${ branch }"` } );
 	},
 
-	createUpstreamBranch( branch ) {
-		const args = `push upstream ${ branch }`;
-		return git.runCommand( { args, logMessage: `Creating upstream branch "${ branch }"` } );
-	},
-
 	resetBranch( branch ) {
 		const args = `reset --hard upstream/${ branch }`;
 		return git.runCommand( { args, logMessage: `Hard reset on branch: "${ branch }"` } );

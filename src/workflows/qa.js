@@ -23,7 +23,6 @@ export const qaDefault = [
 	run.getFeatureBranch,
 	run.updateDependencies,
 	run.gitDiff,
-	run.gitCreateUpstreamBranch,
 	run.gitAdd,
 	run.gitCommitBumpMessage,
 	run.gitPushUpstreamFeatureBranch
