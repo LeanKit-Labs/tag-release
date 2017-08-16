@@ -190,10 +190,6 @@ describe( "git", () => {
 				args: "test-branch",
 				expectedRunCommandArgs: { args: "branch test-branch upstream/test-branch", logMessage: `Creating local branch "test-branch"` }
 			},
-			createUpstreamBranch: {
-				args: "feature-branch",
-				expectedRunCommandArgs: { args: "push upstream feature-branch", logMessage: `Creating upstream branch "feature-branch"` }
-			},
 			resetBranch: {
 				args: "test-branch",
 				expectedRunCommandArgs: { args: "reset --hard upstream/test-branch", logMessage: `Hard reset on branch: "test-branch"` }
