@@ -3,7 +3,7 @@ import * as run from "./steps";
 export default [
 	run.gitFetchUpstream,
 	run.getCurrentBranchVersion,
-	run.askPrereleaseIdentifier,
+	run.setPrereleaseIdentifier,
 	run.getFeatureBranch,
 	run.gitMergeUpstreamBranch,
 	run.gitShortLog,

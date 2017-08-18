@@ -171,20 +171,20 @@ describe( "shared workflow steps", () => {
 		} );
 	} );
 
-	describe( "askPrereleaseIdentifier", () => {
+	describe( "setPrereleaseIdentifier", () => {
 		beforeEach( () => {
 			util.prompt = jest.fn( () => Promise.resolve( { prereleaseIdentifier: "pre" } ) );
 		} );
 
 		it( "should not prompt if an identifier was provided at the command line", () => {
 			state = { identifier: "test" };
-			return run.askPrereleaseIdentifier( state ).then( () => {
+			return run.setPrereleaseIdentifier( state ).then( () => {
 				expect( util.prompt ).not.toHaveBeenCalled();
 			} );
 		} );
 
 		it( "should prompt the user for a prerelease identifier", () => {
-			return run.askPrereleaseIdentifier( state ).then( () => {
+			return run.setPrereleaseIdentifier( state ).then( () => {
 				expect( util.prompt ).toHaveBeenCalledTimes( 1 );
 				expect( util.prompt ).toHaveBeenCalledWith( [ {
 					type: "input",
@@ -195,9 +195,18 @@ describe( "shared workflow steps", () => {
 		} );
 
 		it( "should persist the given identifier to the workflow state", () => {
-			return run.askPrereleaseIdentifier( state ).then( () => {
+			return run.setPrereleaseIdentifier( state ).then( () => {
 				expect( state ).toHaveProperty( "identifier" );
 				expect( state.identifier ).toEqual( "pre" );
+			} );
+		} );
+
+		[ "defect", "feature", "rework" ].forEach( redundantIdentifierPrefix => {
+			it( `should strip "${ redundantIdentifierPrefix }-" from the beginning of the identifier when it is present`, () => {
+				state = { identifier: `${ redundantIdentifierPrefix }-test-prerelease-identifier` };
+				return run.setPrereleaseIdentifier( state ).then( () => {
+					expect( state.identifier ).toEqual( "test-prerelease-identifier" );
+				} );
 			} );
 		} );
 	} );
