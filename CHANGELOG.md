@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.4.1
+
+* Cleaned up some unnecessary stuff that was happening in the pre-release workflow
+
 ### 5.4.0
 
 * Added logic to strip redundant prefixes from prerelease identifiers.
