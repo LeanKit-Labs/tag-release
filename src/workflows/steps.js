@@ -266,6 +266,12 @@ export function gitAdd( state ) {
 	return git.add( [ CHANGELOG_PATH, configPath ] );
 }
 
+export function gitStageConfigFile( state ) {
+	const { configPath } = state;
+
+	return git.add( [ configPath ] );
+}
+
 export function gitCommit( state ) {
 	const { versions: { newVersion } } = state;
 
