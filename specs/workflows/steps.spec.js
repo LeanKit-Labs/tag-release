@@ -823,6 +823,20 @@ describe( "shared workflow steps", () => {
 		} );
 	} );
 
+	describe( "gitStageConfigFile", () => {
+		beforeEach( () => {
+			state.configPath = "./package.json";
+			git.add = jest.fn( () => Promise.resolve() );
+		} );
+
+		it( "should call `git.add` with the appropriate arguments", () => {
+			return run.gitStageConfigFile( state ).then( () => {
+				expect( git.add ).toHaveBeenCalledTimes( 1 );
+				expect( git.add ).toHaveBeenCalledWith( [ "./package.json" ] );
+			} );
+		} );
+	} );
+
 	describe( "gitCommit", () => {
 		it( "should call `git.commit` with the appropriate arguments", () => {
 			state = { versions: { newVersion: "1.2.3" } };
