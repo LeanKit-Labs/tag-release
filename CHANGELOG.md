@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.4.0
+
+* Added logic to strip redundant prefixes from prerelease identifiers.
+
 ### 5.3.3
 
 * Removed --qa step to create an upstream branch before pushing into it
