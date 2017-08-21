@@ -56,10 +56,11 @@ commander.on( "--help", () => {
 	console.log( "    $ tag-release --promote v1.1.1-my-tagged-version.0" );
 	console.log( "    $ tag-release --continue" );
 	console.log( "    $ tag-release --qa" );
-	console.log( "    $ tag-release --qa aoe" );
+	console.log( "    $ tag-release --qa myorg" );
 	console.log( "    $ tag-release --pr" );
-	console.log( "    $ tag-release --pr aoe" );
+	console.log( "    $ tag-release --pr myorg" );
 	console.log( "" );
+	console.log( `Link to README: ${ chalk.yellow.underline.bold( "https://github.com/LeanKit-Labs/tag-release/blob/master/README.md" ) } ` );
 } );
 
 commander.parse( process.argv );
