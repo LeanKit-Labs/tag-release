@@ -34,7 +34,7 @@ Options:
   -c, --config [filePath]        Path to JSON Configuration file (defaults to './package.json')
   -r, --release [type]           Release type (major, minor, patch)
   --verbose                      Console additional information
-  -V, --version                  output the version number
+  -V, --version                  Output the version number
   -p, --prerelease               Create a pre-release
   -i, --identifier <identifier>  Identifier used for pre-release
   --reset                        Reset repo to upstream master/develop branches
@@ -61,9 +61,9 @@ Examples:
    $ tag-release --promote v1.1.1-my-tagged-version.0
    $ tag-release --continue
    $ tag-release --qa
-   $ tag-release --qa aoe
+   $ tag-release --qa myorg
    $ tag-release --pr
-   $ tag-release --pr aoe
+   $ tag-release --pr myorg
 ```
 
 ### Pre-releases
@@ -75,7 +75,7 @@ iterated upon. In order use this feature will you have to provide `tag-release` 
 (or you can provide the identifier on the command-line) that will be used in the pre-release tag.
 Then the flow will continue as normal release.
 
-Notes: When using the pre-release feature you should have an upstream feature branch with the same name.
+> **Note**: When using the pre-release feature you should have an upstream feature branch with the same name.
 
 ```
 Usage:
@@ -121,7 +121,7 @@ These tags always match the following schema: [version]-[identifier].[bump]
 
 ### Pre-release Promotion
 
-This feature is use for promoting a pre-release to an offical release that is intended to go out
+This feature is used for promoting a pre-release to an offical release that is intended to go out
 into production. In order use this feature will you have to provide `tag-release` with the
 `--promote` as a command-line flag.
 
@@ -154,6 +154,80 @@ Example:
 
 This will skip the selection process of a tag you wish to promote and it will flow the same flow as the
 normal `--promote` command-line argument above.
+
+### QA
+
+This feature is used to create an upstream feature branch in your consumer project that pulls in your dependency projects.
+Its primary use is to pull in pre-releases that were previously created using `tag-release --prerelease`. It will
+give you the option to update package versions, ask for the reason you are making this change (typically this is
+the theme of all changes for your work), and prompt you with a list of tags to choose from per package.
+
+```
+Usage:
+   my-consumer-project git:(develop) tag-release --qa
+
+Example:
+
+   my-consume-project git:(develop) tag-release --qa
+   ? Select the package(s) you wish to update: (Press <space> to select)
+   ❯ ◯ my-dependency-project
+     ◯ my-other-dependency-project
+     ◯ my-last-dependency-project
+   ? What is the reason for this change: This is my reason
+   ? Update my-dependency-project from 1.2.3 to: (Use arrow keys)
+   ❯ 2.0.0-test.0
+     1.2.4-bug.1
+     1.3.0-somechange.0
+   ? What type of change is this work (Use arrow keys)
+   ❯ feature
+     defect
+     rework
+   ? What do you want your branch name to be? feature-reason
+```
+> **Note**: The branch name that is created to hold your changes is based off of the first pre-release identifier
+from the package versions you are updating, but if there is no identifier it will use your "reason for this change"
+message but by removing some non-critical words. You will also have the ability to update this branch's name to
+your liking as well.
+
+If you find yourself having to update a pre-release you created you can update your feature branch by running `tag-release --qa`
+from within that feature branch. It will pick up the packages you previously updated and give you the ability to update them
+to the new versions. This is based on the lastest commit being a bump commit in the follow format:
+Bumped [ package ] to [ version ]: [ reason ]. If there are multiple package changes the format will be the following:
+Bumped [ package ] to [ version ], [ package ] to [ version ]: [ reason ]
+
+
+If the default scope `tag-release` uses is not fitting for your usage, you have the ability to provide your own.
+
+```
+Usage:
+   my-consumer-project git:(develop) tag-release --qa myorg
+```
+
+> **Note**: `--qa` will use a default scope of `lk`
+
+### PR
+
+This feature is used to create a PR into your consumer project's develop branch. It will read in the packages that
+you updated from your bump commit and ask you which version you wish to update them to. This is where you will
+pick offical releases and not pre-releases.
+
+> **Note**: `--pr` should be run from your branch that was created using `--qa`
+
+```
+Usage:
+   my-consumer-project git:(my-feature-branch) tag-release --pr
+
+Example:
+
+   my-consumer-project git:(my-feature-branch) tag-release --pr
+   ? Update my-dependency-project from 1.2.3-identifier.1 to: (Use arrow keys)
+   ❯ 2.0.0
+     1.3.0
+     1.2.4
+     1.2.3-identifier.1
+```
+
+> **Note**: `--pr` will auto-create the GitHub PR for you and add the appropriate `Ready to Merge into Develop` label
 
 ### GitHub Integration
 
@@ -189,6 +263,56 @@ token                : a92282731316b2d4f2313ff64b1350b78a5d4cf6
  Minor (New Feature)
  Patch (Bug Fix)
 ```
+
+### Release Workflow
+
+1. Fork the dependency project & add development updates to your project (manual)
+
+> **Note**: An example would be forking my-dependency-project and developing a feature based off its master branch. Your local branch should start with feature, defect, or rework (ex: feature-amazing-thing).
+
+2. Make a GitHub PR for your dependency project against an upstream branch (manual)
+
+> **Note**: Your upstream branch should be based off of the master branch so that when you create your PR it is comparing only changes different from master.
+
+3. After PR review is approved, pre-release your dependency project (automated by `tag-release`)
+
+```
+my-dependency-project git:(my-feature-branch) tag-release --prerelease --identifier new-feature
+```
+
+This can also be done using the shorthand syntax...
+
+```
+my-dependency-project git:(my-feature-branch) tag-release -pi new-feature
+```
+
+> **Note**: This will create a pre-release that will be published to npm (sinopia) and GitHub (ex: 1.2.3-new-feature.0)
+
+4. Create a consumer project upstream branch to include your pre-released dependency project for QA (automated by `tag-release`)
+
+```
+my-consumer-project git:(master) tag-release --qa
+```
+
+> **Note**: This will create an upstream feature branch on the consumer project.
+
+5. Deploy your consumer project's branch to a QA test environment (manual)
+
+6. Once QA has passed your code, promote dependency project's pre-release to an offical release (automated by `tag-release`)
+
+```
+my-dependency-project git:(master) tag-release --promote
+```
+
+> **Note**: This will change your pre-release from something like 1.2.3-new-feature.0 to 1.2.3 or whatever version is next in line. You will use this version in the next step.
+
+7. Update your consumer project's branch to use the real dependency project's version and create a GitHub PR for the AEs to merge into develop (automated by `tag-release`)
+
+```
+my-consumer-project git:(my-feature-branch) tag-release --pr
+```
+
+> **Note**: `tag-release` will auto-create the GitHub PR for you and add the appropriate `Ready to Merge into Develop` label.
 
 ## Frequently Asked Questions
 
