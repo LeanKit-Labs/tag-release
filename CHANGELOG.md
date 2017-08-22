@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.5.0
+
+* Updated README.md for qa and pr command-line args and added release flow section
+
 ### 5.4.1
 
 * Cleaned up some unnecessary stuff that was happening in the pre-release workflow
