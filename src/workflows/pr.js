@@ -1,4 +1,5 @@
 import * as run from "./steps";
+import { createPullRequest } from "./shared";
 
 export default [
 	run.gitFetchUpstream,
@@ -7,34 +8,10 @@ export default [
 	run.gitRebaseUpstreamBranch,
 	run.saveState,
 	run.gitRebaseUpstreamDevelop,
-	run.getReposFromBumpCommit,
-	run.verifyPackagesToPromote,
-	run.getCurrentDependencyVersions,
-	run.githubUpstream,
-	run.askVersions,
-	run.updateDependencies,
-	run.gitDiff,
-	run.gitAdd,
-	run.gitAmendCommitBumpMessage,
-	run.gitForcePushUpstreamFeatureBranch,
-	run.githubUpstream,
-	run.createGithubPullRequestAganistDevelop,
-	run.cleanUpTmpFiles
+	...createPullRequest
 ];
 
 export const keepTheBallRolling = [
 	run.getPackageScope,
-	run.getReposFromBumpCommit,
-	run.verifyPackagesToPromote,
-	run.getCurrentDependencyVersions,
-	run.githubUpstream,
-	run.askVersions,
-	run.updateDependencies,
-	run.gitDiff,
-	run.gitAdd,
-	run.gitAmendCommitBumpMessage,
-	run.gitForcePushUpstreamFeatureBranch,
-	run.githubUpstream,
-	run.createGithubPullRequestAganistDevelop,
-	run.cleanUpTmpFiles
+	...createPullRequest
 ];
