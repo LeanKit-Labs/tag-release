@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.6.0
+
+* Refactored common sequential steps into shared workflow groups for reuse
+
 ### 5.5.0
 
 * Updated README.md for qa and pr command-line args and added release flow section
