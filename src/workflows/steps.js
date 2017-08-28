@@ -295,12 +295,13 @@ export function gitPushUpstreamMaster() {
 }
 
 export function npmPublish( state ) {
-	const { configPath } = state;
+	const { configPath, identifier, prerelease } = state;
 	if ( configPath !== "./package.json" ) {
 		return null;
 	}
 
-	const command = `npm publish`;
+	let command = "npm publish";
+	command = prerelease && identifier ? `${ command } --tag ${ identifier }` : command;
 
 	if ( !util.isPackagePrivate( configPath ) ) {
 		return util.getPackageRegistry( configPath ).then( registry => {

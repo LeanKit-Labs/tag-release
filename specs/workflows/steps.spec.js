@@ -909,6 +909,24 @@ describe( "shared workflow steps", () => {
 			} );
 		} );
 
+		it( "should publish with identifier for pre-releases", () => {
+			state = { configPath: "./package.json", prerelease: true, identifier: "my-identifier" };
+			util.prompt = jest.fn( () => Promise.resolve( { publish: true } ) );
+			return run.npmPublish( state ).then( () => {
+				expect( util.log.begin ).toHaveBeenCalledWith( "npm publish --tag my-identifier" );
+				expect( util.exec ).toHaveBeenCalledWith( "npm publish --tag my-identifier" );
+			} );
+		} );
+
+		it( "should publish for releases", () => {
+			state = { configPath: "./package.json", prerelease: false };
+			util.prompt = jest.fn( () => Promise.resolve( { publish: true } ) );
+			return run.npmPublish( state ).then( () => {
+				expect( util.log.begin ).toHaveBeenCalledWith( "npm publish" );
+				expect( util.exec ).toHaveBeenCalledWith( "npm publish" );
+			} );
+		} );
+
 		it( "should not prompt if the package is private", () => {
 			util.isPackagePrivate = jest.fn( () => true );
 			util.getPackageRegistry = jest.fn( () => Promise.resolve() );
