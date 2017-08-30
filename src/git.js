@@ -296,8 +296,8 @@ const git = {
 		return git.rebase( { branch: `upstream/${ branch }` } );
 	},
 
-	rebaseUpstreamDevelop() {
-		return git.rebase( { branch: "upstream/develop", failHelpKey: "gitRebaseInteractive", showError: false } );
+	rebaseUpstreamDevelop( { onError } ) {
+		return git.rebase( { branch: "upstream/develop", failHelpKey: "gitRebaseInteractive", showError: false, onError } );
 	},
 
 	getLatestCommitMessage() {
