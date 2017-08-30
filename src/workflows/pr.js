@@ -20,29 +20,11 @@ export const prRebaseConflict = [
 	run.gitStageFiles,
 	run.gitRebaseContinue,
 	run.getFeatureBranch,
-	run.githubUpstream,
-	run.askVersions,
-	run.updateDependencies,
-	run.gitDiff,
-	run.gitAdd,
-	run.gitAmendCommitBumpMessage,
-	run.gitForcePushUpstreamFeatureBranch,
-	run.githubUpstream,
-	run.createGithubPullRequestAganistDevelop,
-	run.cleanUpTmpFiles
+	...createPullRequest
 ];
 
 export const prRebaseSuccess = [
-	run.githubUpstream,
-	run.askVersions,
-	run.updateDependencies,
-	run.gitDiff,
-	run.gitAdd,
-	run.gitAmendCommitBumpMessage,
-	run.gitForcePushUpstreamFeatureBranch,
-	run.githubUpstream,
-	run.createGithubPullRequestAganistDevelop,
-	run.cleanUpTmpFiles
+	...createPullRequest
 ];
 
 export const prContinue = [

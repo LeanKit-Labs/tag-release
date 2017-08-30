@@ -93,7 +93,7 @@ const resolveChunkConflicts = state => {
 				chunk.forEach( line => {
 					if ( line.includes( localKey ) ) {
 						const [ , , version ] = /"@lk\/([\w-]+)": "([\d\.]+)"/.exec( line ) || [];
-						logger.log( `${ chalk.white.bold( `You had a local change of ` ) } ${ chalk.yellow.bold( `${ localChanges[ localKey ] }` ) } for ${ chalk.yellow.bold( `${ localKey }` ) }, but we used HEAD's version of ${ chalk.yellow.bold( `${ version }` ) }` );
+						logger.log( `${ chalk.white.bold( `You had a local change of` ) } ${ chalk.yellow.bold( `${ localChanges[ localKey ] }` ) } ${ chalk.white.bold( `for` ) } ${ chalk.yellow.bold( `${ localKey }` ) }${ chalk.white.bold( `, but we used HEAD's version of` ) } ${ chalk.yellow.bold( `${ version }` ) }` );
 					}
 				} );
 			}
