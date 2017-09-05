@@ -51,17 +51,21 @@ if ( commander.release ) {
 sequence( [ ::utils.detectVersion, bootstrap ] );
 
 export function startTagRelease( options, queries = questions.general ) {
-	if ( commander.verbose ) {
-		fmt.title( "GitHub Configuration" );
-		fmt.field( "username", options.username );
-		fmt.field( "token", options.token );
-		fmt.line();
+	try {
+		if ( commander.verbose ) {
+			fmt.title( "GitHub Configuration" );
+			fmt.field( "username", options.username );
+			fmt.field( "token", options.token );
+			fmt.line();
+		}
+
+		options = _.extend( {}, commander, options );
+		options.configPath = options.config || "./package.json";
+
+		return tagRelease( options );
+	} catch ( error ) {
+		console.log( `Tag-release encountered a problem: ${ error }` );
 	}
-
-	options = _.extend( {}, commander, options );
-	options.configPath = options.config || "./package.json";
-
-	return tagRelease( options );
 }
 
 export function bootstrap() {

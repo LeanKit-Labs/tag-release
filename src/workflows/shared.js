@@ -24,6 +24,9 @@ export const rebaseUpdateLogCommitTagRelease = [
 ];
 
 export const createPullRequest = [
+	run.getReposFromBumpCommit,
+	run.verifyPackagesToPromote,
+	run.getCurrentDependencyVersions,
 	run.githubUpstream,
 	run.askVersions,
 	run.updateDependencies,

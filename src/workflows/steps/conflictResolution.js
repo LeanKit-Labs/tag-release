@@ -4,8 +4,9 @@ import logger from "better-console";
 import chalk from "chalk";
 import { remove } from "lodash";
 
-const getLocalChanges = state => {
+export function getLocalChanges( state ) {
 	const { dependencies } = state;
+
 	// creates an object of the changes you made to the package.json
 	// for the pre-releases.
 	const localChanges = dependencies.reduce( ( result, dep ) => {
@@ -15,9 +16,9 @@ const getLocalChanges = state => {
 	}, {} );
 
 	state.cr.localChanges = localChanges;
-};
+}
 
-const findConflictedPackageJSONChunks = state => {
+export function findConflictedPackageJSONChunks( state ) {
 	const { configPath, cr: { localChanges } } = state;
 	const contents = util.readFile( configPath );
 
@@ -57,7 +58,7 @@ const findConflictedPackageJSONChunks = state => {
 		const chunk = chunks[ key ];
 		const index = chunk.findIndex( item => item.includes( MIDDLE_MARKER ) );
 		const local = chunk.slice( index + 1 );
-		Object.keys( state.cr.localChanges ).forEach( change => {
+		Object.keys( localChanges ).forEach( change => {
 			remove( local, l => l.includes( change ) );
 		} );
 
@@ -74,9 +75,9 @@ const findConflictedPackageJSONChunks = state => {
 		newLines,
 		contents
 	} );
-};
+}
 
-const resolveChunkConflicts = state => {
+export function resolveChunkConflicts( state ) {
 	const { scope, cr: { chunks, localChanges } } = state;
 	// updates chunk object	to reflect how the chunk should look
 	// when inserted back into the package.json to resolve conflicts.
@@ -101,9 +102,9 @@ const resolveChunkConflicts = state => {
 	} );
 
 	state.cr.chunks = chunks;
-};
+}
 
-const writeChunksToPackageJSON = state => {
+export function writeChunksToPackageJSON( state ) {
 	let { cr: { contents } } = state;
 	const { configPath, cr: { chunks, newLines } } = state;
 
@@ -119,7 +120,7 @@ const writeChunksToPackageJSON = state => {
 
 	contents = newLines.join( "\n" );
 	util.writeFile( configPath, contents );
-};
+}
 
 export function gitRebaseUpstreamDevelopWithConflictFlag( state ) {
 	const onError = err => {
