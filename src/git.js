@@ -5,22 +5,18 @@ import semver from "semver";
 const DEFAULT_PRERELEASE_TAG_LIST_LIMIT = 10;
 
 const git = {
-	runCommand( { args, showOutput = true, logMessage, failHelpKey = "gitCommandFailed", exitOnFail = true, showError = true, fullCommand = false, onError, state = { pr: false } } ) {
+	runCommand( { args, showOutput = true, logMessage, failHelpKey = "gitCommandFailed", exitOnFail = true, showError = true, fullCommand = false, onError } ) {
 		const command = fullCommand ? `${ args }` : `git ${ args }`;
 
 		if ( !showOutput ) {
 			return util.exec( command );
 		}
 
-		if ( !onError ) {
+		if ( onError === undefined ) {
 			onError = err => {
 				util.advise( failHelpKey, { exit: exitOnFail } );
 
-				if ( !showError ) {
-					return () => Promise.reject();
-				}
-
-				return () => Promise.reject( err );
+				return showError ? () => Promise.reject( err ) : () => Promise.reject();
 			};
 		}
 
@@ -73,9 +69,9 @@ const git = {
 		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey } : { args } );
 	},
 
-	rebase( { branch, failHelpKey, showError = true, onError = () => {}, state = {} } ) {
+	rebase( { branch, failHelpKey, onError, showError = true } ) {
 		const args = `rebase ${ branch } --preserve-merges`;
-		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey, showError, onError, state } : { args, showError, onError, state } );
+		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey, showError, onError } : { args, showError, onError } );
 	},
 
 	mergeMaster() {
@@ -246,8 +242,8 @@ const git = {
 		return git.runCommand( { args, logMessage: "Removing pre-release commit history", failHelpKey: "gitRebaseInteractive", showError: false, fullCommand: true } );
 	},
 
-	rebaseUpstreamMaster() {
-		return git.rebase( { branch: "upstream/master" } );
+	rebaseUpstreamMaster( { onError } = {} ) {
+		return git.rebase( { branch: "upstream/master", onError } );
 	},
 
 	getBranchList() {
@@ -292,11 +288,11 @@ const git = {
 		return git.runCommand( { args } );
 	},
 
-	rebaseUpstreamBranch( branch ) {
-		return git.rebase( { branch: `upstream/${ branch }` } );
+	rebaseUpstreamBranch( { branch, onError } ) {
+		return git.rebase( { branch: `upstream/${ branch }`, onError } );
 	},
 
-	rebaseUpstreamDevelop( { onError } ) {
+	rebaseUpstreamDevelop( { onError } = {} ) {
 		return git.rebase( { branch: "upstream/develop", failHelpKey: "gitRebaseInteractive", showError: false, onError } );
 	},
 

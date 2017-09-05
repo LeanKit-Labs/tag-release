@@ -36,9 +36,9 @@ import editor from "editor"; // eslint-disable-line no-unused-vars
 import logger from "better-console";
 import semver from "semver";
 import GitHub from "github-api";
-import util from "../../src/utils";
-import git from "../../src/git";
-import * as run from "../../src/workflows/steps/index";
+import util from "../../../src/utils";
+import git from "../../../src/git";
+import * as run from "../../../src/workflows/steps/index";
 import sequence from "when/sequence";
 import path from "path";
 
@@ -1485,15 +1485,6 @@ describe( "shared workflow steps", () => {
 		} );
 	} );
 
-	describe( "verifyConflictResolution", () => {
-		it( "should call `git.checkConflictMarkers`", () => {
-			git.checkConflictMarkers = jest.fn( () => Promise.resolve() );
-			return run.verifyConflictResolution().then( () => {
-				expect( git.checkConflictMarkers ).toHaveBeenCalledTimes( 1 );
-			} );
-		} );
-	} );
-
 	describe( "getPackageScope", () => {
 		beforeEach( () => {
 			util.readJSONFile = jest.fn( () => ( {} ) );
@@ -1970,7 +1961,7 @@ describe( "shared workflow steps", () => {
 			state.branch = "feature-branch";
 			return run.gitRebaseUpstreamBranch( state ).then( () => {
 				expect( git.rebaseUpstreamBranch ).toHaveBeenCalledTimes( 1 );
-				expect( git.rebaseUpstreamBranch ).toHaveBeenCalledWith( "feature-branch" );
+				expect( git.rebaseUpstreamBranch ).toHaveBeenCalledWith( { branch: "feature-branch" } );
 			} );
 		} );
 	} );
