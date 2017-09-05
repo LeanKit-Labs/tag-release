@@ -660,7 +660,7 @@ export function verifyPackagesToPromote( state ) {
 
 export function gitRebaseUpstreamBranch( state ) {
 	const { branch } = state;
-	return git.rebaseUpstreamBranch( branch );
+	return git.rebaseUpstreamBranch( { branch } );
 }
 
 export function gitRebaseUpstreamDevelop( state ) {
