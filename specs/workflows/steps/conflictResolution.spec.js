@@ -135,7 +135,7 @@ describe( "conflict resolution workflow steps", () => {
 			} );
 		} );
 
-		it( "should use [] for package version when change isn't in localChanges and package doesn't match regex", () => {
+		it( "should use undefined in localChanges for change when change isn't in localChanges and package doesn't match regex", () => {
 			state = {
 				configPath: "./package.json",
 				cr: {
@@ -254,7 +254,7 @@ describe( "conflict resolution workflow steps", () => {
 			} );
 		} );
 
-		it( "should default version to [] when regex doesn't match localKey in conflict chunk", () => {
+		it( "should use undefined when version doesn't match regex in conflict chunk", () => {
 			state = {
 				scope: "@lk",
 				cr: {

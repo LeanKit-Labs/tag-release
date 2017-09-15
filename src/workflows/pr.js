@@ -1,5 +1,5 @@
 import * as run from "./steps/index";
-import * as run2 from "./steps/conflictResolution";
+import { gitRebaseUpstreamDevelopWithConflictFlag, resolvePackageJSONConflicts, verifyConflictResolution } from "./steps/conflictResolution";
 import { createPullRequest } from "./shared";
 
 export default [
@@ -11,12 +11,12 @@ export default [
 	run.getReposFromBumpCommit,
 	run.verifyPackagesToPromote,
 	run.getCurrentDependencyVersions,
-	run2.gitRebaseUpstreamDevelopWithConflictFlag
+	gitRebaseUpstreamDevelopWithConflictFlag
 ];
 
 export const prRebaseConflict = [
-	run2.resolvePackageJSONConflicts,
-	run2.verifyConflictResolution,
+	resolvePackageJSONConflicts,
+	verifyConflictResolution,
 	run.gitStageFiles,
 	run.gitRebaseContinue,
 	run.getFeatureBranch,

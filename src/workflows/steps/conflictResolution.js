@@ -4,39 +4,13 @@ import logger from "better-console";
 import chalk from "chalk";
 import { remove } from "lodash";
 
-export function getLocalChanges( state ) {
-	const { dependencies } = state;
-
-	// creates an object of the changes you made to the package.json
-	// for the pre-releases.
-	const localChanges = dependencies.reduce( ( result, dep ) => {
-		result[ dep.pkg ] = "";
-		result[ dep.pkg ] = dep.version;
-		return result;
-	}, {} );
-
-	state.cr.localChanges = localChanges;
-}
-
-export function findConflictedPackageJSONChunks( state ) {
-	const { configPath, cr: { localChanges } } = state;
-	const contents = util.readFile( configPath );
-
+const retrieveAndRemoveConflictedSectionsFromContents = ( contents, state ) => {
 	const LEFT_MARKER = "<<<<<<<";
 	const RIGHT_MARKER = ">>>>>>>";
-	const MIDDLE_MARKER = "=======";
-
-	// Potentially ask git diff --check to have it return line numbers for diff markers.
-	// Would have to subtract one from each number to make with array.
-	const lines = contents.split( "\n" );
-
-	// Find the conflicted section start
-	// Save off previous line so we know where to insert
-	// Read out conflicted section into chunk array
-	// Remove conflicted section with splice
 	let conflictMarker = null;
 	const chunks = {};
 
+	const lines = contents.split( "\n" );
 	const newLines = lines.reduce( ( memo, line, index ) => {
 		if ( line.includes( LEFT_MARKER ) ) {
 			conflictMarker = lines[ index - 1 ];
@@ -53,6 +27,17 @@ export function findConflictedPackageJSONChunks( state ) {
 
 		return memo;
 	}, [] );
+
+	state.cr = Object.assign( {}, state.cr, {
+		newLines,
+		contents
+	} );
+
+	return chunks;
+};
+
+const createChunksToBeInserted = ( chunks, localChanges, state ) => {
+	const MIDDLE_MARKER = "=======";
 
 	Object.keys( chunks ).forEach( key => {
 		const chunk = chunks[ key ];
@@ -71,10 +56,29 @@ export function findConflictedPackageJSONChunks( state ) {
 	} );
 
 	state.cr = Object.assign( {}, state.cr, {
-		chunks,
-		newLines,
-		contents
+		chunks
 	} );
+};
+
+export function getLocalChanges( state ) {
+	const { dependencies } = state;
+
+	// creates an object of the changes you made to the package.json
+	// for the pre-releases.
+	const localChanges = dependencies.reduce( ( result, dep ) => {
+		result[ dep.pkg ] = dep.version;
+		return result;
+	}, {} );
+
+	state.cr.localChanges = localChanges;
+}
+
+export function findConflictedPackageJSONChunks( state ) {
+	const { configPath, cr: { localChanges } } = state;
+	const contents = util.readFile( configPath );
+
+	const chunks = retrieveAndRemoveConflictedSectionsFromContents( contents, state );
+	createChunksToBeInserted( chunks, localChanges, state );
 }
 
 export function resolveChunkConflicts( state ) {

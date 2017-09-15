@@ -1,6 +1,6 @@
 import { default as prWorkflow, prRebaseConflict, prRebaseSuccess, prContinue } from "../../src/workflows/pr";
 import * as run from "../../src/workflows/steps/index";
-import * as run2 from "../../src/workflows/steps/conflictResolution";
+import { gitRebaseUpstreamDevelopWithConflictFlag, resolvePackageJSONConflicts, verifyConflictResolution } from "../../src/workflows/steps/conflictResolution";
 
 describe( "pr workflows", () => {
 	describe( "default", () => {
@@ -14,7 +14,7 @@ describe( "pr workflows", () => {
 				run.getReposFromBumpCommit,
 				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
-				run2.gitRebaseUpstreamDevelopWithConflictFlag
+				gitRebaseUpstreamDevelopWithConflictFlag
 			] );
 		} );
 	} );
@@ -22,8 +22,8 @@ describe( "pr workflows", () => {
 	describe( "prRebaseConflict", () => {
 		it( "should have all of the required steps", () => {
 			expect( prRebaseConflict ).toEqual( [
-				run2.resolvePackageJSONConflicts,
-				run2.verifyConflictResolution,
+				resolvePackageJSONConflicts,
+				verifyConflictResolution,
 				run.gitStageFiles,
 				run.gitRebaseContinue,
 				run.getFeatureBranch,

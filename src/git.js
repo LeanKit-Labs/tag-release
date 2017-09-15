@@ -16,11 +16,7 @@ const git = {
 			onError = err => {
 				util.advise( failHelpKey, { exit: exitOnFail } );
 
-				if ( !showError ) {
-					return () => Promise.reject();
-				}
-
-				return () => Promise.reject( err );
+				return showError ? () => Promise.reject( err ) : () => Promise.reject();
 			};
 		}
 
