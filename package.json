@@ -16,7 +16,8 @@
     "cover": "npm test",
     "cover:watch": "npm run test:watch",
     "cover:open": "open coverage/lcov-report/index.html",
-    "pre-commit": "echo 'Running pre-commit hooks...' && exit 0"
+    "pre-commit": "echo 'Running pre-commit hooks...' && exit 0",
+    "pretest": "npm run lint"
   },
   "pre-commit": [
     "pre-commit",

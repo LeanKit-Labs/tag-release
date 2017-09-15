@@ -1,6 +1,9 @@
 jest.mock( "child_process", () => ( {
 	exec: jest.fn( ( command, cb ) => {
 		cb( null, "success" );
+	} ),
+	execSync: jest.fn( command => {
+		return "https://puppet.leankit.com:4873";
 	} )
 } ) );
 
@@ -903,6 +906,25 @@ describe( "utils", () => {
 			util.advise( "hello world", { exit: false } );
 			expect( process.exit ).toHaveBeenCalledTimes( 1 );
 			expect( console.log ).toHaveBeenCalledTimes( 1 ); // eslint-disable-line no-console
+		} );
+	} );
+
+	describe( "hasLkScope", () => {
+		it( "should run `child_process.execSync", () => {
+			util.hasLkScope();
+			expect( cp.execSync ).toHaveBeenCalledTimes( 1 );
+			expect( cp.execSync ).toHaveBeenCalledWith( "npm config get @lk:registry" );
+		} );
+
+		it( `should return true when the user has a registry for the "@lk" scope`, () => {
+			const isLK = util.hasLkScope();
+			expect( isLK ).toBeTruthy();
+		} );
+
+		it( `should return false when the user has no registry for the "@lk" scope`, () => {
+			cp.execSync = jest.fn( command => "undefined" );
+			const isLK = util.hasLkScope();
+			expect( isLK ).toBeFalsy();
 		} );
 	} );
 } );
