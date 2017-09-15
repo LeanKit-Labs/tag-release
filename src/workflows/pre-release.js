@@ -1,4 +1,4 @@
-import * as run from "./steps";
+import * as run from "./steps/index";
 
 export default [
 	run.gitFetchUpstream,

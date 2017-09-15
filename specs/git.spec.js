@@ -82,10 +82,18 @@ describe( "git", () => {
 					expect( err ).toEqual( undefined );
 				} );
 			} );
+
+			it( "should use onError passed as arg when provided", () => {
+				const onError = jest.fn( () => Promise.resolve( "" ) );
+				return git.runCommand( { args: "--version", onError } ).catch( err => {
+					expect( onError ).toHaveBeenCalledTimes( 1 );
+				} );
+			} );
 		} );
 	} );
 
 	describe( "commands", () => {
+		const onError = () => {};
 		const commands = {
 			getRemoteBranches: {
 				expectedRunCommandArgs: { args: "branch -r" }
@@ -112,8 +120,8 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "merge upstream/test-branch --ff-only" }
 			},
 			rebase: {
-				args: { branch: "upstream/test-branch" },
-				expectedRunCommandArgs: { args: "rebase upstream/test-branch --preserve-merges", showError: true }
+				args: { branch: "upstream/test-branch", onError },
+				expectedRunCommandArgs: { args: "rebase upstream/test-branch --preserve-merges", onError, showError: true }
 			},
 			mergeMaster: {
 				expectedRunCommandArgs: { args: "merge master --ff-only", failHelpKey: "gitMergeMaster" }
@@ -203,7 +211,8 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: `log upstream/master..HEAD --pretty=format:"%h %s"` }
 			},
 			rebaseUpstreamMaster: {
-				expectedRunCommandArgs: { args: "rebase upstream/master --preserve-merges", showError: true }
+				args: { onError },
+				expectedRunCommandArgs: { args: "rebase upstream/master --preserve-merges", onError, showError: true }
 			},
 			getBranchList: {
 				expectedRunCommandArgs: { args: "branch", logMessage: `Getting branch list` }
@@ -226,11 +235,12 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: `checkout feature-branch` }
 			},
 			rebaseUpstreamBranch: {
-				args: "feature-branch",
-				expectedRunCommandArgs: { args: `rebase upstream/feature-branch --preserve-merges`, showError: true }
+				args: { branch: "feature-branch", onError },
+				expectedRunCommandArgs: { args: `rebase upstream/feature-branch --preserve-merges`, onError, showError: true }
 			},
 			rebaseUpstreamDevelop: {
-				expectedRunCommandArgs: { args: `rebase upstream/develop --preserve-merges`, failHelpKey: `gitRebaseInteractive`, showError: false }
+				args: { onError },
+				expectedRunCommandArgs: { args: `rebase upstream/develop --preserve-merges`, failHelpKey: `gitRebaseInteractive`, onError, showError: false }
 			},
 			getLatestCommitMessage: {
 				expectedRunCommandArgs: { args: `log --format=%B -n 1` }
@@ -238,6 +248,9 @@ describe( "git", () => {
 			checkoutAndCreateBranch: {
 				args: "feature-branch",
 				expectedRunCommandArgs: { args: `checkout -b feature-branch upstream/develop` }
+			},
+			status: {
+				expectedRunCommandArgs: { args: `status`, showOutput: true }
 			}
 		};
 
@@ -332,9 +345,25 @@ describe( "git", () => {
 			} );
 
 			it( `should call "git.runCommand" with provided failHelpKey when passed to "git.rebase"`, () => {
-				return git.rebase( { branch: "feature-branch", failHelpKey: "test-key" } ).then( () => {
+				return git.rebase( { branch: "feature-branch", onError, failHelpKey: "test-key" } ).then( () => {
 					expect( git.runCommand ).toHaveBeenCalledTimes( 1 );
-					expect( git.runCommand ).toHaveBeenCalledWith( { args: "rebase feature-branch --preserve-merges", failHelpKey: "test-key", showError: true } );
+					expect( git.runCommand ).toHaveBeenCalledWith( { args: "rebase feature-branch --preserve-merges", failHelpKey: "test-key", onError, showError: true } );
+				} );
+			} );
+
+			it( `should call "rebaseUpstreamDevelop" with default onError of undefined`, () => {
+				git.rebase = jest.fn( () => Promise.resolve( "" ) );
+				return git.rebaseUpstreamDevelop().then( () => {
+					expect( git.rebase ).toHaveBeenCalledTimes( 1 );
+					expect( git.rebase ).toHaveBeenCalledWith( { branch: "upstream/develop", failHelpKey: "gitRebaseInteractive", onError: undefined, showError: false } );
+				} );
+			} );
+
+			it( `should call "rebaseUpstreamMaster" with default onError of undefined`, () => {
+				git.rebase = jest.fn( () => Promise.resolve( "" ) );
+				return git.rebaseUpstreamMaster().then( () => {
+					expect( git.rebase ).toHaveBeenCalledTimes( 1 );
+					expect( git.rebase ).toHaveBeenCalledWith( { branch: "upstream/master", onError: undefined } );
 				} );
 			} );
 

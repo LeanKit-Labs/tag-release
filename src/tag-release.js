@@ -7,7 +7,7 @@ import resetWorkflow from "./workflows/reset";
 import promoteWorkflow, { keepTheBallRolling as promoteContinue } from "./workflows/promote";
 import continueWorkflow from "./workflows/continue";
 import qaWorkflow, { qaDefault, qaUpdate } from "./workflows/qa";
-import prWorkflow, { keepTheBallRolling as prContinue } from "./workflows/pr";
+import prWorkflow, { prRebaseSuccess, prRebaseConflict, prContinue } from "./workflows/pr";
 
 export default state => {
 	if ( state.continue ) {
@@ -31,6 +31,16 @@ export default state => {
 		} );
 	}
 
+	if ( state.pr ) {
+		return sequence( prWorkflow, state ).then( () => {
+			if ( state.conflict ) {
+				return sequence( prRebaseConflict, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
+			}
+
+			return sequence( prRebaseSuccess, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console
+		} );
+	}
+
 	let workflow = defaultWorkflow;
 	if ( state.prerelease ) {
 		workflow = prereleaseWorkflow;
@@ -42,10 +52,6 @@ export default state => {
 
 	if ( state.promote ) {
 		workflow = promoteWorkflow;
-	}
-
-	if ( state.pr ) {
-		workflow = prWorkflow;
 	}
 
 	return sequence( workflow, state ).then( () => console.log( "Finished" ) ); // eslint-disable-line no-console

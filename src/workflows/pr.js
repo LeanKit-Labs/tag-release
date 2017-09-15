@@ -1,4 +1,5 @@
-import * as run from "./steps";
+import * as run from "./steps/index";
+import { gitRebaseUpstreamDevelopWithConflictFlag, resolvePackageJSONConflicts, verifyConflictResolution } from "./steps/conflictResolution";
 import { createPullRequest } from "./shared";
 
 export default [
@@ -7,11 +8,26 @@ export default [
 	run.getFeatureBranch,
 	run.gitRebaseUpstreamBranch,
 	run.saveState,
-	run.gitRebaseUpstreamDevelop,
+	run.getReposFromBumpCommit,
+	run.verifyPackagesToPromote,
+	run.getCurrentDependencyVersions,
+	gitRebaseUpstreamDevelopWithConflictFlag
+];
+
+export const prRebaseConflict = [
+	resolvePackageJSONConflicts,
+	verifyConflictResolution,
+	run.gitStageFiles,
+	run.gitRebaseContinue,
+	run.getFeatureBranch,
 	...createPullRequest
 ];
 
-export const keepTheBallRolling = [
+export const prRebaseSuccess = [
+	...createPullRequest
+];
+
+export const prContinue = [
 	run.getPackageScope,
 	...createPullRequest
 ];

@@ -5,11 +5,19 @@ import semver from "semver";
 const DEFAULT_PRERELEASE_TAG_LIST_LIMIT = 10;
 
 const git = {
-	runCommand( { args, showOutput = true, logMessage, failHelpKey = "gitCommandFailed", exitOnFail = true, showError = true, fullCommand = false } ) {
+	runCommand( { args, showOutput = true, logMessage, failHelpKey = "gitCommandFailed", exitOnFail = true, showError = true, fullCommand = false, onError } ) {
 		const command = fullCommand ? `${ args }` : `git ${ args }`;
 
 		if ( !showOutput ) {
 			return util.exec( command );
+		}
+
+		if ( onError === undefined ) {
+			onError = err => {
+				util.advise( failHelpKey, { exit: exitOnFail } );
+
+				return showError ? () => Promise.reject( err ) : () => Promise.reject();
+			};
 		}
 
 		util.log.begin( logMessage || command );
@@ -20,13 +28,8 @@ const git = {
 			} )
 			.catch( err => {
 				util.log.end();
-				util.advise( failHelpKey, { exit: exitOnFail } );
 
-				if ( !showError ) {
-					return Promise.reject();
-				}
-
-				return Promise.reject( err );
+				return onError( err )();
 			} );
 	},
 
@@ -66,9 +69,9 @@ const git = {
 		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey } : { args } );
 	},
 
-	rebase( { branch, failHelpKey, showError = true } ) {
+	rebase( { branch, failHelpKey, onError, showError = true } ) {
 		const args = `rebase ${ branch } --preserve-merges`;
-		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey, showError } : { args, showError } );
+		return git.runCommand( ( failHelpKey && failHelpKey.length ) ? { args, failHelpKey, showError, onError } : { args, showError, onError } );
 	},
 
 	mergeMaster() {
@@ -239,8 +242,8 @@ const git = {
 		return git.runCommand( { args, logMessage: "Removing pre-release commit history", failHelpKey: "gitRebaseInteractive", showError: false, fullCommand: true } );
 	},
 
-	rebaseUpstreamMaster() {
-		return git.rebase( { branch: "upstream/master" } );
+	rebaseUpstreamMaster( { onError } = {} ) {
+		return git.rebase( { branch: "upstream/master", onError } );
 	},
 
 	getBranchList() {
@@ -285,12 +288,12 @@ const git = {
 		return git.runCommand( { args } );
 	},
 
-	rebaseUpstreamBranch( branch ) {
-		return git.rebase( { branch: `upstream/${ branch }` } );
+	rebaseUpstreamBranch( { branch, onError } ) {
+		return git.rebase( { branch: `upstream/${ branch }`, onError } );
 	},
 
-	rebaseUpstreamDevelop() {
-		return git.rebase( { branch: "upstream/develop", failHelpKey: "gitRebaseInteractive", showError: false } );
+	rebaseUpstreamDevelop( { onError } = {} ) {
+		return git.rebase( { branch: "upstream/develop", failHelpKey: "gitRebaseInteractive", showError: false, onError } );
 	},
 
 	getLatestCommitMessage() {
@@ -302,6 +305,11 @@ const git = {
 		util.deleteFile( path.join( __dirname, ".commits-to-rebase.txt" ) );
 
 		return Promise.resolve();
+	},
+
+	status( showOutput = true ) {
+		const args = "status";
+		return git.runCommand( { args, showOutput } );
 	}
 
 };

@@ -47,7 +47,7 @@ import resetWorkflow from "../src/workflows/reset";
 import promoteWorkflow, { keepTheBallRolling as promoteContinue } from "../src/workflows/promote";
 import continueWorkflow from "../src/workflows/continue";
 import qaWorkflow, { qaDefault, qaUpdate } from "../src/workflows/qa";
-import prWorkflow, { keepTheBallRolling as prContinue } from "../src/workflows/pr";
+import prWorkflow, { prRebaseSuccess, prRebaseConflict, prContinue } from "../src/workflows/pr";
 import tagRelease from "../src/tag-release";
 
 describe( "tag-release", () => {
@@ -158,10 +158,26 @@ describe( "tag-release", () => {
 		} );
 	} );
 
-	it( "should run the pr workflow when the CLI flag is passed", () => {
-		tagRelease( { pr: true } ).then( () => {
-			expect( sequence ).toHaveBeenCalledTimes( 1 );
-			expect( sequence ).toHaveBeenCalledWith( prWorkflow, { pr: true } );
+	describe( "pr", () => {
+		it( "should run the pr workflow when the CLI flag is passed", () => {
+			tagRelease( { pr: true } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( prWorkflow, { pr: true } );
+			} );
+		} );
+
+		it( "should run the success pr workflow when the CLI flag is passed and there are no conflicts", () => {
+			tagRelease( { pr: true, conflict: false } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( prRebaseSuccess, { pr: true, conflict: false } );
+			} );
+		} );
+
+		it( "should run the conflict pr workflow when the CLI flag is passed and there are conflicts", () => {
+			tagRelease( { pr: true, conflict: true } ).then( () => {
+				expect( sequence ).toHaveBeenCalledTimes( 2 );
+				expect( sequence ).toHaveBeenCalledWith( prRebaseConflict, { pr: true, conflict: true } );
+			} );
 		} );
 	} );
 } );

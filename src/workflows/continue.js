@@ -1,8 +1,9 @@
-import * as run from "./steps";
+import { gitStageFiles, gitRebaseContinue, getFeatureBranch } from "./steps/index";
+import { verifyConflictResolution } from "./steps/conflictResolution";
 
 export default [
-	run.verifyConflictResolution,
-	run.gitStageFiles,
-	run.gitRebaseContinue,
-	run.getFeatureBranch
+	verifyConflictResolution,
+	gitStageFiles,
+	gitRebaseContinue,
+	getFeatureBranch
 ];
