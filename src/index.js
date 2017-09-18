@@ -6,6 +6,7 @@ import _ from "lodash";
 import utils from "./utils.js";
 import chalk from "chalk";
 import tagRelease from "./tag-release";
+import help from "./help";
 import logger from "better-console";
 import fmt from "fmt";
 import pkg from "../package.json";
@@ -39,29 +40,7 @@ commander
 	.option( "--qa [scope]", "Create initial upstream branch for lightning." )
 	.option( "--pr [scope]", "Update lightning branch and create a PR to develop." );
 
-commander.on( "--help", () => {
-	console.log( "" );
-	console.log( "  Examples: \n" );
-	console.log( "    $ tag-release" );
-	console.log( "    $ tag-release --config ../../config.json" );
-	console.log( "    $ tag-release -c ./manifest.json" );
-	console.log( "    $ tag-release --release major" );
-	console.log( "    $ tag-release -r minor" );
-	console.log( "    $ tag-release --prerelease" );
-	console.log( "    $ tag-release -p -i rc" );
-	console.log( "    $ tag-release --reset" );
-	console.log( "    $ tag-release --verbose" );
-	console.log( "    $ tag-release -v" );
-	console.log( "    $ tag-release --promote" );
-	console.log( "    $ tag-release --promote v1.1.1-my-tagged-version.0" );
-	console.log( "    $ tag-release --continue" );
-	console.log( "    $ tag-release --qa" );
-	console.log( "    $ tag-release --qa myorg" );
-	console.log( "    $ tag-release --pr" );
-	console.log( "    $ tag-release --pr myorg" );
-	console.log( "" );
-	console.log( `Link to README: ${ chalk.yellow.underline.bold( "https://github.com/LeanKit-Labs/tag-release/blob/master/README.md" ) } ` );
-} );
+commander.on( "--help", () => help() );
 
 commander.parse( process.argv );
 

@@ -280,5 +280,18 @@ export default {
 		if ( exit ) {
 			process.exit( 0 ); // eslint-disable-line no-process-exit
 		}
+	},
+	hasLkScope() {
+		const GET_LK_REGISTRY_SCOPE = "npm config get @lk:registry";
+		const run = command => childProcess.execSync( command ).toString().trim();
+		return run( GET_LK_REGISTRY_SCOPE ) !== "undefined";
+	},
+	renderHelpContent( content ) {
+		// mocking console.log is not awesome, and this function only exists
+		// for the purpose of avoiding having to mock console.log in tests,
+		// so we're just going to go ahead and safely ignore this in coverage
+
+		/* istanbul ignore next */
+		console.log( content ); // eslint-disable-line no-console
 	}
 };
