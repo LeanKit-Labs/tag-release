@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.7.0
+
+* Refactored help output, and added link to LK tag-release workflow docs
+
 ### 5.6.0
 
 * Refactored common sequential steps into shared workflow groups for reuse
