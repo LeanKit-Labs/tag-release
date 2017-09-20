@@ -1421,12 +1421,10 @@ describe( "shared workflow steps", () => {
 	} );
 
 	describe( "gitGenerateRebaseCommitLog", () => {
-		it( "should call `git.generateRebaseCommitLog` with the appropriate arguments", () => {
-			state.promote = "v1.1.1";
+		it( "should call `git.generateRebaseCommitLog`", () => {
 			git.generateRebaseCommitLog = jest.fn( () => Promise.resolve() );
 			return run.gitGenerateRebaseCommitLog( state ).then( () => {
 				expect( git.generateRebaseCommitLog ).toHaveBeenCalledTimes( 1 );
-				expect( git.generateRebaseCommitLog ).toHaveBeenCalledWith( "v1.1.1" );
 			} );
 		} );
 	} );

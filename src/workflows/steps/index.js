@@ -459,8 +459,8 @@ export function gitCheckoutTag( state ) {
 	return git.checkoutTag( state.promote );
 }
 
-export function gitGenerateRebaseCommitLog( state ) {
-	return git.generateRebaseCommitLog( state.promote );
+export function gitGenerateRebaseCommitLog() {
+	return git.generateRebaseCommitLog();
 }
 
 export function gitRemovePreReleaseCommits() {
