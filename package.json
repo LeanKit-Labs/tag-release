@@ -1,6 +1,6 @@
 {
   "name": "tag-release",
-  "version": "5.8.0-fancy-pr.0",
+  "version": "5.8.0-fancy-pr.1",
   "description": "Automatically Tag and Release Repositories",
   "main": "index.js",
   "bin": {
