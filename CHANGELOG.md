@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.8.0
+
+* Added auto conflict resolution for package.json with running --pr
+
 ### 5.7.0
 
 * Refactored help output, and added link to LK tag-release workflow docs
