@@ -1,4 +1,4 @@
-import * as run from "./steps";
+import * as run from "./steps/index";
 import { rebaseUpdateLogCommitTagRelease } from "./shared";
 
 export default [
