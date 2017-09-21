@@ -222,7 +222,7 @@ describe( "git", () => {
 				expectedRunCommandArgs: { args: "branch -D promote-release-v1.1.1-feature.0", showOutput: true }
 			},
 			stageFiles: {
-				expectedRunCommandArgs: { args: "add -A" }
+				expectedRunCommandArgs: { args: "add -u" }
 			},
 			rebaseContinue: {
 				expectedRunCommandArgs: { args: `GIT_EDITOR="cat" git rebase --continue`, logMessage: "Continuing with rebase", failHelpKey: "gitRebaseInteractive", showError: false, fullCommand: true }

@@ -272,7 +272,7 @@ const git = {
 	},
 
 	stageFiles() {
-		const args = `add -A`;
+		const args = `add -u`;
 		return git.runCommand( { args } );
 	},
 
