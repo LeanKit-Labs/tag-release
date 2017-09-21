@@ -2,6 +2,7 @@ import * as run from "./steps";
 
 export const rebaseUpdateLogCommitTagRelease = [
 	run.getCurrentBranchVersion,
+	run.checkHasDevelopBranch,
 	run.gitMergeUpstreamDevelop,
 	run.gitShortLog,
 	run.previewLog,

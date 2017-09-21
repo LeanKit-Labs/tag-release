@@ -1,4 +1,4 @@
-import { default as promoteWorkflow, keepTheBallRolling } from "../../src/workflows/promote";
+import { default as promoteWorkflow, promoteContinue } from "../../src/workflows/promote";
 import * as run from "../../src/workflows/steps";
 
 describe( "promote workflows", () => {
@@ -15,9 +15,8 @@ describe( "promote workflows", () => {
 				run.gitCheckoutMaster,
 				run.gitMergeUpstreamMaster,
 				run.gitMergePromotionBranch,
-				run.gitMergeUpstreamBranch,
-				run.checkHasDevelopBranch,
 				run.getCurrentBranchVersion,
+				run.checkHasDevelopBranch,
 				run.gitMergeUpstreamDevelop,
 				run.gitShortLog,
 				run.previewLog,
@@ -42,15 +41,15 @@ describe( "promote workflows", () => {
 		} );
 	} );
 
-	describe( "keepTheBallRolling", () => {
+	describe( "promoteContinue", () => {
 		it( "should have all of the required steps", () => {
-			expect( keepTheBallRolling ).toEqual( [
+			expect( promoteContinue ).toEqual( [
 				run.setPromote,
-				run.checkHasDevelopBranch,
 				run.gitCheckoutMaster,
 				run.gitMergeUpstreamMaster,
 				run.gitMergePromotionBranch,
 				run.getCurrentBranchVersion,
+				run.checkHasDevelopBranch,
 				run.gitMergeUpstreamDevelop,
 				run.gitShortLog,
 				run.previewLog,
