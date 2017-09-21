@@ -36,7 +36,8 @@ describe( "promote workflows", () => {
 				run.gitPushOriginMaster,
 				run.githubUpstream,
 				run.githubRelease,
-				run.cleanUpTmpFiles
+				run.cleanUpTmpFiles,
+				run.gitRemovePromotionBranches
 			] );
 		} );
 	} );
@@ -69,7 +70,8 @@ describe( "promote workflows", () => {
 				run.gitPushOriginMaster,
 				run.githubUpstream,
 				run.githubRelease,
-				run.cleanUpTmpFiles
+				run.cleanUpTmpFiles,
+				run.gitRemovePromotionBranches
 			] );
 		} );
 	} );

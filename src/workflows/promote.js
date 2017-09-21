@@ -13,7 +13,8 @@ export default [
 	run.gitMergeUpstreamMaster,
 	run.gitMergePromotionBranch,
 	...rebaseUpdateLogCommitTagRelease,
-	run.cleanUpTmpFiles
+	run.cleanUpTmpFiles,
+	run.gitRemovePromotionBranches
 ];
 
 export const promoteContinue = [
@@ -22,5 +23,6 @@ export const promoteContinue = [
 	run.gitMergeUpstreamMaster,
 	run.gitMergePromotionBranch,
 	...rebaseUpdateLogCommitTagRelease,
-	run.cleanUpTmpFiles
+	run.cleanUpTmpFiles,
+	run.gitRemovePromotionBranches
 ];
