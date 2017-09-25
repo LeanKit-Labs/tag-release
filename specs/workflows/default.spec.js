@@ -5,10 +5,10 @@ describe( "default workflow", () => {
 	it( "should have all of the required steps", () => {
 		expect( defaultWorkflow ).toEqual( [
 			run.gitFetchUpstream,
-			run.checkHasDevelopBranch,
 			run.gitCheckoutMaster,
 			run.gitMergeUpstreamMaster,
 			run.getCurrentBranchVersion,
+			run.checkHasDevelopBranch,
 			run.gitMergeUpstreamDevelop,
 			run.gitShortLog,
 			run.previewLog,

@@ -4,7 +4,7 @@ import sequence from "when/sequence";
 import defaultWorkflow from "./workflows/default";
 import prereleaseWorkflow from "./workflows/pre-release";
 import resetWorkflow from "./workflows/reset";
-import promoteWorkflow, { keepTheBallRolling as promoteContinue } from "./workflows/promote";
+import promoteWorkflow, { promoteContinue } from "./workflows/promote";
 import continueWorkflow from "./workflows/continue";
 import qaWorkflow, { qaDefault, qaUpdate } from "./workflows/qa";
 import prWorkflow, { prRebaseSuccess, prRebaseConflict, prContinue } from "./workflows/pr";

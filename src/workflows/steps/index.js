@@ -459,8 +459,8 @@ export function gitCheckoutTag( state ) {
 	return git.checkoutTag( state.promote );
 }
 
-export function gitGenerateRebaseCommitLog( state ) {
-	return git.generateRebaseCommitLog( state.promote );
+export function gitGenerateRebaseCommitLog() {
+	return git.generateRebaseCommitLog();
 }
 
 export function gitRemovePreReleaseCommits() {
@@ -729,8 +729,9 @@ export function createGithubPullRequestAganistDevelop( state ) {
 
 	const repository = github.getRepo( repositoryOwner, repositoryName );
 
+	const [ , , reason = "" ] = state.bumpComment.match( /Bumped (.*): (.*)/ ) || [];
 	const options = {
-		title: state.bumpComment,
+		title: reason,
 		head: `${ repositoryOwner }:${ branch }`,
 		base: "develop"
 	};

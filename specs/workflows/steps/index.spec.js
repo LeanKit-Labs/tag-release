@@ -1421,12 +1421,10 @@ describe( "shared workflow steps", () => {
 	} );
 
 	describe( "gitGenerateRebaseCommitLog", () => {
-		it( "should call `git.generateRebaseCommitLog` with the appropriate arguments", () => {
-			state.promote = "v1.1.1";
+		it( "should call `git.generateRebaseCommitLog`", () => {
 			git.generateRebaseCommitLog = jest.fn( () => Promise.resolve() );
 			return run.gitGenerateRebaseCommitLog( state ).then( () => {
 				expect( git.generateRebaseCommitLog ).toHaveBeenCalledTimes( 1 );
-				expect( git.generateRebaseCommitLog ).toHaveBeenCalledWith( "v1.1.1" );
 			} );
 		} );
 	} );
@@ -2161,12 +2159,23 @@ describe( "shared workflow steps", () => {
 				github: { owner: "someone-awesome", name: "something-awesome" },
 				token: "z8259r",
 				prerelease: false,
-				branch: "feature-branch"
+				branch: "feature-branch",
+				bumpComment: "Bumped my-package to 1.1.1: This is my reason for the change"
 			};
 
 			logger.log = jest.fn();
 			util.prompt = jest.fn( () => Promise.resolve( { name: "Something awesome" } ) );
 			GitHub.mockImplementation( mockGitHub() );
+		} );
+
+		describe( "when bumpComment is falsy", () => {
+			it( "should call `editIssue` with issue number and label", () => {
+				state.bumpComment = "";
+				return run.createGithubPullRequestAganistDevelop( state ).then( () => {
+					expect( editIssue ).toHaveBeenCalledTimes( 1 );
+					expect( editIssue ).toHaveBeenCalledWith( 47, { labels: [ "Ready to Merge Into Develop" ] } );
+				} );
+			} );
 		} );
 
 		it( "should create a new GitHub client instance given a valid auth token", () => {

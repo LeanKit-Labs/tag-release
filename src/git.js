@@ -217,15 +217,18 @@ const git = {
 		return git.runCommand( { args } );
 	},
 
-	generateRebaseCommitLog( tag ) {
-		tag = tag.slice( 1, tag.lastIndexOf( "." ) ); // remove the 'v' and version of pre-release that it is eg. .0, .1, .2, etc...
+	generateRebaseCommitLog() {
+		const preReleaseRegEx = /^v?\d+\.\d+\.\d+\-.+\.\d+$/;
+		const gitLogMsgRegEx = /^[0-9a-f]{5,40} (.*)/;
 
 		const args = `log upstream/master..HEAD --pretty=format:"%h %s"`;
 		return git.runCommand( { args } ).then( result => {
 			let commits = result.split( "\n" );
 
 			commits = commits.reduce( ( memo, commit ) => {
-				if ( !commit.includes( tag ) ) {
+				const [ , commitMsg ] = gitLogMsgRegEx.exec( commit ) || [];
+
+				if ( !preReleaseRegEx.test( commitMsg ) ) {
 					memo.push( `pick ${ commit }`.trim() );
 				}
 				return memo;
@@ -269,7 +272,7 @@ const git = {
 	},
 
 	stageFiles() {
-		const args = `add -A`;
+		const args = `add -u`;
 		return git.runCommand( { args } );
 	},
 

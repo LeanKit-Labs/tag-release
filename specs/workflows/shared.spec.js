@@ -6,6 +6,7 @@ describe( "shared workflows", () => {
 		it( "should have all of the required steps", () => {
 			expect( rebaseUpdateLogCommitTagRelease ).toEqual( [
 				run.getCurrentBranchVersion,
+				run.checkHasDevelopBranch,
 				run.gitMergeUpstreamDevelop,
 				run.gitShortLog,
 				run.previewLog,
