@@ -17,7 +17,7 @@ jest.mock( "../src/workflows/reset", () => {
 jest.mock( "../src/workflows/promote", () => {
 	return {
 		default: "promote",
-		keepTheBallRolling: "promoteContinue"
+		promoteContinue: "promoteContinue"
 	};
 } );
 
@@ -36,7 +36,7 @@ jest.mock( "../src/workflows/qa", () => {
 jest.mock( "../src/workflows/pr", () => {
 	return {
 		default: "pr",
-		keepTheBallRolling: "prContinue"
+		prContinue: "prContinue"
 	};
 } );
 
@@ -44,7 +44,7 @@ import sequence from "when/sequence";
 import defaultWorkflow from "../src/workflows/default";
 import prereleaseWorkflow from "../src/workflows/pre-release";
 import resetWorkflow from "../src/workflows/reset";
-import promoteWorkflow, { keepTheBallRolling as promoteContinue } from "../src/workflows/promote";
+import promoteWorkflow, { promoteContinue } from "../src/workflows/promote";
 import continueWorkflow from "../src/workflows/continue";
 import qaWorkflow, { qaDefault, qaUpdate } from "../src/workflows/qa";
 import prWorkflow, { prRebaseSuccess, prRebaseConflict, prContinue } from "../src/workflows/pr";

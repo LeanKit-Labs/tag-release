@@ -12,18 +12,17 @@ export default [
 	run.gitCheckoutMaster,
 	run.gitMergeUpstreamMaster,
 	run.gitMergePromotionBranch,
-	run.gitMergeUpstreamBranch,
-	run.checkHasDevelopBranch,
 	...rebaseUpdateLogCommitTagRelease,
-	run.cleanUpTmpFiles
+	run.cleanUpTmpFiles,
+	run.gitRemovePromotionBranches
 ];
 
-export const keepTheBallRolling = [
+export const promoteContinue = [
 	run.setPromote,
-	run.checkHasDevelopBranch,
 	run.gitCheckoutMaster,
 	run.gitMergeUpstreamMaster,
 	run.gitMergePromotionBranch,
 	...rebaseUpdateLogCommitTagRelease,
-	run.cleanUpTmpFiles
+	run.cleanUpTmpFiles,
+	run.gitRemovePromotionBranches
 ];
