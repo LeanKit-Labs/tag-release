@@ -1,5 +1,14 @@
 ## 5.x
 
+### 5.8.1
+
+* Removed powershell step from PR review steps
+* Removed Bumped [pkg] to [v] from PR title to only use commit reason
+* Fixed --promote not cleaning up tmp branch
+* Cleaned up some of the workflow steps
+* Fixed add to only add tracked files after conflict resolution
+* Use regex to find pre-release commits to remove
+
 ### 5.8.0
 
 * Added auto conflict resolution for package.json with running --pr
