@@ -13,7 +13,6 @@
 - [ ] Coverage Reviewed
 - [ ] Feature worked as expected
 - [ ] Added or updated flags to `--help` and `README.md`
-- [ ] Does the feature work in Windows PowerShell?
 - [ ] Is the version upgrade path clear for this change? (breaking vs minor vs
   patch)
 - [ ] Follow up work tracked in a card if needed
