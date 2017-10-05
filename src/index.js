@@ -76,7 +76,9 @@ export function startTagRelease(options) {
 		options = _.extend({}, commander, options);
 		options.configPath = options.config || "./package.json";
 
-		return tagRelease(options);
+		return tagRelease(options).catch(error => {
+			console.log(`Tag-release encountered a problem: ${error}`);
+		});
 	} catch (error) {
 		console.log(`Tag-release encountered a problem: ${error}`);
 	}

@@ -48,6 +48,9 @@ export default {
 	deleteFile(path) {
 		return fs.existsSync(path) ? fs.unlink(path) : Promise.resolve();
 	},
+	fileExists(path) {
+		return fs.existsSync(path) ? true : false;
+	},
 	exec(command) {
 		return new Promise((resolve, reject) =>
 			childProcess.exec(command, (error, stdout) => {

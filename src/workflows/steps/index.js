@@ -427,6 +427,18 @@ export function githubUpstream(state) {
 		.catch(error => logger.log("error", error));
 }
 
+export function githubOrigin(state) {
+	const command = `git config remote.origin.url`;
+	return util
+		.exec(command)
+		.then(data => {
+			const [, owner, name] =
+				data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) || [];
+			state.github = { owner, name };
+		})
+		.catch(error => logger.log("error", error));
+}
+
 export function githubRelease(state) {
 	const {
 		github: { owner: repositoryOwner, name: repositoryName },
@@ -901,4 +913,101 @@ export function getTagsFromRepo(state, repositoryName) {
 			return tags;
 		})
 		.catch(err => logger.log(chalk.red(err)));
+}
+
+export function verifyRemotes(state) {
+	const command = `git remote`;
+	return util.exec(command).then(response => {
+		state.remotes = {
+			origin: response.includes("origin") ? true : false,
+			upstream: response.includes("upstream") ? true : false
+		};
+	});
+}
+
+export function verifyOrigin(state) {
+	const { remotes: { origin } } = state;
+	util.log.begin("Verifying origin remote");
+
+	if (!origin) {
+		util.advise("gitOrigin");
+	}
+
+	util.log.end();
+	return Promise.resolve();
+}
+
+export function verifyUpstream(state) {
+	const {
+		github: { owner: repositoryOwner, name: repositoryName },
+		token,
+		remotes: { upstream }
+	} = state;
+	util.log.begin("Verifying upstream remote");
+
+	if (!upstream) {
+		util.log.end();
+		util.log.begin("Creating upstream remote");
+		const github = new GitHub({ token });
+
+		const repository = github.getRepo(repositoryOwner, repositoryName);
+
+		return repository
+			.getDetails()
+			.then(response => {
+				const parent_ssh_url = response.data.hasOwnProperty("parent")
+					? response.data.parent.ssh_url
+					: response.data.ssh_url;
+				const command = `git remote add upstream ${parent_ssh_url}`;
+				return util
+					.exec(command)
+					.then(() => {
+						util.log.end();
+					})
+					.catch(err => logger.log(chalk.red(err)));
+			})
+			.catch(err => logger.log(chalk.red(err)));
+	}
+
+	util.log.end();
+	return Promise.resolve();
+}
+
+export function verifyChangelog() {
+	util.log.begin("Verifying CHANGELOG.md");
+	util.log.end();
+	if (util.fileExists(CHANGELOG_PATH)) {
+		return Promise.resolve();
+	}
+
+	return util
+		.prompt([
+			{
+				type: "confirm",
+				name: "changelog",
+				message: "Would you like us to create a CHANGELOG.md",
+				default: true
+			}
+		])
+		.then(answers => {
+			if (answers.changelog) {
+				util.log.begin("Creating CHANGELOG.md");
+				util.log.end();
+				return util.writeFile(CHANGELOG_PATH, "");
+			}
+
+			return Promise.resolve();
+		});
+}
+
+export function verifyPackageJson(state) {
+	const { configPath } = state;
+	util.log.begin("Verifying package.json");
+	util.log.end();
+
+	if (!util.fileExists(configPath)) {
+		util.advise("missingPackageJson");
+	}
+
+	return Promise.resolve();
 }
