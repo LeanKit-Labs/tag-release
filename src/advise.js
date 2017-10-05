@@ -74,6 +74,6 @@ Either you don't have an upstream with the same name as your local, or we weren'
 
 const MAXIMUM_WIDTH = 50;
 
-export default function( key, width = MAXIMUM_WIDTH ) {
-	return wrap( MESSAGES[ key ], { width, indent: "" } );
+export default function(key, width = MAXIMUM_WIDTH) {
+	return wrap(MESSAGES[key], { width, indent: "" });
 }

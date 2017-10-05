@@ -1,9 +1,9 @@
 import defaultWorkflow from "../../src/workflows/default";
 import * as run from "../../src/workflows/steps";
 
-describe( "default workflow", () => {
-	it( "should have all of the required steps", () => {
-		expect( defaultWorkflow ).toEqual( [
+describe("default workflow", () => {
+	it("should have all of the required steps", () => {
+		expect(defaultWorkflow).toEqual([
 			run.gitFetchUpstream,
 			run.gitCheckoutMaster,
 			run.gitMergeUpstreamMaster,
@@ -28,6 +28,6 @@ describe( "default workflow", () => {
 			run.gitPushOriginMaster,
 			run.githubUpstream,
 			run.githubRelease
-		] );
-	} );
-} );
+		]);
+	});
+});

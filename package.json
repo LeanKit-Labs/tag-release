@@ -7,8 +7,7 @@
     "tag-release": "./index.js"
   },
   "scripts": {
-    "lint": "eslint --ignore-path .gitignore ./",
-    "lint:fix": "eslint --fix --ignore-path .gitignore ./",
+    "lint": "eslint --fix --ignore-path .gitignore ./",
     "test": "jest --coverage",
     "test:verbose": "npm run test -- --verbose",
     "test:watch": "npm test -- --watchAll",
@@ -16,13 +15,16 @@
     "cover": "npm test",
     "cover:watch": "npm run test:watch",
     "cover:open": "open coverage/lcov-report/index.html",
-    "pre-commit": "echo 'Running pre-commit hooks...' && exit 0",
-    "pretest": "npm run lint"
+    "precommit": "lint-staged",
+    "pretest": "npm run lint",
+    "prettier-all-the-things": "find ./**/*.js | xargs prettier --write --use-tabs"
   },
-  "pre-commit": [
-    "pre-commit",
-    "lint"
-  ],
+  "lint-staged": {
+    "*.js": [
+      "prettier --use-tabs --write",
+      "git add"
+    ]
+  },
   "author": "LeanKit",
   "license": "MIT",
   "publishConfig": {
@@ -53,11 +55,11 @@
     "word-wrap": "^1.1.0"
   },
   "devDependencies": {
-    "eslint": "^1.10.3",
-    "eslint-config-leankit": "^1.1.0",
-    "babel-eslint": "^7.2.3",
+    "eslint-config-leankit": "^4.3.0",
+    "husky": "^0.14.3",
     "jest": "^20.0.4",
-    "pre-commit": "^1.1.3"
+    "lint-staged": "^4.2.3",
+    "prettier": "^1.7.4"
   },
   "jest": {
     "testMatch": [

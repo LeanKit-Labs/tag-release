@@ -1,10 +1,13 @@
-import { rebaseUpdateLogCommitTagRelease, createPullRequest } from "../../src/workflows/shared";
+import {
+	rebaseUpdateLogCommitTagRelease,
+	createPullRequest
+} from "../../src/workflows/shared";
 import * as run from "../../src/workflows/steps";
 
-describe( "shared workflows", () => {
-	describe( "rebaseUpdateLogCommitTagRelease", () => {
-		it( "should have all of the required steps", () => {
-			expect( rebaseUpdateLogCommitTagRelease ).toEqual( [
+describe("shared workflows", () => {
+	describe("rebaseUpdateLogCommitTagRelease", () => {
+		it("should have all of the required steps", () => {
+			expect(rebaseUpdateLogCommitTagRelease).toEqual([
 				run.getCurrentBranchVersion,
 				run.checkHasDevelopBranch,
 				run.gitMergeUpstreamDevelop,
@@ -26,13 +29,13 @@ describe( "shared workflows", () => {
 				run.gitPushOriginMaster,
 				run.githubUpstream,
 				run.githubRelease
-			] );
-		} );
-	} );
+			]);
+		});
+	});
 
-	describe( "createPullRequest", () => {
-		it( "should have all of the required steps", () => {
-			expect( createPullRequest ).toEqual( [
+	describe("createPullRequest", () => {
+		it("should have all of the required steps", () => {
+			expect(createPullRequest).toEqual([
 				run.getReposFromBumpCommit,
 				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
@@ -46,7 +49,7 @@ describe( "shared workflows", () => {
 				run.githubUpstream,
 				run.createGithubPullRequestAganistDevelop,
 				run.cleanUpTmpFiles
-			] );
-		} );
-	} );
-} );
+			]);
+		});
+	});
+});
