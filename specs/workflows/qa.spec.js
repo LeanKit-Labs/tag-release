@@ -1,19 +1,23 @@
-import { default as qaWorkflow, qaDefault, qaUpdate } from "../../src/workflows/qa";
+import {
+	default as qaWorkflow,
+	qaDefault,
+	qaUpdate
+} from "../../src/workflows/qa";
 import * as run from "../../src/workflows/steps";
 
-describe( "qa workflows", () => {
-	describe( "qaWorkflow", () => {
-		it( "should have all of the required steps", () => {
-			expect( qaWorkflow ).toEqual( [
+describe("qa workflows", () => {
+	describe("qaWorkflow", () => {
+		it("should have all of the required steps", () => {
+			expect(qaWorkflow).toEqual([
 				run.gitFetchUpstream,
 				run.getFeatureBranch,
 				run.getReposFromBumpCommit
-			] );
-		} );
-	} );
-	describe( "qaDefault", () => {
-		it( "should have all of the required steps", () => {
-			expect( qaDefault ).toEqual( [
+			]);
+		});
+	});
+	describe("qaDefault", () => {
+		it("should have all of the required steps", () => {
+			expect(qaDefault).toEqual([
 				run.checkHasDevelopBranch,
 				run.gitCheckoutDevelop,
 				run.gitRebaseUpstreamDevelop,
@@ -33,12 +37,12 @@ describe( "qa workflows", () => {
 				run.gitAdd,
 				run.gitCommitBumpMessage,
 				run.gitPushUpstreamFeatureBranch
-			] );
-		} );
-	} );
-	describe( "qaUpdate", () => {
-		it( "should have all of the required steps", () => {
-			expect( qaUpdate ).toEqual( [
+			]);
+		});
+	});
+	describe("qaUpdate", () => {
+		it("should have all of the required steps", () => {
+			expect(qaUpdate).toEqual([
 				run.getPackageScope,
 				run.getCurrentDependencyVersions,
 				run.githubUpstream,
@@ -48,7 +52,7 @@ describe( "qa workflows", () => {
 				run.gitAdd,
 				run.gitAmendCommitBumpMessage,
 				run.gitForcePushUpstreamFeatureBranch
-			] );
-		} );
-	} );
-} );
+			]);
+		});
+	});
+});

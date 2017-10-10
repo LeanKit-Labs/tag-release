@@ -1,10 +1,13 @@
-import { default as promoteWorkflow, promoteContinue } from "../../src/workflows/promote";
+import {
+	default as promoteWorkflow,
+	promoteContinue
+} from "../../src/workflows/promote";
 import * as run from "../../src/workflows/steps";
 
-describe( "promote workflows", () => {
-	describe( "default", () => {
-		it( "should have all of the required steps", () => {
-			expect( promoteWorkflow ).toEqual( [
+describe("promote workflows", () => {
+	describe("default", () => {
+		it("should have all of the required steps", () => {
+			expect(promoteWorkflow).toEqual([
 				run.gitFetchUpstream,
 				run.selectPrereleaseToPromote,
 				run.gitCheckoutTag,
@@ -38,13 +41,13 @@ describe( "promote workflows", () => {
 				run.githubRelease,
 				run.cleanUpTmpFiles,
 				run.gitRemovePromotionBranches
-			] );
-		} );
-	} );
+			]);
+		});
+	});
 
-	describe( "promoteContinue", () => {
-		it( "should have all of the required steps", () => {
-			expect( promoteContinue ).toEqual( [
+	describe("promoteContinue", () => {
+		it("should have all of the required steps", () => {
+			expect(promoteContinue).toEqual([
 				run.setPromote,
 				run.gitCheckoutMaster,
 				run.gitMergeUpstreamMaster,
@@ -72,7 +75,7 @@ describe( "promote workflows", () => {
 				run.githubRelease,
 				run.cleanUpTmpFiles,
 				run.gitRemovePromotionBranches
-			] );
-		} );
-	} );
-} );
+			]);
+		});
+	});
+});

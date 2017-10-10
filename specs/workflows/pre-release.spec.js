@@ -1,9 +1,9 @@
 import preReleaseWorkflow from "../../src/workflows/pre-release";
 import * as run from "../../src/workflows/steps";
 
-describe( "pre-release workflow", () => {
-	it( "should have all of the required steps", () => {
-		expect( preReleaseWorkflow ).toEqual( [
+describe("pre-release workflow", () => {
+	it("should have all of the required steps", () => {
+		expect(preReleaseWorkflow).toEqual([
 			run.gitFetchUpstream,
 			run.getCurrentBranchVersion,
 			run.setPrereleaseIdentifier,
@@ -21,6 +21,6 @@ describe( "pre-release workflow", () => {
 			run.npmPublish,
 			run.githubUpstream,
 			run.githubRelease
-		] );
-	} );
-} );
+		]);
+	});
+});

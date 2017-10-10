@@ -1,5 +1,9 @@
 import * as run from "./steps/index";
-import { gitRebaseUpstreamDevelopWithConflictFlag, resolvePackageJSONConflicts, verifyConflictResolution } from "./steps/conflictResolution";
+import {
+	gitRebaseUpstreamDevelopWithConflictFlag,
+	resolvePackageJSONConflicts,
+	verifyConflictResolution
+} from "./steps/conflictResolution";
 import { createPullRequest } from "./shared";
 
 export default [
@@ -23,11 +27,6 @@ export const prRebaseConflict = [
 	...createPullRequest
 ];
 
-export const prRebaseSuccess = [
-	...createPullRequest
-];
+export const prRebaseSuccess = [...createPullRequest];
 
-export const prContinue = [
-	run.getPackageScope,
-	...createPullRequest
-];
+export const prContinue = [run.getPackageScope, ...createPullRequest];
