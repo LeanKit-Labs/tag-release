@@ -282,6 +282,18 @@ describe("utils", () => {
 		});
 	});
 
+	describe("fileExists", () => {
+		it("should return true if file exists", () => {
+			fs.existsSync = jest.fn().mockReturnValue(true);
+			expect(util.fileExists("./some_path/file.txt")).toBeTruthy();
+		});
+
+		it("should return false if file doesn't exists", () => {
+			fs.existsSync = jest.fn().mockReturnValue(false);
+			expect(util.fileExists(null)).toBeFalsy();
+		});
+	});
+
 	describe("exec", () => {
 		it("should return a promise", () => {
 			const result = util.exec(`say "test"`);

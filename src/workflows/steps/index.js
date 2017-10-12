@@ -694,6 +694,10 @@ export function askChangeType(state) {
 		});
 }
 
+export function changeReasonValidator(changeReason) {
+	return changeReason.trim().length > 0;
+}
+
 export function askChangeReason(state) {
 	return util
 		.prompt([
@@ -703,7 +707,7 @@ export function askChangeReason(state) {
 				message: `What is the reason for this change? ${chalk.red(
 					"(required)"
 				)}`,
-				validate: changeReason => changeReason.trim().length > 0
+				validate: changeReasonValidator
 			}
 		])
 		.then(({ changeReason }) => {
@@ -922,8 +926,8 @@ export function verifyRemotes(state) {
 	const command = `git remote`;
 	return util.exec(command).then(response => {
 		state.remotes = {
-			origin: response.includes("origin") ? true : false,
-			upstream: response.includes("upstream") ? true : false
+			origin: response.includes("origin"),
+			upstream: response.includes("upstream")
 		};
 	});
 }
@@ -964,9 +968,7 @@ export function verifyUpstream(state) {
 				const command = `git remote add upstream ${parent_ssh_url}`;
 				return util
 					.exec(command)
-					.then(() => {
-						util.log.end();
-					})
+					.then(util.log.end)
 					.catch(err => logger.log(chalk.red(err)));
 			})
 			.catch(err => logger.log(chalk.red(err)));
@@ -978,10 +980,11 @@ export function verifyUpstream(state) {
 
 export function verifyChangelog() {
 	util.log.begin("Verifying CHANGELOG.md");
-	util.log.end();
 	if (util.fileExists(CHANGELOG_PATH)) {
+		util.log.end();
 		return Promise.resolve();
 	}
+	util.log.end();
 
 	return util
 		.prompt([
