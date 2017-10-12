@@ -70,7 +70,7 @@ export function setPrereleaseIdentifier(state) {
 			{
 				type: "input",
 				name: "prereleaseIdentifier",
-				message: "Pre-release Identifier:"
+				message: "What is your pre-release Identifier?"
 			}
 		])
 		.then(response => {
@@ -87,7 +87,7 @@ export function selectPrereleaseToPromote(state) {
 					{
 						type: "list",
 						name: "prereleaseToPromote",
-						message: "Select the pre-release you wish to promote:",
+						message: "Which pre-release do you wish to promote?",
 						choices: prereleases
 					}
 				])
@@ -201,7 +201,7 @@ export function askSemverJump(state) {
 			{
 				type: "list",
 				name: "release",
-				message: "What type of release is this",
+				message: "What type of release is this?",
 				choices
 			}
 		])
@@ -217,7 +217,7 @@ export function updateLog(state) {
 			{
 				type: "confirm",
 				name: "log",
-				message: "Would you like to edit your log",
+				message: "Would you like to edit your log?",
 				default: true
 			}
 		])
@@ -619,7 +619,7 @@ export function askReposToUpdate(state) {
 				{
 					type: "checkbox",
 					name: "packagesToPromote",
-					message: "Select the package(s) you wish to update:",
+					message: "Which package(s) do you wish to update?",
 					choices: packages
 				}
 			])
@@ -684,7 +684,7 @@ export function askChangeType(state) {
 			{
 				type: "list",
 				name: "changeType",
-				message: "What type of change is this work",
+				message: "What type of change is this work?",
 				choices: ["feature", "defect", "rework"]
 			}
 		])
@@ -700,7 +700,10 @@ export function askChangeReason(state) {
 			{
 				type: "input",
 				name: "changeReason",
-				message: "What is the reason for this change"
+				message: `What is the reason for this change? ${chalk.red(
+					"(required)"
+				)}`,
+				validate: changeReason => changeReason.trim().length > 0
 			}
 		])
 		.then(({ changeReason }) => {
@@ -985,7 +988,7 @@ export function verifyChangelog() {
 			{
 				type: "confirm",
 				name: "changelog",
-				message: "Would you like us to create a CHANGELOG.md",
+				message: "Would you like us to create a CHANGELOG.md?",
 				default: true
 			}
 		])
