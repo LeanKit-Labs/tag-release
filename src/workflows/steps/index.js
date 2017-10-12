@@ -694,6 +694,10 @@ export function askChangeType(state) {
 		});
 }
 
+export function changeReasonValidator(changeReason) {
+	return changeReason.trim().length > 0;
+}
+
 export function askChangeReason(state) {
 	return util
 		.prompt([
@@ -703,7 +707,7 @@ export function askChangeReason(state) {
 				message: `What is the reason for this change? ${chalk.red(
 					"(required)"
 				)}`,
-				validate: changeReason => changeReason.trim().length > 0
+				validate: changeReasonValidator
 			}
 		])
 		.then(({ changeReason }) => {
@@ -978,10 +982,11 @@ export function verifyUpstream(state) {
 
 export function verifyChangelog() {
 	util.log.begin("Verifying CHANGELOG.md");
-	util.log.end();
 	if (util.fileExists(CHANGELOG_PATH)) {
+		util.log.end();
 		return Promise.resolve();
 	}
+	util.log.end();
 
 	return util
 		.prompt([
