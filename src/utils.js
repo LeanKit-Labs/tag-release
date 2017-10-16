@@ -49,7 +49,7 @@ export default {
 		return fs.existsSync(path) ? fs.unlink(path) : Promise.resolve();
 	},
 	fileExists(path) {
-		return fs.existsSync(path) ? true : false;
+		return fs.existsSync(path);
 	},
 	exec(command) {
 		return new Promise((resolve, reject) =>

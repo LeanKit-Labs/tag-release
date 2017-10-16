@@ -926,8 +926,8 @@ export function verifyRemotes(state) {
 	const command = `git remote`;
 	return util.exec(command).then(response => {
 		state.remotes = {
-			origin: response.includes("origin") ? true : false,
-			upstream: response.includes("upstream") ? true : false
+			origin: response.includes("origin"),
+			upstream: response.includes("upstream")
 		};
 	});
 }
@@ -968,9 +968,7 @@ export function verifyUpstream(state) {
 				const command = `git remote add upstream ${parent_ssh_url}`;
 				return util
 					.exec(command)
-					.then(() => {
-						util.log.end();
-					})
+					.then(util.log.end)
 					.catch(err => logger.log(chalk.red(err)));
 			})
 			.catch(err => logger.log(chalk.red(err)));
