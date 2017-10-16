@@ -1250,6 +1250,16 @@ describe("shared workflow steps", () => {
 	});
 
 	describe("githubOrigin", () => {
+		beforeEach(() => {
+			state = {
+				remotes: {
+					origin: {
+						exists: true
+					}
+				}
+			};
+		});
+
 		it("should call `util.exec` with the appropriate arguments to get the origin repository url", () => {
 			util.exec = jest.fn(() =>
 				Promise.resolve("https://github.com/leankit-labs/tag-release.git")
@@ -1279,6 +1289,12 @@ describe("shared workflow steps", () => {
 						github: {
 							owner: "leankit-labs",
 							name: "tag-release"
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: "https://github.com/leankit-labs/tag-release.git"
+							}
 						}
 					});
 				});
@@ -1290,11 +1306,17 @@ describe("shared workflow steps", () => {
 						"https://github.com/banditsoftware/web-lightning-ui.git"
 					)
 				);
-				return run.githubUpstream(state).then(() => {
+				return run.githubOrigin(state).then(() => {
 					expect(state).toEqual({
 						github: {
 							owner: "banditsoftware",
 							name: "web-lightning-ui"
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: "https://github.com/banditsoftware/web-lightning-ui.git"
+							}
 						}
 					});
 				});
@@ -1311,6 +1333,12 @@ describe("shared workflow steps", () => {
 						github: {
 							owner: "leankit-labs",
 							name: "tag-release"
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: "git@github.com:leankit-labs/tag-release.git"
+							}
 						}
 					});
 				});
@@ -1320,11 +1348,17 @@ describe("shared workflow steps", () => {
 				util.exec = jest.fn(() =>
 					Promise.resolve("git@github.com:banditsoftware/web-lightning-ui.git")
 				);
-				return run.githubUpstream(state).then(() => {
+				return run.githubOrigin(state).then(() => {
 					expect(state).toEqual({
 						github: {
 							owner: "banditsoftware",
 							name: "web-lightning-ui"
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: "git@github.com:banditsoftware/web-lightning-ui.git"
+							}
 						}
 					});
 				});
@@ -1335,7 +1369,18 @@ describe("shared workflow steps", () => {
 			it("should set the github object on state to an empty object", () => {
 				util.exec = jest.fn(() => Promise.resolve(""));
 				return run.githubOrigin(state).then(() => {
-					expect(state).toEqual({ github: {} });
+					expect(state).toEqual({
+						github: {
+							owner: undefined,
+							name: undefined
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: ""
+							}
+						}
+					});
 				});
 			});
 		});
@@ -2747,8 +2792,8 @@ describe("shared workflow steps", () => {
 				return run.verifyRemotes(state).then(() => {
 					expect(state.remotes).toHaveProperty("origin");
 					expect(state.remotes).toHaveProperty("upstream");
-					expect(state.remotes.origin).toEqual(true);
-					expect(state.remotes.upstream).toEqual(true);
+					expect(state.remotes.origin.exists).toEqual(true);
+					expect(state.remotes.upstream.exists).toEqual(true);
 				});
 			});
 
@@ -2757,8 +2802,8 @@ describe("shared workflow steps", () => {
 				return run.verifyRemotes(state).then(() => {
 					expect(state.remotes).toHaveProperty("origin");
 					expect(state.remotes).toHaveProperty("upstream");
-					expect(state.remotes.origin).toEqual(false);
-					expect(state.remotes.upstream).toEqual(false);
+					expect(state.remotes.origin.exists).toEqual(false);
+					expect(state.remotes.upstream.exists).toEqual(false);
 				});
 			});
 
@@ -2767,8 +2812,8 @@ describe("shared workflow steps", () => {
 				return run.verifyRemotes(state).then(() => {
 					expect(state.remotes).toHaveProperty("origin");
 					expect(state.remotes).toHaveProperty("upstream");
-					expect(state.remotes.origin).toEqual(false);
-					expect(state.remotes.upstream).toEqual(true);
+					expect(state.remotes.origin.exists).toEqual(false);
+					expect(state.remotes.upstream.exists).toEqual(true);
 				});
 			});
 
@@ -2777,8 +2822,8 @@ describe("shared workflow steps", () => {
 				return run.verifyRemotes(state).then(() => {
 					expect(state.remotes).toHaveProperty("origin");
 					expect(state.remotes).toHaveProperty("upstream");
-					expect(state.remotes.origin).toEqual(true);
-					expect(state.remotes.upstream).toEqual(false);
+					expect(state.remotes.origin.exists).toEqual(true);
+					expect(state.remotes.upstream.exists).toEqual(false);
 				});
 			});
 		});
@@ -2788,7 +2833,9 @@ describe("shared workflow steps", () => {
 		beforeEach(() => {
 			state = {
 				remotes: {
-					origin: true
+					origin: {
+						exists: true
+					}
 				}
 			};
 		});
@@ -2809,7 +2856,9 @@ describe("shared workflow steps", () => {
 		it("should advise when remote origin doesn't exists", () => {
 			state = {
 				remotes: {
-					origin: false
+					origin: {
+						exists: false
+					}
 				}
 			};
 
@@ -2831,7 +2880,8 @@ describe("shared workflow steps", () => {
 						Promise.resolve({
 							data: {
 								parent: {
-									ssh_url: "git@github.com:johndoe/hasParent-repo.git"
+									ssh_url: "git@github.com:johndoe/hasParent-repo.git",
+									svn_url: "https://github.com/johndoe/noParent-repo.git"
 								}
 							}
 						})
@@ -2840,7 +2890,8 @@ describe("shared workflow steps", () => {
 					getDetails = jest.fn(() =>
 						Promise.resolve({
 							data: {
-								ssh_url: "git@github.com:johndoe/noParent-repo.git"
+								ssh_url: "git@github.com:johndoe/noParent-repo.git",
+								svn_url: "https://github.com/johndoe/noParent-repo.git"
 							}
 						})
 					);
@@ -2867,7 +2918,15 @@ describe("shared workflow steps", () => {
 			state = {
 				github: { owner: "someone-awesome", name: "something-awesome" },
 				token: "z8259r",
-				remotes: { upstream: false }
+				remotes: {
+					origin: {
+						exists: true,
+						url: "git@github.com:johnsmith/awesome-repo.git"
+					},
+					upstream: {
+						exists: false
+					}
+				}
 			};
 			util.exec = jest.fn(() => Promise.resolve(""));
 			GitHub.mockImplementation(mockGitHub());
@@ -2894,7 +2953,7 @@ describe("shared workflow steps", () => {
 
 		describe("when upstream remote exists", () => {
 			it("should log the action to console", () => {
-				state.remotes.upstream = true;
+				state.remotes.upstream.exists = true;
 
 				return run.verifyUpstream(state).then(() => {
 					expect(util.log.begin).toHaveBeenCalledTimes(1);
@@ -2927,6 +2986,33 @@ describe("shared workflow steps", () => {
 							"git remote add upstream git@github.com:johndoe/noParent-repo.git"
 						);
 					});
+				});
+
+				describe("when using svn_url", () => {
+					it("should create remote upstream", () => {
+						state.remotes.origin.url =
+							"https://github.com/johndoe/noParent-repo.git";
+						GitHub.mockImplementation(mockGitHub(true, false));
+
+						return run.verifyUpstream(state).then(() => {
+							expect(util.exec).toHaveBeenCalledTimes(1);
+							expect(util.exec).toHaveBeenCalledWith(
+								"git remote add upstream https://github.com/johndoe/noParent-repo.git"
+							);
+						});
+					});
+				});
+			});
+
+			it("should create remote upstream with svn_url", () => {
+				state.remotes.origin.url =
+					"https://github.com/johndoe/noParent-repo.git";
+
+				return run.verifyUpstream(state).then(() => {
+					expect(util.exec).toHaveBeenCalledTimes(1);
+					expect(util.exec).toHaveBeenCalledWith(
+						"git remote add upstream https://github.com/johndoe/noParent-repo.git"
+					);
 				});
 			});
 		});
