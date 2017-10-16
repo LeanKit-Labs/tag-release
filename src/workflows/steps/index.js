@@ -432,6 +432,7 @@ export function githubOrigin(state) {
 	return util
 		.exec(command)
 		.then(data => {
+			state.remotes.origin.url = data;
 			const [, owner, name] =
 				data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) || [];
 			state.github = { owner, name };
@@ -926,8 +927,12 @@ export function verifyRemotes(state) {
 	const command = `git remote`;
 	return util.exec(command).then(response => {
 		state.remotes = {
-			origin: response.includes("origin"),
-			upstream: response.includes("upstream")
+			origin: {
+				exists: response.includes("origin")
+			},
+			upstream: {
+				exists: response.includes("upstream")
+			}
 		};
 	});
 }
@@ -936,7 +941,7 @@ export function verifyOrigin(state) {
 	const { remotes: { origin } } = state;
 	util.log.begin("Verifying origin remote");
 
-	if (!origin) {
+	if (!origin.exists) {
 		util.advise("gitOrigin");
 	}
 
@@ -948,11 +953,11 @@ export function verifyUpstream(state) {
 	const {
 		github: { owner: repositoryOwner, name: repositoryName },
 		token,
-		remotes: { upstream }
+		remotes: { origin, upstream }
 	} = state;
 	util.log.begin("Verifying upstream remote");
 
-	if (!upstream) {
+	if (!upstream.exists) {
 		util.log.end();
 		util.log.begin("Creating upstream remote");
 		const github = new GitHub({ token });
@@ -962,13 +967,20 @@ export function verifyUpstream(state) {
 		return repository
 			.getDetails()
 			.then(response => {
-				const parent_ssh_url = response.data.hasOwnProperty("parent")
-					? response.data.parent.ssh_url
-					: response.data.ssh_url;
+				let parent_ssh_url;
+				if (response.data.hasOwnProperty("parent")) {
+					parent_ssh_url = origin.url.includes("https")
+						? response.data.parent.svn_url
+						: response.data.parent.ssh_url;
+				} else {
+					parent_ssh_url = origin.url.includes("https")
+						? response.data.svn_url
+						: response.data.ssh_url;
+				}
 				const command = `git remote add upstream ${parent_ssh_url}`;
 				return util
 					.exec(command)
-					.then(util.log.end)
+					.then(util.log.end())
 					.catch(err => logger.log(chalk.red(err)));
 			})
 			.catch(err => logger.log(chalk.red(err)));
