@@ -1,5 +1,13 @@
 ## 5.x
 
+### 5.9.0
+
+* Use svn_url when remotes use svn_url
+* Added tests for verifying remotes, package.json, CHANGELOG.md, and changeReason validation
+* Made changeReason required when running --qa
+* Added babel-preset-env and made --reset more new repo friendly ( verify remotes, package.json, CHANGELOG.md )
+* Added prettier support
+
 ### 5.8.1
 
 * Removed powershell step from PR review steps
