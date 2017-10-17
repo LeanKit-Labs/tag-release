@@ -55,6 +55,11 @@ You might consider reseting your branch by running 'git reset --hard upstream/de
 tag-release needs an upstream remote in order to work correctly. You can double check by running 'git remote -v'
 
 To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`,
+	gitOrigin: `It appears we couldn't access your remote origin repository.
+
+To add a remote origin run 'git remote add origin https://github.com/username/repo.git'
+
+You can double check by running 'git remote -v'`,
 	gitRebaseInteractive: `It looks like there was some conflict(s) while trying to rebase with upstream/master.
 
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue'. Tag-release
@@ -69,7 +74,12 @@ Please fix all conflict markers with the current conflict before running 'tag-re
 You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
 	gitMergeUpstreamBranch: `It appears that when trying to merge with the upstream branch something went wrong.
 
-Either you don't have an upstream with the same name as your local, or we weren't able to 'merge --ff-only' on your local branch with the upstream.`
+Either you don't have an upstream with the same name as your local, or we weren't able to 'merge --ff-only' on your local branch with the upstream.`,
+	missingPackageJson: `It appears you do not have a package.json. A package.json is required to use tag-release.
+
+You can use the 'npm init' command to generate a package.json for you.
+
+Alternatively, You can specifiy a different config file by using the -c command: 'tag-release -c another.json'`
 };
 
 const MAXIMUM_WIDTH = 50;
