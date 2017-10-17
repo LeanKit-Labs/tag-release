@@ -70,7 +70,7 @@ export function setPrereleaseIdentifier(state) {
 			{
 				type: "input",
 				name: "prereleaseIdentifier",
-				message: "Pre-release Identifier:"
+				message: "What is your pre-release Identifier?"
 			}
 		])
 		.then(response => {
@@ -87,7 +87,7 @@ export function selectPrereleaseToPromote(state) {
 					{
 						type: "list",
 						name: "prereleaseToPromote",
-						message: "Select the pre-release you wish to promote:",
+						message: "Which pre-release do you wish to promote?",
 						choices: prereleases
 					}
 				])
@@ -201,7 +201,7 @@ export function askSemverJump(state) {
 			{
 				type: "list",
 				name: "release",
-				message: "What type of release is this",
+				message: "What type of release is this?",
 				choices
 			}
 		])
@@ -217,7 +217,7 @@ export function updateLog(state) {
 			{
 				type: "confirm",
 				name: "log",
-				message: "Would you like to edit your log",
+				message: "Would you like to edit your log?",
 				default: true
 			}
 		])
@@ -427,6 +427,19 @@ export function githubUpstream(state) {
 		.catch(error => logger.log("error", error));
 }
 
+export function githubOrigin(state) {
+	const command = `git config remote.origin.url`;
+	return util
+		.exec(command)
+		.then(data => {
+			state.remotes.origin.url = data;
+			const [, owner, name] =
+				data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) || [];
+			state.github = { owner, name };
+		})
+		.catch(error => logger.log("error", error));
+}
+
 export function githubRelease(state) {
 	const {
 		github: { owner: repositoryOwner, name: repositoryName },
@@ -607,7 +620,7 @@ export function askReposToUpdate(state) {
 				{
 					type: "checkbox",
 					name: "packagesToPromote",
-					message: "Select the package(s) you wish to update:",
+					message: "Which package(s) do you wish to update?",
 					choices: packages
 				}
 			])
@@ -672,7 +685,7 @@ export function askChangeType(state) {
 			{
 				type: "list",
 				name: "changeType",
-				message: "What type of change is this work",
+				message: "What type of change is this work?",
 				choices: ["feature", "defect", "rework"]
 			}
 		])
@@ -682,13 +695,20 @@ export function askChangeType(state) {
 		});
 }
 
+export function changeReasonValidator(changeReason) {
+	return changeReason.trim().length > 0;
+}
+
 export function askChangeReason(state) {
 	return util
 		.prompt([
 			{
 				type: "input",
 				name: "changeReason",
-				message: "What is the reason for this change"
+				message: `What is the reason for this change? ${chalk.red(
+					"(required)"
+				)}`,
+				validate: changeReasonValidator
 			}
 		])
 		.then(({ changeReason }) => {
@@ -901,4 +921,111 @@ export function getTagsFromRepo(state, repositoryName) {
 			return tags;
 		})
 		.catch(err => logger.log(chalk.red(err)));
+}
+
+export function verifyRemotes(state) {
+	const command = `git remote`;
+	return util.exec(command).then(response => {
+		state.remotes = {
+			origin: {
+				exists: response.includes("origin")
+			},
+			upstream: {
+				exists: response.includes("upstream")
+			}
+		};
+	});
+}
+
+export function verifyOrigin(state) {
+	const { remotes: { origin } } = state;
+	util.log.begin("Verifying origin remote");
+
+	if (!origin.exists) {
+		util.advise("gitOrigin");
+	}
+
+	util.log.end();
+	return Promise.resolve();
+}
+
+export function verifyUpstream(state) {
+	const {
+		github: { owner: repositoryOwner, name: repositoryName },
+		token,
+		remotes: { origin, upstream }
+	} = state;
+	util.log.begin("Verifying upstream remote");
+
+	if (!upstream.exists) {
+		util.log.end();
+		util.log.begin("Creating upstream remote");
+		const github = new GitHub({ token });
+
+		const repository = github.getRepo(repositoryOwner, repositoryName);
+
+		return repository
+			.getDetails()
+			.then(response => {
+				let parent_ssh_url;
+				if (response.data.hasOwnProperty("parent")) {
+					parent_ssh_url = origin.url.includes("https")
+						? response.data.parent.svn_url
+						: response.data.parent.ssh_url;
+				} else {
+					parent_ssh_url = origin.url.includes("https")
+						? response.data.svn_url
+						: response.data.ssh_url;
+				}
+				const command = `git remote add upstream ${parent_ssh_url}`;
+				return util
+					.exec(command)
+					.then(util.log.end())
+					.catch(err => logger.log(chalk.red(err)));
+			})
+			.catch(err => logger.log(chalk.red(err)));
+	}
+
+	util.log.end();
+	return Promise.resolve();
+}
+
+export function verifyChangelog() {
+	util.log.begin("Verifying CHANGELOG.md");
+	if (util.fileExists(CHANGELOG_PATH)) {
+		util.log.end();
+		return Promise.resolve();
+	}
+	util.log.end();
+
+	return util
+		.prompt([
+			{
+				type: "confirm",
+				name: "changelog",
+				message: "Would you like us to create a CHANGELOG.md?",
+				default: true
+			}
+		])
+		.then(answers => {
+			if (answers.changelog) {
+				util.log.begin("Creating CHANGELOG.md");
+				util.log.end();
+				return util.writeFile(CHANGELOG_PATH, "");
+			}
+
+			return Promise.resolve();
+		});
+}
+
+export function verifyPackageJson(state) {
+	const { configPath } = state;
+	util.log.begin("Verifying package.json");
+	util.log.end();
+
+	if (!util.fileExists(configPath)) {
+		util.advise("missingPackageJson");
+	}
+
+	return Promise.resolve();
 }

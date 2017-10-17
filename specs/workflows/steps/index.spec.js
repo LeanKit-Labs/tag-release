@@ -203,7 +203,7 @@ describe("shared workflow steps", () => {
 					{
 						type: "input",
 						name: "prereleaseIdentifier",
-						message: "Pre-release Identifier:"
+						message: "What is your pre-release Identifier?"
 					}
 				]);
 			});
@@ -259,7 +259,7 @@ describe("shared workflow steps", () => {
 					{
 						type: "list",
 						name: "prereleaseToPromote",
-						message: "Select the pre-release you wish to promote:",
+						message: "Which pre-release do you wish to promote?",
 						choices: [
 							"v18.0.0-robert.0",
 							"v17.12.0-break.1",
@@ -524,7 +524,7 @@ describe("shared workflow steps", () => {
 						{
 							type: "list",
 							name: "release",
-							message: "What type of release is this",
+							message: "What type of release is this?",
 							choices: [
 								{
 									name: "Major (Breaking Change) v2.0.0",
@@ -558,7 +558,7 @@ describe("shared workflow steps", () => {
 						{
 							type: "list",
 							name: "release",
-							message: "What type of release is this",
+							message: "What type of release is this?",
 							choices: [
 								{
 									name: "Pre-major (Breaking Change) v2.0.0-test.0",
@@ -638,7 +638,7 @@ describe("shared workflow steps", () => {
 					{
 						type: "confirm",
 						name: "log",
-						message: "Would you like to edit your log",
+						message: "Would you like to edit your log?",
 						default: true
 					}
 				]);
@@ -1249,6 +1249,143 @@ describe("shared workflow steps", () => {
 		});
 	});
 
+	describe("githubOrigin", () => {
+		beforeEach(() => {
+			state = {
+				remotes: {
+					origin: {
+						exists: true
+					}
+				}
+			};
+		});
+
+		it("should call `util.exec` with the appropriate arguments to get the origin repository url", () => {
+			util.exec = jest.fn(() =>
+				Promise.resolve("https://github.com/leankit-labs/tag-release.git")
+			);
+			return run.githubOrigin(state).then(() => {
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith("git config remote.origin.url");
+			});
+		});
+
+		it("should log an error to the console when the call to `util.exec` fails", () => {
+			util.exec = jest.fn(() => Promise.reject("nope"));
+			logger.log = jest.fn(() => {});
+			return run.githubOrigin(state).then(() => {
+				expect(logger.log).toHaveBeenCalledTimes(1);
+				expect(logger.log).toHaveBeenCalledWith("error", "nope");
+			});
+		});
+
+		describe("when an https uri is returned", () => {
+			it("should extract the correct repository owner and name given https://github.com/leanKit-labs/tag-release.git", () => {
+				util.exec = jest.fn(() =>
+					Promise.resolve("https://github.com/leankit-labs/tag-release.git")
+				);
+				return run.githubOrigin(state).then(() => {
+					expect(state).toEqual({
+						github: {
+							owner: "leankit-labs",
+							name: "tag-release"
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: "https://github.com/leankit-labs/tag-release.git"
+							}
+						}
+					});
+				});
+			});
+
+			it("should extract the correct repository owner and name given https://github.com/banditsoftware/web-lightning-ui.git", () => {
+				util.exec = jest.fn(() =>
+					Promise.resolve(
+						"https://github.com/banditsoftware/web-lightning-ui.git"
+					)
+				);
+				return run.githubOrigin(state).then(() => {
+					expect(state).toEqual({
+						github: {
+							owner: "banditsoftware",
+							name: "web-lightning-ui"
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: "https://github.com/banditsoftware/web-lightning-ui.git"
+							}
+						}
+					});
+				});
+			});
+		});
+
+		describe("when an ssh uri is returned", () => {
+			it("should extract the correct repository owner and name given git@github.com:leankit-labs/tag-release.git", () => {
+				util.exec = jest.fn(() =>
+					Promise.resolve("git@github.com:leankit-labs/tag-release.git")
+				);
+				return run.githubOrigin(state).then(() => {
+					expect(state).toEqual({
+						github: {
+							owner: "leankit-labs",
+							name: "tag-release"
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: "git@github.com:leankit-labs/tag-release.git"
+							}
+						}
+					});
+				});
+			});
+
+			it("should extract the correct repository owner and name given git@github.com:banditsoftware/web-lightning-ui.git", () => {
+				util.exec = jest.fn(() =>
+					Promise.resolve("git@github.com:banditsoftware/web-lightning-ui.git")
+				);
+				return run.githubOrigin(state).then(() => {
+					expect(state).toEqual({
+						github: {
+							owner: "banditsoftware",
+							name: "web-lightning-ui"
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: "git@github.com:banditsoftware/web-lightning-ui.git"
+							}
+						}
+					});
+				});
+			});
+		});
+
+		describe("when no data is returned", () => {
+			it("should set the github object on state to an empty object", () => {
+				util.exec = jest.fn(() => Promise.resolve(""));
+				return run.githubOrigin(state).then(() => {
+					expect(state).toEqual({
+						github: {
+							owner: undefined,
+							name: undefined
+						},
+						remotes: {
+							origin: {
+								exists: true,
+								url: ""
+							}
+						}
+					});
+				});
+			});
+		});
+	});
+
 	describe("githubRelease", () => {
 		GitHub.mockImplementation(jest.fn());
 		let getRepo = jest.fn();
@@ -1769,7 +1906,7 @@ describe("shared workflow steps", () => {
 					{
 						type: "checkbox",
 						name: "packagesToPromote",
-						message: "Select the package(s) you wish to update:",
+						message: "Which package(s) do you wish to update?",
 						choices: ["over-watch", "watch-over"]
 					}
 				]);
@@ -1934,7 +2071,7 @@ describe("shared workflow steps", () => {
 					{
 						type: "list",
 						name: "changeType",
-						message: "What type of change is this work",
+						message: "What type of change is this work?",
 						choices: ["feature", "defect", "rework"]
 					}
 				]);
@@ -1946,6 +2083,28 @@ describe("shared workflow steps", () => {
 				expect(state).toHaveProperty("changeType");
 				expect(state.changeType).toEqual("feature");
 			});
+		});
+	});
+
+	describe("changeReasonValidator", () => {
+		let changeReason;
+
+		beforeEach(() => {
+			changeReason = "this is some reason";
+		});
+
+		it("should return true with value", () => {
+			expect(run.changeReasonValidator(changeReason)).toEqual(true);
+		});
+
+		it("should return false with no value", () => {
+			changeReason = "";
+			expect(run.changeReasonValidator(changeReason)).toEqual(false);
+		});
+
+		it("should return false with whitespace", () => {
+			changeReason = "     ";
+			expect(run.changeReasonValidator(changeReason)).toEqual(false);
 		});
 	});
 
@@ -1963,7 +2122,8 @@ describe("shared workflow steps", () => {
 					{
 						type: "input",
 						name: "changeReason",
-						message: "What is the reason for this change"
+						message: "What is the reason for this change? (required)",
+						validate: run.changeReasonValidator
 					}
 				]);
 			});
@@ -2613,6 +2773,340 @@ describe("shared workflow steps", () => {
 			return run.getTagsFromRepo(state).then(() => {
 				expect(logger.log).toHaveBeenCalledTimes(1);
 				expect(logger.log).toHaveBeenCalledWith("listTags fail");
+			});
+		});
+	});
+
+	describe("verifyRemotes", () => {
+		it("should call `util.exec` with the appropriate arguments to get the remotes", () => {
+			util.exec = jest.fn(() => Promise.resolve(""));
+			return run.verifyRemotes(state).then(() => {
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith("git remote");
+			});
+		});
+
+		describe("when setting state", () => {
+			it("should set origin and upstream to true", () => {
+				util.exec = jest.fn(() => Promise.resolve("origin\nupstream\n"));
+				return run.verifyRemotes(state).then(() => {
+					expect(state.remotes).toHaveProperty("origin");
+					expect(state.remotes).toHaveProperty("upstream");
+					expect(state.remotes.origin.exists).toEqual(true);
+					expect(state.remotes.upstream.exists).toEqual(true);
+				});
+			});
+
+			it("should set origin and upstream to false", () => {
+				util.exec = jest.fn(() => Promise.resolve(""));
+				return run.verifyRemotes(state).then(() => {
+					expect(state.remotes).toHaveProperty("origin");
+					expect(state.remotes).toHaveProperty("upstream");
+					expect(state.remotes.origin.exists).toEqual(false);
+					expect(state.remotes.upstream.exists).toEqual(false);
+				});
+			});
+
+			it("should set origin to false and upstream to true", () => {
+				util.exec = jest.fn(() => Promise.resolve("upstream\n"));
+				return run.verifyRemotes(state).then(() => {
+					expect(state.remotes).toHaveProperty("origin");
+					expect(state.remotes).toHaveProperty("upstream");
+					expect(state.remotes.origin.exists).toEqual(false);
+					expect(state.remotes.upstream.exists).toEqual(true);
+				});
+			});
+
+			it("should set origin to true and upstream to false", () => {
+				util.exec = jest.fn(() => Promise.resolve("origin\n"));
+				return run.verifyRemotes(state).then(() => {
+					expect(state.remotes).toHaveProperty("origin");
+					expect(state.remotes).toHaveProperty("upstream");
+					expect(state.remotes.origin.exists).toEqual(true);
+					expect(state.remotes.upstream.exists).toEqual(false);
+				});
+			});
+		});
+	});
+
+	describe("verifyOrigin", () => {
+		beforeEach(() => {
+			state = {
+				remotes: {
+					origin: {
+						exists: true
+					}
+				}
+			};
+		});
+		it("should resolve when remote origin exists", () => {
+			return run.verifyOrigin(state).then(() => {
+				expect(util.advise).not.toHaveBeenCalled();
+			});
+		});
+
+		it("should log the action to the console", () => {
+			return run.verifyOrigin(state).then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(1);
+				expect(util.log.begin).toHaveBeenCalledWith("Verifying origin remote");
+				expect(util.log.end).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("should advise when remote origin doesn't exists", () => {
+			state = {
+				remotes: {
+					origin: {
+						exists: false
+					}
+				}
+			};
+
+			return run.verifyOrigin(state).then(() => {
+				expect(util.advise).toHaveBeenCalledTimes(1);
+				expect(util.advise).toHaveBeenCalledWith("gitOrigin");
+			});
+		});
+	});
+
+	describe("verifyUpstream", () => {
+		let getRepo = jest.fn();
+		let getDetails = jest.fn();
+
+		const mockGetDetails = (shouldResolve = true, hasParent = true) => {
+			if (shouldResolve) {
+				if (hasParent) {
+					getDetails = jest.fn(() =>
+						Promise.resolve({
+							data: {
+								parent: {
+									ssh_url: "git@github.com:johndoe/hasParent-repo.git",
+									svn_url: "https://github.com/johndoe/noParent-repo.git"
+								}
+							}
+						})
+					);
+				} else {
+					getDetails = jest.fn(() =>
+						Promise.resolve({
+							data: {
+								ssh_url: "git@github.com:johndoe/noParent-repo.git",
+								svn_url: "https://github.com/johndoe/noParent-repo.git"
+							}
+						})
+					);
+				}
+
+				return getDetails;
+			}
+
+			getDetails = jest.fn(() => Promise.reject("getDetails fail"));
+
+			return getDetails;
+		};
+
+		const mockGitHub = (getDetailsShouldResolve = true, hasParent = true) => {
+			getDetails = mockGetDetails(getDetailsShouldResolve, hasParent);
+			getRepo = jest.fn(() => ({
+				getDetails
+			}));
+
+			return jest.fn(() => ({ getRepo }));
+		};
+
+		beforeEach(() => {
+			state = {
+				github: { owner: "someone-awesome", name: "something-awesome" },
+				token: "z8259r",
+				remotes: {
+					origin: {
+						exists: true,
+						url: "git@github.com:johnsmith/awesome-repo.git"
+					},
+					upstream: {
+						exists: false
+					}
+				}
+			};
+			util.exec = jest.fn(() => Promise.resolve(""));
+			GitHub.mockImplementation(mockGitHub());
+		});
+
+		it("should log an error to the console when the call to `util.exec` fails", () => {
+			util.exec = jest.fn(() => Promise.reject("nope"));
+			logger.log = jest.fn(() => {});
+			return run.verifyUpstream(state).then(() => {
+				expect(logger.log).toHaveBeenCalledTimes(1);
+				expect(logger.log).toHaveBeenCalledWith("nope");
+			});
+		});
+
+		it("should log an error to the console when the call to the API to get detailss fails", () => {
+			logger.log = jest.fn();
+			GitHub.mockImplementation(mockGitHub(false));
+
+			return run.verifyUpstream(state).then(() => {
+				expect(logger.log).toHaveBeenCalledTimes(1);
+				expect(logger.log).toHaveBeenCalledWith("getDetails fail");
+			});
+		});
+
+		describe("when upstream remote exists", () => {
+			it("should log the action to console", () => {
+				state.remotes.upstream.exists = true;
+
+				return run.verifyUpstream(state).then(() => {
+					expect(util.log.begin).toHaveBeenCalledTimes(1);
+					expect(util.log.begin).toHaveBeenCalledWith(
+						"Verifying upstream remote"
+					);
+					expect(util.log.end).toHaveBeenCalledTimes(1);
+				});
+			});
+		});
+
+		describe("when upstream remote doesn't exist", () => {
+			it("should log the action to console", () => {
+				return run.verifyUpstream(state).then(() => {
+					expect(util.log.begin).toHaveBeenCalledTimes(2);
+					expect(util.log.begin).toHaveBeenCalledWith(
+						"Creating upstream remote"
+					);
+					expect(util.log.end).toHaveBeenCalledTimes(2);
+				});
+			});
+
+			describe("when repository is parent", () => {
+				it("should create remote upstream", () => {
+					GitHub.mockImplementation(mockGitHub(true, false));
+
+					return run.verifyUpstream(state).then(() => {
+						expect(util.exec).toHaveBeenCalledTimes(1);
+						expect(util.exec).toHaveBeenCalledWith(
+							"git remote add upstream git@github.com:johndoe/noParent-repo.git"
+						);
+					});
+				});
+
+				describe("when using svn_url", () => {
+					it("should create remote upstream", () => {
+						state.remotes.origin.url =
+							"https://github.com/johndoe/noParent-repo.git";
+						GitHub.mockImplementation(mockGitHub(true, false));
+
+						return run.verifyUpstream(state).then(() => {
+							expect(util.exec).toHaveBeenCalledTimes(1);
+							expect(util.exec).toHaveBeenCalledWith(
+								"git remote add upstream https://github.com/johndoe/noParent-repo.git"
+							);
+						});
+					});
+				});
+			});
+
+			it("should create remote upstream with svn_url", () => {
+				state.remotes.origin.url =
+					"https://github.com/johndoe/noParent-repo.git";
+
+				return run.verifyUpstream(state).then(() => {
+					expect(util.exec).toHaveBeenCalledTimes(1);
+					expect(util.exec).toHaveBeenCalledWith(
+						"git remote add upstream https://github.com/johndoe/noParent-repo.git"
+					);
+				});
+			});
+		});
+	});
+
+	describe("verifyChangelog", () => {
+		beforeEach(() => {
+			util.fileExists = jest.fn(() => false);
+			util.writeFile = jest.fn(() => {});
+			util.prompt = jest.fn(() => Promise.resolve({ changelog: true }));
+		});
+
+		describe("when CHANGELOG.md exists", () => {
+			it("should log the action to the console", () => {
+				util.fileExists = jest.fn(() => true);
+				return run.verifyChangelog(state).then(() => {
+					expect(util.log.begin).toHaveBeenCalledTimes(1);
+					expect(util.log.begin).toHaveBeenCalledWith("Verifying CHANGELOG.md");
+					expect(util.log.end).toHaveBeenCalledTimes(1);
+				});
+			});
+		});
+
+		describe("when CHANGELOG.md doesn't exist", () => {
+			it("should prompt user", () => {
+				return run.verifyChangelog(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledTimes(1);
+					expect(util.prompt).toHaveBeenCalledWith([
+						{
+							type: "confirm",
+							name: "changelog",
+							message: "Would you like us to create a CHANGELOG.md?",
+							default: true
+						}
+					]);
+				});
+			});
+
+			it("should log the action to the console", () => {
+				return run.verifyChangelog(state).then(() => {
+					expect(util.log.begin).toHaveBeenCalledTimes(2);
+					expect(util.log.begin).toHaveBeenCalledWith("Creating CHANGELOG.md");
+					expect(util.log.end).toHaveBeenCalledTimes(2);
+				});
+			});
+
+			it("should create CHANGELOG.md", () => {
+				util.prompt = jest.fn(() => Promise.resolve({ changelog: true }));
+				return run.verifyChangelog(state).then(() => {
+					expect(util.writeFile).toHaveBeenCalledTimes(1);
+				});
+			});
+
+			it("should not create CHANGELOG.md", () => {
+				util.prompt = jest.fn(() => Promise.resolve({ changelog: false }));
+				return run.verifyChangelog(state).then(() => {
+					expect(util.writeFile).not.toHaveBeenCalled();
+				});
+			});
+		});
+	});
+
+	describe("verifyPackageJson", () => {
+		beforeEach(() => {
+			state = {
+				configPath: "./some_path"
+			};
+			util.advise = jest.fn(() => Promise.resolve());
+			util.fileExists = jest.fn(() => true);
+		});
+
+		it("should log the action to the console", () => {
+			return run.verifyPackageJson(state).then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(1);
+				expect(util.log.begin).toHaveBeenCalledWith("Verifying package.json");
+				expect(util.log.end).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		describe("when configPath exists", () => {
+			it("should not advise", () => {
+				return run.verifyPackageJson(state).then(() => {
+					expect(util.advise).not.toHaveBeenCalled();
+				});
+			});
+		});
+
+		describe("when configPath doesn't exist", () => {
+			it("should advise", () => {
+				util.fileExists = jest.fn(() => false);
+				return run.verifyPackageJson(state).then(() => {
+					expect(util.advise).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledWith("missingPackageJson");
+				});
 			});
 		});
 	});
