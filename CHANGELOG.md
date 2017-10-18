@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.9.1
+
+* Moved babel-preset-env to dependencies
+
 ### 5.9.0
 
 * Use svn_url when remotes use svn_url
