@@ -4,6 +4,7 @@ import * as run from "../../src/workflows/steps";
 describe("pre-release workflow", () => {
 	it("should have all of the required steps", () => {
 		expect(preReleaseWorkflow).toEqual([
+			run.isPackagePrivate,
 			run.gitFetchUpstream,
 			run.getCurrentBranchVersion,
 			run.setPrereleaseIdentifier,

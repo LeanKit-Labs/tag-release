@@ -1,6 +1,7 @@
 import * as run from "./steps/index";
 
 export default [
+	run.isPackagePrivate,
 	run.gitFetchUpstream,
 	run.getCurrentBranchVersion,
 	run.setPrereleaseIdentifier,

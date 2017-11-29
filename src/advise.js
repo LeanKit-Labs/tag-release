@@ -79,7 +79,11 @@ Either you don't have an upstream with the same name as your local, or we weren'
 
 You can use the 'npm init' command to generate a package.json for you.
 
-Alternatively, You can specifiy a different config file by using the -c command: 'tag-release -c another.json'`
+Alternatively, You can specifiy a different config file by using the -c command: 'tag-release -c another.json'`,
+
+	privatePackage: `It appears you are trying to pre-release a private repository. The pre-release flag is meant for dependency projects.
+
+Did you mean to run 'tag-release --qa' instead?`
 };
 
 const MAXIMUM_WIDTH = 50;
