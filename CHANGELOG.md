@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.9.2
+
+* No longer able to pre-release hosting projects
+
 ### 5.9.1
 
 * Moved babel-preset-env to dependencies
