@@ -1029,3 +1029,12 @@ export function verifyPackageJson(state) {
 
 	return Promise.resolve();
 }
+
+export function isPackagePrivate(state) {
+	const { configPath } = state;
+	if (util.isPackagePrivate(configPath)) {
+		util.advise("privatePackage");
+	}
+
+	return Promise.resolve();
+}

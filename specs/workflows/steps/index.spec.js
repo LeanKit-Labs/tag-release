@@ -3110,4 +3110,26 @@ describe("shared workflow steps", () => {
 			});
 		});
 	});
+
+	describe("isPackagePrivate", () => {
+		beforeEach(() => {
+			state.configPath = "./package.json";
+			util.advise = jest.fn(() => Promise.resolve());
+			util.isPackagePrivate = jest.fn(() => true);
+		});
+
+		it("should advise when package.json is set to private", () => {
+			return run.isPackagePrivate(state).then(() => {
+				expect(util.advise).toHaveBeenCalledTimes(1);
+				expect(util.advise).toHaveBeenCalledWith("privatePackage");
+			});
+		});
+
+		it("should resolve when package.json isn't private", () => {
+			util.isPackagePrivate = jest.fn(() => false);
+			return run.isPackagePrivate(state).then(() => {
+				expect(util.advise).toHaveBeenCalledTimes(0);
+			});
+		});
+	});
 });
