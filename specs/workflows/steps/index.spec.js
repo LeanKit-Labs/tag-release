@@ -2084,6 +2084,13 @@ describe("shared workflow steps", () => {
 				expect(state.changeType).toEqual("feature");
 			});
 		});
+
+		it("should resolve when keepBranch is true", () => {
+			state.keepBranch = true;
+			return run.askChangeType(state).then(() => {
+				expect(util.prompt).toHaveBeenCalledTimes(0);
+			});
+		});
 	});
 
 	describe("changeReasonValidator", () => {
@@ -2140,15 +2147,46 @@ describe("shared workflow steps", () => {
 	describe("gitCheckoutAndCreateBranch", () => {
 		beforeEach(() => {
 			git.checkoutAndCreateBranch = jest.fn(() => Promise.resolve());
+			git.checkoutAndCreateBranchWithoutTracking = jest.fn(() =>
+				Promise.resolve()
+			);
+			state.branch = "feature-new-menu";
+			state.log = "";
+			state.keepBranch = false;
 		});
 
-		it("should call `git.checkoutAndCreateBranch` with the appropriate argument", () => {
-			state.branch = "feature-new-menu";
+		it("should call `git.checkoutAndCreateBranch` with the appropriate argument without a log", () => {
 			return run.gitCheckoutAndCreateBranch(state).then(() => {
+				expect(
+					git.checkoutAndCreateBranchWithoutTracking
+				).toHaveBeenCalledTimes(0);
 				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(1);
 				expect(git.checkoutAndCreateBranch).toHaveBeenCalledWith(
 					"feature-new-menu"
 				);
+			});
+		});
+
+		it("should call `git.checkoutAndCreateBranch` with the appropriate argument with a log", () => {
+			state.log = "this is some commit";
+			return run.gitCheckoutAndCreateBranch(state).then(() => {
+				expect(
+					git.checkoutAndCreateBranchWithoutTracking
+				).toHaveBeenCalledTimes(1);
+				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(0);
+				expect(git.checkoutAndCreateBranchWithoutTracking).toHaveBeenCalledWith(
+					"feature-new-menu"
+				);
+			});
+		});
+
+		it("should resolve when keepBranch is true and not checkoutAndCreateBranch", () => {
+			state.keepBranch = true;
+			return run.gitCheckoutAndCreateBranch(state).then(() => {
+				expect(
+					git.checkoutAndCreateBranchWithoutTracking
+				).toHaveBeenCalledTimes(0);
+				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(0);
 			});
 		});
 	});
@@ -2666,7 +2704,8 @@ describe("shared workflow steps", () => {
 		beforeEach(() => {
 			state = {
 				changeType: "feature",
-				identifier: "magic"
+				identifier: "magic",
+				keepBranch: false
 			};
 			util.prompt = jest.fn(() =>
 				Promise.resolve({ branchName: "feature-magic" })
@@ -2691,6 +2730,13 @@ describe("shared workflow steps", () => {
 			return run.promptBranchName(state).then(() => {
 				expect(state).toHaveProperty("branch");
 				expect(state.branch).toEqual("feature-magic");
+			});
+		});
+
+		it("should resolve when keepBranch is true", () => {
+			state.keepBranch = true;
+			return run.promptBranchName(state).then(() => {
+				expect(util.prompt).toHaveBeenCalledTimes(0);
 			});
 		});
 	});
@@ -3129,6 +3175,102 @@ describe("shared workflow steps", () => {
 			util.isPackagePrivate = jest.fn(() => false);
 			return run.isPackagePrivate(state).then(() => {
 				expect(util.advise).toHaveBeenCalledTimes(0);
+			});
+		});
+	});
+
+	describe("checkNewCommits", () => {
+		beforeEach(() => {
+			state.currentVersion = "1.2.3";
+			git.shortLog = jest.fn(() => Promise.resolve("some random commit"));
+		});
+
+		describe("when checking for new commits", () => {
+			it("should set state with returned log", () => {
+				return run.checkNewCommits(state).then(() => {
+					expect(git.shortLog).toHaveBeenCalledTimes(1);
+					expect(git.shortLog).toHaveBeenCalledWith(`v${state.currentVersion}`);
+					expect(state.log).toEqual("some random commit");
+				});
+			});
+		});
+	});
+
+	describe("useCurrentBranchOrCheckoutDevelop", () => {
+		beforeEach(() => {
+			state = {
+				log: "some random commit",
+				hasDevelopBranch: true
+			};
+			git.checkoutDevelop = jest.fn(() => Promise.resolve());
+			util.advise = jest.fn(() => Promise.resolve());
+		});
+
+		describe("when branch has new commits", () => {
+			it("should resolve", () => {
+				return run.useCurrentBranchOrCheckoutDevelop(state).then(() => {
+					expect(git.checkoutDevelop).toHaveBeenCalledTimes(0);
+					expect(util.advise).toHaveBeenCalledTimes(0);
+				});
+			});
+		});
+
+		describe("when repository has a develop branch and no new changes", () => {
+			it("should checkout develop", () => {
+				state.log = "";
+				return run.useCurrentBranchOrCheckoutDevelop(state).then(() => {
+					expect(git.checkoutDevelop).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledTimes(0);
+				});
+			});
+		});
+
+		describe("when branch has no changes nor a develop branch", () => {
+			it("should advise", () => {
+				state = {
+					log: "",
+					hasDevelopBranch: false
+				};
+				return run.useCurrentBranchOrCheckoutDevelop(state).then(() => {
+					expect(git.checkoutDevelop).toHaveBeenCalledTimes(0);
+					expect(util.advise).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledWith("qaNoChangeNoDevelop");
+				});
+			});
+		});
+	});
+
+	describe("promptKeepBranchOrCreateNew", () => {
+		beforeEach(() => {
+			state = {
+				log: "some random commit"
+			};
+			util.prompt = jest.fn(() => Promise.resolve({ keep: true }));
+		});
+
+		it("should resolve with no new commits", () => {
+			state.log = "";
+			return run.promptKeepBranchOrCreateNew(state).then(() => {
+				expect(util.prompt).toHaveBeenCalledTimes(0);
+			});
+		});
+
+		describe("when prompting the user", () => {
+			it("should set state when user selects true", () => {
+				return run.promptKeepBranchOrCreateNew(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledTimes(1);
+					expect(state).toHaveProperty("keepBranch");
+					expect(state.keepBranch).toEqual(true);
+				});
+			});
+
+			it("should set state when user selects false", () => {
+				util.prompt = jest.fn(() => Promise.resolve({ keep: false }));
+				return run.promptKeepBranchOrCreateNew(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledTimes(1);
+					expect(state).toHaveProperty("keepBranch");
+					expect(state.keepBranch).toEqual(false);
+				});
 			});
 		});
 	});

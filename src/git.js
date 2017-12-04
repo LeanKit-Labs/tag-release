@@ -359,6 +359,11 @@ const git = {
 		return git.runCommand({ args });
 	},
 
+	checkoutAndCreateBranchWithoutTracking(branch) {
+		const args = `checkout -b ${branch}`;
+		return git.runCommand({ args });
+	},
+
 	rebaseUpstreamBranch({ branch, onError }) {
 		return git.rebase({ branch: `upstream/${branch}`, onError });
 	},

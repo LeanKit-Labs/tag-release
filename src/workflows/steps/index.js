@@ -680,6 +680,12 @@ export function askVersions(state) {
 }
 
 export function askChangeType(state) {
+	const { keepBranch } = state;
+
+	if (keepBranch) {
+		return Promise.resolve();
+	}
+
 	return util
 		.prompt([
 			{
@@ -718,7 +724,18 @@ export function askChangeReason(state) {
 }
 
 export function gitCheckoutAndCreateBranch(state) {
-	return git.checkoutAndCreateBranch(state.branch);
+	const { branch, log, keepBranch } = state;
+
+	let result;
+	if (keepBranch) {
+		result = () => Promise.resolve();
+	} else if (log.length) {
+		result = () => git.checkoutAndCreateBranchWithoutTracking(branch);
+	} else {
+		result = () => git.checkoutAndCreateBranch(branch);
+	}
+
+	return result();
 }
 
 export function updateDependencies(state) {
@@ -887,6 +904,11 @@ export function cleanUpTmpFiles() {
 }
 
 export function promptBranchName(state) {
+	const { keepBranch } = state;
+
+	if (keepBranch) {
+		return Promise.resolve();
+	}
 	return util
 		.prompt([
 			{
@@ -1037,4 +1059,50 @@ export function isPackagePrivate(state) {
 	}
 
 	return Promise.resolve();
+}
+
+export function checkNewCommits(state) {
+	const { currentVersion } = state;
+	const latestRelease = `v${currentVersion}`;
+
+	return git.shortLog(latestRelease).then(data => {
+		state.log = data;
+	});
+}
+
+export function useCurrentBranchOrCheckoutDevelop(state) {
+	const { log, hasDevelopBranch } = state;
+
+	let result;
+	if (log.length) {
+		result = () => Promise.resolve();
+	} else if (hasDevelopBranch) {
+		result = () => git.checkoutDevelop();
+	} else {
+		result = () => util.advise("qaNoChangeNoDevelop");
+	}
+
+	return result();
+}
+
+export function promptKeepBranchOrCreateNew(state) {
+	const { log } = state;
+
+	if (!log.length) {
+		return Promise.resolve();
+	}
+
+	return util
+		.prompt([
+			{
+				type: "confirm",
+				name: "keep",
+				message: "Would you like to use your current branch?",
+				default: true
+			}
+		])
+		.then(answers => {
+			state.keepBranch = answers.keep;
+			return Promise.resolve();
+		});
 }

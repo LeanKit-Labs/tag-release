@@ -341,6 +341,12 @@ describe("git", () => {
 					args: `checkout -b feature-branch upstream/develop`
 				}
 			},
+			checkoutAndCreateBranchWithoutTracking: {
+				args: "feature-branch",
+				expectedRunCommandArgs: {
+					args: `checkout -b feature-branch`
+				}
+			},
 			status: {
 				expectedRunCommandArgs: { args: `status`, showOutput: true }
 			}
