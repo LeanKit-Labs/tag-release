@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.10.0
+
+* Added ability to have changes in hosting repository and bump versions.
+
 ### 5.9.2
 
 * No longer able to pre-release hosting projects
