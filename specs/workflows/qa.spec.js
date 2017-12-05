@@ -19,7 +19,9 @@ describe("qa workflows", () => {
 		it("should have all of the required steps", () => {
 			expect(qaDefault).toEqual([
 				run.checkHasDevelopBranch,
-				run.gitCheckoutDevelop,
+				run.getCurrentBranchVersion,
+				run.checkNewCommits,
+				run.useCurrentBranchOrCheckoutDevelop,
 				run.gitRebaseUpstreamDevelop,
 				run.getPackageScope,
 				run.askReposToUpdate,
@@ -28,6 +30,7 @@ describe("qa workflows", () => {
 				run.askChangeReason,
 				run.githubUpstream,
 				run.askVersions,
+				run.promptKeepBranchOrCreateNew,
 				run.askChangeType,
 				run.promptBranchName,
 				run.gitCheckoutAndCreateBranch,

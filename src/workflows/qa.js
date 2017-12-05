@@ -8,7 +8,9 @@ export default [
 
 export const qaDefault = [
 	run.checkHasDevelopBranch,
-	run.gitCheckoutDevelop,
+	run.getCurrentBranchVersion,
+	run.checkNewCommits,
+	run.useCurrentBranchOrCheckoutDevelop,
 	run.gitRebaseUpstreamDevelop,
 	run.getPackageScope,
 	run.askReposToUpdate,
@@ -17,6 +19,7 @@ export const qaDefault = [
 	run.askChangeReason,
 	run.githubUpstream,
 	run.askVersions,
+	run.promptKeepBranchOrCreateNew,
 	run.askChangeType,
 	run.promptBranchName,
 	run.gitCheckoutAndCreateBranch,
