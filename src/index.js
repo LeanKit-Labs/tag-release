@@ -11,6 +11,7 @@ import logger from "better-console";
 import fmt from "fmt";
 import pkg from "../package.json";
 import sequence from "when/sequence";
+import path from "path";
 
 const questions = {
 	github: [
@@ -54,7 +55,18 @@ commander
 		"Update lightning branch and create a PR to develop."
 	);
 
-commander.on("--help", () => help());
+commander.on("--help", () => {
+	help(commander);
+
+	if (commander.verbose) {
+		const diagramPath = path.resolve(__dirname, "workflow.txt");
+		console.log(utils.readFile(diagramPath));
+	} else {
+		console.log(
+			"  To get a flowchart included with --help add --verbose to the command"
+		);
+	}
+});
 
 commander.parse(process.argv);
 
