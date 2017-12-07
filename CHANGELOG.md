@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.11.0
+
+* Added --verbose flag to --help
+
 ### 5.10.0
 
 * Added ability to have changes in hosting repository and bump versions.
