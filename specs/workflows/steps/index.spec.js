@@ -182,6 +182,40 @@ describe("shared workflow steps", () => {
 		});
 	});
 
+	describe("checkExistingPrereleaseIdentifier", () => {
+		beforeEach(() => {
+			state = {};
+		});
+
+		it("should not modify state with existing identifier", () => {
+			state.identifier = "some-identifier";
+			state.currentVersion = "1.0.0-some-other-identifier.0";
+			return run.checkExistingPrereleaseIdentifier(state).then(() => {
+				expect(state).toHaveProperty("identifier");
+				expect(state.identifier).toEqual("some-identifier");
+				expect(state).not.toHaveProperty("release");
+			});
+		});
+
+		it("should set state with identifier and release type", () => {
+			state.currentVersion = "1.0.0-some-other-identifier.0";
+			return run.checkExistingPrereleaseIdentifier(state).then(() => {
+				expect(state).toHaveProperty("identifier");
+				expect(state.identifier).toEqual("some-other-identifier");
+				expect(state).toHaveProperty("release");
+				expect(state.release).toEqual("prerelease");
+			});
+		});
+
+		it("should do nothing with no existing identifier", () => {
+			state.currentVersion = "1.0.0";
+			return run.checkExistingPrereleaseIdentifier(state).then(() => {
+				expect(state).not.toHaveProperty("identifier");
+				expect(state).not.toHaveProperty("release");
+			});
+		});
+	});
+
 	describe("setPrereleaseIdentifier", () => {
 		beforeEach(() => {
 			util.prompt = jest.fn(() =>
