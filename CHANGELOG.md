@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.12.0
+
+* Auto bump with existing pre-release identifier
+
 ### 5.11.0
 
 * Added --verbose flag to --help
