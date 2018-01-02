@@ -7,6 +7,7 @@ describe("pre-release workflow", () => {
 			run.isPackagePrivate,
 			run.gitFetchUpstream,
 			run.getCurrentBranchVersion,
+			run.checkExistingPrereleaseIdentifier,
 			run.setPrereleaseIdentifier,
 			run.getFeatureBranch,
 			run.gitMergeUpstreamBranch,

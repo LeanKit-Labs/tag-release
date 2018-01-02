@@ -53,6 +53,24 @@ export function checkHasDevelopBranch(state) {
 		});
 }
 
+export function checkExistingPrereleaseIdentifier(state) {
+	const { identifier, currentVersion } = state;
+
+	if (identifier && identifier.length) {
+		return Promise.resolve();
+	}
+
+	const preReleaseRegEx = /^v?\d+\.\d+\.\d+-(.+)\.\d+$/;
+	const [, id] = preReleaseRegEx.exec(currentVersion) || [];
+
+	if (id) {
+		state.identifier = id;
+		state.release = "prerelease";
+	}
+
+	return Promise.resolve();
+}
+
 export function setPrereleaseIdentifier(state) {
 	const { identifier } = state;
 

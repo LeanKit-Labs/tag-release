@@ -4,6 +4,7 @@ export default [
 	run.isPackagePrivate,
 	run.gitFetchUpstream,
 	run.getCurrentBranchVersion,
+	run.checkExistingPrereleaseIdentifier,
 	run.setPrereleaseIdentifier,
 	run.getFeatureBranch,
 	run.gitMergeUpstreamBranch,
