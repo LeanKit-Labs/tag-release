@@ -17,6 +17,7 @@ describe("default workflow", () => {
 			run.updateVersion,
 			run.updateChangelog,
 			run.gitDiff,
+			run.updatePackageLockJson,
 			run.gitAdd,
 			run.gitCommit,
 			run.gitTag,
