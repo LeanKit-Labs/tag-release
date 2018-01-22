@@ -46,7 +46,7 @@ export default {
 		return this.writeFile(path, content);
 	},
 	deleteFile(path) {
-		return fs.existsSync(path) ? fs.unlink(path) : Promise.resolve();
+		return fs.existsSync(path) ? fs.unlinkSync(path) : Promise.resolve();
 	},
 	fileExists(path) {
 		return fs.existsSync(path);
@@ -98,7 +98,9 @@ export default {
 		}
 
 		const [, scope] = pkg.name.match(/(@.+)\/.+/) || []; // jscs:ignore
-		const command = scope ? `npm get ${scope}:registry` : `npm get registry`;
+		const command = scope
+			? `npm get ${scope}:registry`
+			: `npm get registry`;
 		return this.exec(command);
 	},
 	log: {
@@ -148,29 +150,38 @@ export default {
 		headers = Object.assign({}, { "User-Agent": "request" }, headers);
 
 		return new Promise((resolve, reject) => {
-			request.post({ url, headers, auth, json }, (err, response, body) => {
-				if (err) {
-					logger.log("error", err);
-					reject(err);
+			request.post(
+				{ url, headers, auth, json },
+				(err, response, body) => {
+					if (err) {
+						logger.log("error", err);
+						reject(err);
+					}
+
+					const { statusCode, errors } = response;
+
+					if (statusCode === CREATED) {
+						resolve(body.token);
+					} else if (statusCode === UNAUTHORIZED) {
+						resolve(
+							this.githubUnauthorized(
+								username,
+								password,
+								response
+							)
+						);
+					} else {
+						// for any other HTTP status code...
+						logger.log(body.message);
+					}
+
+					if (errors && errors.length) {
+						errors.forEach(error => logger.log(error.message));
+					}
+
+					resolve();
 				}
-
-				const { statusCode, errors } = response;
-
-				if (statusCode === CREATED) {
-					resolve(body.token);
-				} else if (statusCode === UNAUTHORIZED) {
-					resolve(this.githubUnauthorized(username, password, response));
-				} else {
-					// for any other HTTP status code...
-					logger.log(body.message);
-				}
-
-				if (errors && errors.length) {
-					errors.forEach(error => logger.log(error.message));
-				}
-
-				resolve();
-			});
+			);
 		});
 	},
 	githubUnauthorized(username, password, response) {
@@ -182,7 +193,8 @@ export default {
 				{
 					type: "input",
 					name: "authCode",
-					message: "What is the GitHub authentication code on your device"
+					message:
+						"What is the GitHub authentication code on your device"
 				}
 			]).then(answers => {
 				return this.createGitHubAuthToken(username, password, {
@@ -213,7 +225,8 @@ export default {
 							reject(versionsErr);
 						}
 
-						const tagReleaseVersions = data[Object.keys(data)[0]].versions;
+						const tagReleaseVersions =
+							data[Object.keys(data)[0]].versions;
 						const fullVersions = tagReleaseVersions
 							.filter(f => !f.includes("-"))
 							.slice(-versionsLimit);
@@ -221,9 +234,12 @@ export default {
 							.filter(f => f.includes("-"))
 							.slice(-versionsLimit);
 
-						const latestFullVersion = fullVersions.reduce((memo, v) => {
-							return semver.gt(v, memo) ? v : memo;
-						}, fullVersions[0]);
+						const latestFullVersion = fullVersions.reduce(
+							(memo, v) => {
+								return semver.gt(v, memo) ? v : memo;
+							},
+							fullVersions[0]
+						);
 
 						const latestPrereleaseVersion = prereleaseVersions.reduce(
 							(memo, prv) => {
@@ -266,9 +282,9 @@ export default {
 				if (semver.gt(latestFullVersion, currentVersion)) {
 					logger.log(
 						chalk.red(
-							`There is an updated ${prerelease
-								? "full "
-								: ""}version (${chalk.yellow(
+							`There is an updated ${
+								prerelease ? "full " : ""
+							}version (${chalk.yellow(
 								latestFullVersion
 							)}) of tag-release available.`
 						)
@@ -279,9 +295,11 @@ export default {
 
 				logger.log(
 					chalk.green(
-						`You're running the latest ${prerelease
-							? "pre-release "
-							: ""}version (${chalk.yellow(currentVersion)}) of tag-release.`
+						`You're running the latest ${
+							prerelease ? "pre-release " : ""
+						}version (${chalk.yellow(
+							currentVersion
+						)}) of tag-release.`
 					)
 				);
 				return Promise.resolve();

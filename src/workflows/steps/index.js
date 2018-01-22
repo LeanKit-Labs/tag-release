@@ -9,6 +9,7 @@ import path from "path";
 import removeWords from "remove-words";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
+const PACKAGELOCKJSON_PATH = "./package-lock.json";
 
 export function getFeatureBranch(state) {
 	return git.getCurrentBranch().then(branch => {
@@ -195,7 +196,11 @@ export function askSemverJump(state) {
 	];
 
 	const prereleaseChoices = [
-		{ name: "Pre-major (Breaking Change)", value: "premajor", short: "p-l" },
+		{
+			name: "Pre-major (Breaking Change)",
+			value: "premajor",
+			short: "p-l"
+		},
 		{ name: "Pre-minor (New Feature)", value: "preminor", short: "p-m" },
 		{ name: "Pre-patch (Bug Fix)", value: "prepatch", short: "p-s" },
 		{
@@ -208,7 +213,11 @@ export function askSemverJump(state) {
 	const choicesSource = prerelease ? prereleaseChoices : releaseChoices;
 
 	const choices = choicesSource.map(item => {
-		const version = `v${semver.inc(currentVersion, item.value, identifier)}`;
+		const version = `v${semver.inc(
+			currentVersion,
+			item.value,
+			identifier
+		)}`;
 		return Object.assign({}, item, {
 			name: `${item.name} ${chalk.gray(version)}`
 		});
@@ -325,8 +334,13 @@ export function gitDiff(state) {
 
 export function gitAdd(state) {
 	const { configPath } = state;
+	const files = [CHANGELOG_PATH, configPath];
 
-	return git.add([CHANGELOG_PATH, configPath]);
+	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+		files.push(PACKAGELOCKJSON_PATH);
+	}
+
+	return git.add(files);
 }
 
 export function gitStageConfigFile(state) {
@@ -381,7 +395,9 @@ export function npmPublish(state) {
 							return util
 								.exec(command)
 								.then(() => util.log.end())
-								.catch(() => util.advise("npmPublish", { exit: false }));
+								.catch(() =>
+									util.advise("npmPublish", { exit: false })
+								);
 						}
 					});
 			})
@@ -615,7 +631,10 @@ export function getScopedRepos(state) {
 			Object.keys(dependencies).filter(key => key.includes(packageScope));
 
 		let repos = getScopedDependencies(content.devDependencies, scope);
-		repos = [...repos, ...getScopedDependencies(content.dependencies, scope)];
+		repos = [
+			...repos,
+			...getScopedDependencies(content.dependencies, scope)
+		];
 		repos = repos.map(key => key.replace(`${scope}/`, ""));
 
 		if (repos.length === 0) {
@@ -658,9 +677,9 @@ export function askVersion(state, dependency) {
 					{
 						type: "list",
 						name: "tag",
-						message: `Update ${chalk.yellow(pkg)} from ${chalk.yellow(
-							version
-						)} to:`,
+						message: `Update ${chalk.yellow(
+							pkg
+						)} from ${chalk.yellow(version)} to:`,
 						choices: tags
 					}
 				])
@@ -673,7 +692,9 @@ export function askVersion(state, dependency) {
 
 export function askVersions(state) {
 	const { dependencies } = state;
-	const prompts = dependencies.map(dependency => askVersion(state, dependency));
+	const prompts = dependencies.map(dependency =>
+		askVersion(state, dependency)
+	);
 
 	return sequence(prompts).then(deps => {
 		state.dependencies = deps;
@@ -813,7 +834,8 @@ export function gitRebaseUpstreamDevelop() {
 
 export function getReposFromBumpCommit(state) {
 	return git.getLatestCommitMessage().then(msg => {
-		const [, versions = "", reason = ""] = msg.match(/Bumped (.*): (.*)/) || [];
+		const [, versions = "", reason = ""] =
+			msg.match(/Bumped (.*): (.*)/) || [];
 		const repoVersion = /([\w-]+) to ([\d.]+)/;
 		const results = versions.split(",").reduce((memo, bump) => {
 			const [, repo, version] = repoVersion.exec(bump) || [];
@@ -853,10 +875,16 @@ export function getCurrentDependencyVersions(state) {
 		packages.forEach(pkg => {
 			const key = `${scope}/${pkg}`;
 			if (content.devDependencies && key in content.devDependencies) {
-				state.dependencies.push({ pkg, version: content.devDependencies[key] });
+				state.dependencies.push({
+					pkg,
+					version: content.devDependencies[key]
+				});
 			}
 			if (content.dependencies && key in content.dependencies) {
-				state.dependencies.push({ pkg, version: content.dependencies[key] });
+				state.dependencies.push({
+					pkg,
+					version: content.dependencies[key]
+				});
 			}
 		});
 	} catch (err) {
@@ -877,7 +905,8 @@ export function createGithubPullRequestAganistDevelop(state) {
 
 	const repository = github.getRepo(repositoryOwner, repositoryName);
 
-	const [, , reason = ""] = state.bumpComment.match(/Bumped (.*): (.*)/) || [];
+	const [, , reason = ""] =
+		state.bumpComment.match(/Bumped (.*): (.*)/) || [];
 	const options = {
 		title: reason,
 		head: `${repositoryOwner}:${branch}`,
@@ -1123,4 +1152,35 @@ export function promptKeepBranchOrCreateNew(state) {
 			state.keepBranch = answers.keep;
 			return Promise.resolve();
 		});
+}
+
+export function updatePackageLockJson(state) {
+	if (!util.fileExists(PACKAGELOCKJSON_PATH)) {
+		return Promise.resolve();
+	}
+
+	const { dependencies, scope } = state;
+	const installs = dependencies.map(dep =>
+		npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
+	);
+
+	return sequence(installs).then(() => Promise.resolve());
+}
+
+export function npmInstallPackage(dependency) {
+	const command = `npm install ${dependency}`;
+
+	return () => {
+		util.log.begin(command);
+		return util
+			.exec(command)
+			.then(() => {
+				util.log.end();
+				return Promise.resolve();
+			})
+			.catch(() => {
+				util.log.end();
+				util.advise("npmInstall", { exit: false });
+			});
+	};
 }
