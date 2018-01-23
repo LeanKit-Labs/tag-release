@@ -1,6 +1,6 @@
 {
   "name": "tag-release",
-  "version": "5.13.0",
+  "version": "5.13.0-update-packagejson-lock.0",
   "description": "Automatically Tag and Release Repositories",
   "main": "index.js",
   "bin": {
