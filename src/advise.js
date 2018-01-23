@@ -85,7 +85,8 @@ Alternatively, You can specifiy a different config file by using the -c command:
 Did you mean to run 'tag-release --qa' instead?`,
 	qaNoChangeNoDevelop: `It appears this repository doesn't have any new changes or a develop branch.
 
-Are you sure you need to run 'tag-release --qa'?`
+Are you sure you need to run 'tag-release --qa'?`,
+	npmInstall: `Sorry, we were unable to install and update your package-lock.json`
 };
 
 const MAXIMUM_WIDTH = 50;
