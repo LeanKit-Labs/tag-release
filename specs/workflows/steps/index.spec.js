@@ -964,6 +964,7 @@ describe("shared workflow steps", () => {
 		beforeEach(() => {
 			state.configPath = "./manifest.json";
 			git.add = jest.fn(() => Promise.resolve());
+			util.fileExists = jest.fn(() => true);
 		});
 
 		it("should call `git.add` with the appropriate arguments", () => {
@@ -971,8 +972,22 @@ describe("shared workflow steps", () => {
 				expect(git.add).toHaveBeenCalledTimes(1);
 				expect(git.add).toHaveBeenCalledWith([
 					"./CHANGELOG.md",
-					"./manifest.json"
+					"./manifest.json",
+					"./package-lock.json"
 				]);
+			});
+		});
+
+		describe("when package-lock.json doesn't exist", () => {
+			it("should call `git.add` with the appropriate arguments", () => {
+				util.fileExists = jest.fn(() => false);
+				return run.gitAdd(state).then(() => {
+					expect(git.add).toHaveBeenCalledTimes(1);
+					expect(git.add).toHaveBeenCalledWith([
+						"./CHANGELOG.md",
+						"./manifest.json"
+					]);
+				});
 			});
 		});
 	});
@@ -3582,6 +3597,36 @@ feature-last-branch`)
 		});
 	});
 
+	describe("updatePackageLockJson", () => {
+		beforeEach(() => {
+			state.dependencies = [
+				{
+					pkg: "over-watch",
+					version: "1.1.1"
+				},
+				{
+					pkg: "watch-over",
+					version: "2.2.2"
+				}
+			];
+			util.fileExists = jest.fn(() => true);
+		});
+
+		it("should do nothing if package-lock.json doesn't exist", () => {
+			util.fileExists = jest.fn(() => false);
+			return run.updatePackageLockJson(state).then(() => {
+				expect(sequence).toHaveBeenCalledTimes(0);
+			});
+		});
+
+		it("should call 'sequence' with an array of dependencies", () => {
+			return run.updatePackageLockJson(state).then(() => {
+				expect(sequence).toHaveBeenCalledTimes(1);
+				expect(sequence).toHaveBeenCalledWith(expect.any(Array));
+			});
+		});
+	});
+
 	describe("deleteUpstreamFeatureBranch", () => {
 		beforeEach(() => {
 			state = {
@@ -3714,6 +3759,39 @@ feature-last-branch`)
 			return run.getDependenciesFromFile(state).then(() => {
 				expect(state).toHaveProperty("dependencies");
 				expect(state.dependencies).toEqual({});
+			});
+		});
+	});
+
+	describe("npmInstallPackage", () => {
+		let dep;
+		beforeEach(() => {
+			util.exec = jest.fn(() => Promise.resolve());
+			util.advise = jest.fn(() => Promise.resolve());
+			dep = "@lk/my-package@1.1.1";
+		});
+
+		it("should execute install successfully", () => {
+			return run.npmInstallPackage(dep)().then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(1);
+				expect(util.log.begin).toHaveBeenCalledWith(`npm install ${dep}`);
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith(`npm install ${dep}`);
+				expect(util.log.end).toHaveBeenCalledTimes(1);
+				expect(util.advise).toHaveBeenCalledTimes(0);
+			});
+		});
+
+		it("should advise when install fails", () => {
+			util.exec = jest.fn(() => Promise.reject());
+			return run.npmInstallPackage(dep)().then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(1);
+				expect(util.log.begin).toHaveBeenCalledWith(`npm install ${dep}`);
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith(`npm install ${dep}`);
+				expect(util.log.end).toHaveBeenCalledTimes(1);
+				expect(util.advise).toHaveBeenCalledTimes(1);
+				expect(util.advise).toHaveBeenCalledWith("npmInstall", { exit: false });
 			});
 		});
 	});

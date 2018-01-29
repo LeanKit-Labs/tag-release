@@ -10,6 +10,7 @@ import path from "path";
 import removeWords from "remove-words";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
+const PACKAGELOCKJSON_PATH = "./package-lock.json";
 
 export function getFeatureBranch(state) {
 	return git.getCurrentBranch().then(branch => {
@@ -334,8 +335,13 @@ export function gitDiff(state) {
 
 export function gitAdd(state) {
 	const { configPath } = state;
+	const files = [CHANGELOG_PATH, configPath];
 
-	return git.add([CHANGELOG_PATH, configPath]);
+	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+		files.push(PACKAGELOCKJSON_PATH);
+	}
+
+	return git.add(files);
 }
 
 export function gitStageConfigFile(state) {
@@ -1265,4 +1271,35 @@ export function getDependenciesFromFile(state) {
 	state.dependencies = content ? content : {};
 
 	return Promise.resolve();
+};
+
+export function updatePackageLockJson(state) {
+	if (!util.fileExists(PACKAGELOCKJSON_PATH)) {
+		return Promise.resolve();
+	}
+
+	const { dependencies, scope } = state;
+	const installs = dependencies.map(dep =>
+		npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
+	);
+
+	return sequence(installs).then(() => Promise.resolve());
+}
+
+export function npmInstallPackage(dependency) {
+	const command = `npm install ${dependency}`;
+
+	return () => {
+		util.log.begin(command);
+		return util
+			.exec(command)
+			.then(() => {
+				util.log.end();
+				return Promise.resolve();
+			})
+			.catch(() => {
+				util.log.end();
+				util.advise("npmInstall", { exit: false });
+			});
+	};
 }

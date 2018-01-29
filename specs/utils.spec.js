@@ -22,8 +22,7 @@ jest.mock("fs", () => ({
 	unlinkSync: jest.fn(),
 	ReadStream: jest.fn(),
 	WriteStream: jest.fn(),
-	existsSync: jest.fn().mockReturnValue(true),
-	unlink: jest.fn()
+	existsSync: jest.fn().mockReturnValue(true)
 }));
 
 jest.mock("inquirer", () => ({
@@ -276,14 +275,14 @@ describe("utils", () => {
 		const path = "./some_unknown_path/.test.txt";
 		it("should delete given file", () => {
 			util.deleteFile(path);
-			expect(fs.unlink).toHaveBeenCalledTimes(1);
-			expect(fs.unlink).toHaveBeenCalledWith(path);
+			expect(fs.unlinkSync).toHaveBeenCalledTimes(1);
+			expect(fs.unlinkSync).toHaveBeenCalledWith(path);
 		});
 
 		it("should return if given file doesn't exist", () => {
 			fs.existsSync = jest.fn().mockReturnValue(false);
 			util.deleteFile(path);
-			expect(fs.unlink).toHaveBeenCalledTimes(0);
+			expect(fs.unlinkSync).toHaveBeenCalledTimes(0);
 		});
 	});
 

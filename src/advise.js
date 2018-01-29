@@ -91,7 +91,8 @@ Are you sure you need to run 'tag-release --qa'?`,
 	upstreamBranchDeleteFailure: `The feature branch failed to be deleted in the upstream. It most likely doesn't exist.`,
 	saveDependencies: `It appears something went wrong attempting to save your dependencies.
 
-You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`
+You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
+	npmInstall: `Sorry, we were unable to install and update your package-lock.json`
 };
 
 const MAXIMUM_WIDTH = 50;

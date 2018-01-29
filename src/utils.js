@@ -46,7 +46,7 @@ export default {
 		return this.writeFile(path, content);
 	},
 	deleteFile(path) {
-		return fs.existsSync(path) ? fs.unlink(path) : Promise.resolve();
+		return fs.existsSync(path) ? fs.unlinkSync(path) : Promise.resolve();
 	},
 	fileExists(path) {
 		return fs.existsSync(path);
