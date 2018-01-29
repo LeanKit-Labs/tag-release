@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.14.0
+
+* Added updating and adding package-lock.json for promote, pr, and default tag-release flow
+
 ### 5.13.0
 
 * Added new eslint rules, give better error message when branch already exists on the upstream, cleanup branches locally and upstream after promotion
