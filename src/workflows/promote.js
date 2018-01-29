@@ -14,6 +14,9 @@ export default [
 	run.gitMergePromotionBranch,
 	...rebaseUpdateLogCommitTagRelease,
 	run.cleanUpTmpFiles,
+	run.findBranchByTag,
+	run.deleteLocalFeatureBranch,
+	run.deleteUpstreamFeatureBranch,
 	run.gitRemovePromotionBranches
 ];
 
@@ -24,5 +27,8 @@ export const promoteContinue = [
 	run.gitMergePromotionBranch,
 	...rebaseUpdateLogCommitTagRelease,
 	run.cleanUpTmpFiles,
+	run.findBranchByTag,
+	run.deleteLocalFeatureBranch,
+	run.deleteUpstreamFeatureBranch,
 	run.gitRemovePromotionBranches
 ];

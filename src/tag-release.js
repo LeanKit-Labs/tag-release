@@ -22,7 +22,9 @@ export default state => {
 				);
 			}
 
-			return sequence(prContinue, state).then(() => console.log("Finished")); // eslint-disable-line no-console
+			return sequence(prContinue, state).then(
+				() => console.log("Finished") // eslint-disable-line no-console
+			);
 		});
 	}
 
@@ -31,10 +33,14 @@ export default state => {
 			const onFeatureBranch =
 				state.branch !== "develop" && state.branch !== "master";
 			if (state.packages.length && onFeatureBranch) {
-				return sequence(qaUpdate, state).then(() => console.log("Finished")); // eslint-disable-line no-console
+				return sequence(qaUpdate, state).then(
+					() => console.log("Finished") // eslint-disable-line no-console
+				);
 			}
 
-			return sequence(qaDefault, state).then(() => console.log("Finished")); // eslint-disable-line no-console
+			return sequence(qaDefault, state).then(
+				() => console.log("Finished") // eslint-disable-line no-console
+			);
 		});
 	}
 

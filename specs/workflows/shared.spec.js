@@ -36,7 +36,7 @@ describe("shared workflows", () => {
 	describe("createPullRequest", () => {
 		it("should have all of the required steps", () => {
 			expect(createPullRequest).toEqual([
-				run.getReposFromBumpCommit,
+				run.getDependenciesFromFile,
 				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
 				run.githubUpstream,

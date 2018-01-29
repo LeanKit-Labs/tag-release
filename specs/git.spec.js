@@ -21,7 +21,9 @@ describe("git", () => {
 		it("should run `git` with the given args", () => {
 			const branch = "master";
 			const includeTags = true;
-			const args = `fetch upstream ${branch}${includeTags ? " --tags" : ""}`;
+			const args = `fetch upstream ${branch}${
+				includeTags ? " --tags" : ""
+			}`;
 
 			return git.runCommand({ args }).then(() => {
 				expect(util.exec).toHaveBeenCalledTimes(1);
@@ -40,10 +42,15 @@ describe("git", () => {
 
 		it("should log with the given `logMessage` when provided", () => {
 			return git
-				.runCommand({ args: "--version", logMessage: "Get git version" })
+				.runCommand({
+					args: "--version",
+					logMessage: "Get git version"
+				})
 				.then(() => {
 					expect(util.log.begin).toHaveBeenCalledTimes(1);
-					expect(util.log.begin).toHaveBeenCalledWith("Get git version");
+					expect(util.log.begin).toHaveBeenCalledWith(
+						"Get git version"
+					);
 				});
 		});
 
@@ -95,9 +102,11 @@ describe("git", () => {
 
 			it("should use onError passed as arg when provided", () => {
 				const onError = jest.fn(() => Promise.resolve(""));
-				return git.runCommand({ args: "--version", onError }).catch(() => {
-					expect(onError).toHaveBeenCalledTimes(1);
-				});
+				return git
+					.runCommand({ args: "--version", onError })
+					.catch(() => {
+						expect(onError).toHaveBeenCalledTimes(1);
+					});
 			});
 		});
 	});
@@ -133,7 +142,9 @@ describe("git", () => {
 			},
 			merge: {
 				args: "upstream/test-branch",
-				expectedRunCommandArgs: { args: "merge upstream/test-branch --ff-only" }
+				expectedRunCommandArgs: {
+					args: "merge upstream/test-branch --ff-only"
+				}
 			},
 			rebase: {
 				args: { branch: "upstream/test-branch", onError },
@@ -150,10 +161,14 @@ describe("git", () => {
 				}
 			},
 			mergeUpstreamMaster: {
-				expectedRunCommandArgs: { args: "merge upstream/master --ff-only" }
+				expectedRunCommandArgs: {
+					args: "merge upstream/master --ff-only"
+				}
 			},
 			mergeUpstreamDevelop: {
-				expectedRunCommandArgs: { args: "merge upstream/develop --ff-only" }
+				expectedRunCommandArgs: {
+					args: "merge upstream/develop --ff-only"
+				}
 			},
 			mergePromotionBranch: {
 				args: "v1.1.1-feature.0",
@@ -187,11 +202,15 @@ describe("git", () => {
 			},
 			add: {
 				args: ["CHANGELOG.md", "package.json"],
-				expectedRunCommandArgs: { args: "add CHANGELOG.md package.json" }
+				expectedRunCommandArgs: {
+					args: "add CHANGELOG.md package.json"
+				}
 			},
 			commit: {
 				args: "This is a test commit",
-				expectedRunCommandArgs: { args: `commit -m "This is a test commit"` }
+				expectedRunCommandArgs: {
+					args: `commit -m "This is a test commit"`
+				}
 			},
 			amend: {
 				args: "This is a test comment",
@@ -261,7 +280,8 @@ describe("git", () => {
 			checkoutTag: {
 				args: "v1.1.1-blah.0",
 				expectedRunCommandArgs: {
-					args: "checkout -b promote-release-v1.1.1-blah.0 v1.1.1-blah.0"
+					args:
+						"checkout -b promote-release-v1.1.1-blah.0 v1.1.1-blah.0"
 				}
 			},
 			generateRebaseCommitLog: {
@@ -288,6 +308,8 @@ describe("git", () => {
 				args: "promote-release-v1.1.1-feature.0",
 				expectedRunCommandArgs: {
 					args: "branch -D promote-release-v1.1.1-feature.0",
+					logMessage: "",
+					onError: {},
 					showOutput: true
 				}
 			},
@@ -336,19 +358,36 @@ describe("git", () => {
 				expectedRunCommandArgs: { args: `log --format=%B -n 1` }
 			},
 			checkoutAndCreateBranch: {
-				args: "feature-branch",
+				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
-					args: `checkout -b feature-branch upstream/develop`
+					args: `checkout -b feature-branch upstream/develop`,
+					onError: {}
 				}
 			},
 			checkoutAndCreateBranchWithoutTracking: {
-				args: "feature-branch",
+				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
-					args: `checkout -b feature-branch`
+					args: `checkout -b feature-branch`,
+					onError: {}
 				}
 			},
 			status: {
 				expectedRunCommandArgs: { args: `status`, showOutput: true }
+			},
+			getAllBranchesWithTag: {
+				args: "v1.1.1-tag.1",
+				expectedRunCommandArgs: {
+					args: `branch -a --contains tags/v1.1.1-tag.1`
+				}
+			},
+			deleteUpstreamBranch: {
+				args: "feature-branch",
+				expectedRunCommandArgs: {
+					args: `push upstream :feature-branch`,
+					showOutput: true,
+					logMessage: "",
+					onError: {}
+				}
 			}
 		};
 
@@ -442,13 +481,17 @@ describe("git", () => {
 			});
 
 			it(`should call "deleteBranch" with provided branch`, () => {
-				return git.deleteBranch("promote-release-v1.1.1", false).then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "branch -D promote-release-v1.1.1",
-						showOutput: false
+				return git
+					.deleteBranch("promote-release-v1.1.1", false)
+					.then(() => {
+						expect(git.runCommand).toHaveBeenCalledTimes(1);
+						expect(git.runCommand).toHaveBeenCalledWith({
+							args: "branch -D promote-release-v1.1.1",
+							logMessage: "",
+							onError: {},
+							showOutput: false
+						});
 					});
-				});
 			});
 
 			it(`should call "createLocalBranch" with provided tracking`, () => {
@@ -457,7 +500,8 @@ describe("git", () => {
 					.then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
 						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "branch feature-branch upstream/tracking-branch",
+							args:
+								"branch feature-branch upstream/tracking-branch",
 							logMessage: `Creating local branch "feature-branch"`
 						});
 					});
@@ -465,11 +509,16 @@ describe("git", () => {
 
 			it(`should call "checkoutAndCreateBranch" with provided tracking`, () => {
 				return git
-					.checkoutAndCreateBranch("feature-branch", "tracking-branch")
+					.checkoutAndCreateBranch({
+						branch: "feature-branch",
+						tracking: "tracking-branch"
+					})
 					.then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
 						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "checkout -b feature-branch upstream/tracking-branch"
+							args:
+								"checkout -b feature-branch upstream/tracking-branch",
+							onError: {}
 						});
 					});
 			});
@@ -553,7 +602,9 @@ describe("git", () => {
 							"promote-release-v1.1.1-feature.1"
 						])
 					);
-					git.deleteBranch = jest.fn(branch => Promise.resolve(branch));
+					git.deleteBranch = jest.fn(branch =>
+						Promise.resolve(branch)
+					);
 					return git.removePromotionBranches().then(result => {
 						expect(result).toEqual([
 							"promote-release-v1.1.1-feature.0",
@@ -589,7 +640,10 @@ v17.12.0-break.1
 v17.11.2`)
 					);
 					return git.getPrereleaseTagList(10).then(result => {
-						expect(result).toEqual(["v18.0.0-robert.0", "v17.12.0-break.1"]);
+						expect(result).toEqual([
+							"v18.0.0-robert.0",
+							"v17.12.0-break.1"
+						]);
 					});
 				});
 			});
@@ -597,7 +651,9 @@ v17.11.2`)
 			describe("generateRebaseCommitLog", () => {
 				let writeSpy;
 				beforeEach(() => {
-					writeSpy = jest.spyOn(util, "writeFile").mockImplementation(() => "");
+					writeSpy = jest
+						.spyOn(util, "writeFile")
+						.mockImplementation(() => "");
 				});
 
 				it("should remove all pre-release commits", () => {

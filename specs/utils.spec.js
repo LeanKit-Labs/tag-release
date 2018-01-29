@@ -170,7 +170,9 @@ describe("utils", () => {
 		it("should read a file", () => {
 			util.readJSONFile("./data/read-json-file.json");
 			expect(util.readFile).toHaveBeenCalledTimes(1);
-			expect(util.readFile).toHaveBeenCalledWith("./data/read-json-file.json");
+			expect(util.readFile).toHaveBeenCalledWith(
+				"./data/read-json-file.json"
+			);
 		});
 
 		it("should parse the returned content", () => {
@@ -214,7 +216,10 @@ describe("utils", () => {
 		it("should read from the given file", () => {
 			util.writeJSONFile(file, contents);
 			expect(fs.readFileSync).toHaveBeenCalledTimes(1);
-			expect(fs.readFileSync).toHaveBeenCalledWith("./manifest.json", "utf-8");
+			expect(fs.readFileSync).toHaveBeenCalledWith(
+				"./manifest.json",
+				"utf-8"
+			);
 		});
 
 		it("should detect the indent of the given file", () => {
@@ -370,7 +375,10 @@ describe("utils", () => {
 			return util.editLog("monkey").then(() => {
 				expect(editor).toHaveBeenCalledTimes(1);
 				expect(util.writeFile).toHaveBeenCalledTimes(1);
-				expect(util.writeFile).toHaveBeenCalledWith("./.shortlog", "monkey");
+				expect(util.writeFile).toHaveBeenCalledWith(
+					"./.shortlog",
+					"monkey"
+				);
 			});
 		});
 
@@ -529,12 +537,14 @@ describe("utils", () => {
 		});
 
 		it("should call `exec` with the appropriate arguments", () => {
-			return util.setGitConfig("tag-release.username", "monkey").then(() => {
-				expect(util.exec).toHaveBeenCalledTimes(1);
-				expect(util.exec).toHaveBeenCalledWith(
-					"git config --global tag-release.username monkey"
-				);
-			});
+			return util
+				.setGitConfig("tag-release.username", "monkey")
+				.then(() => {
+					expect(util.exec).toHaveBeenCalledTimes(1);
+					expect(util.exec).toHaveBeenCalledWith(
+						"git config --global tag-release.username monkey"
+					);
+				});
 		});
 	});
 
@@ -551,8 +561,12 @@ describe("utils", () => {
 		it("calls getGitConfig for username and token", () => {
 			return util.getGitConfigs().then(() => {
 				expect(util.getGitConfig).toHaveBeenCalledTimes(2);
-				expect(util.getGitConfig).toHaveBeenCalledWith("tag-release.username");
-				expect(util.getGitConfig).toHaveBeenCalledWith("tag-release.token");
+				expect(util.getGitConfig).toHaveBeenCalledWith(
+					"tag-release.username"
+				);
+				expect(util.getGitConfig).toHaveBeenCalledWith(
+					"tag-release.token"
+				);
 			});
 		});
 	});
@@ -620,28 +634,32 @@ describe("utils", () => {
 		});
 
 		it("should execute an http POST request to GitHub", () => {
-			return util.createGitHubAuthToken("username", "password").then(() => {
-				expect(request.post).toHaveBeenCalledTimes(1);
-				const requestArgs = request.post.mock.calls[0][0];
-				expect(requestArgs.url).toEqual(
-					"https://api.github.com/authorizations"
-				);
-				expect(requestArgs.headers).toEqual({
-					"User-Agent": "request"
+			return util
+				.createGitHubAuthToken("username", "password")
+				.then(() => {
+					expect(request.post).toHaveBeenCalledTimes(1);
+					const requestArgs = request.post.mock.calls[0][0];
+					expect(requestArgs.url).toEqual(
+						"https://api.github.com/authorizations"
+					);
+					expect(requestArgs.headers).toEqual({
+						"User-Agent": "request"
+					});
+					expect(requestArgs.auth).toEqual({
+						user: "username",
+						pass: "password"
+					});
+					expect(requestArgs.json.scopes).toEqual(["repo"]);
+					expect(requestArgs.json.note).toContain("tag-release-");
 				});
-				expect(requestArgs.auth).toEqual({
-					user: "username",
-					pass: "password"
-				});
-				expect(requestArgs.json.scopes).toEqual(["repo"]);
-				expect(requestArgs.json.note).toContain("tag-release-");
-			});
 		});
 
 		it("should return a token if the response statusCode is 201", () => {
-			return util.createGitHubAuthToken("username", "password").then(token => {
-				expect(token).toEqual("1234567890");
-			});
+			return util
+				.createGitHubAuthToken("username", "password")
+				.then(token => {
+					expect(token).toEqual("1234567890");
+				});
 		});
 
 		it("should call `githubUnauthorized` if the response statusCode is 401", () => {
@@ -651,9 +669,11 @@ describe("utils", () => {
 				});
 			});
 
-			return util.createGitHubAuthToken("username", "password").then(() => {
-				expect(util.githubUnauthorized).toHaveBeenCalledTimes(1);
-			});
+			return util
+				.createGitHubAuthToken("username", "password")
+				.then(() => {
+					expect(util.githubUnauthorized).toHaveBeenCalledTimes(1);
+				});
 		});
 
 		it("should log a message and errors for any other response statusCode", () => {
@@ -671,11 +691,15 @@ describe("utils", () => {
 				);
 			});
 
-			return util.createGitHubAuthToken("username", "password").then(() => {
-				expect(logger.log).toHaveBeenCalledTimes(2);
-				expect(logger.log).toHaveBeenCalledWith("nope");
-				expect(logger.log).toHaveBeenCalledWith("something bad happened");
-			});
+			return util
+				.createGitHubAuthToken("username", "password")
+				.then(() => {
+					expect(logger.log).toHaveBeenCalledTimes(2);
+					expect(logger.log).toHaveBeenCalledWith("nope");
+					expect(logger.log).toHaveBeenCalledWith(
+						"something bad happened"
+					);
+				});
 		});
 
 		it("should log a message when the request throws an error", () => {
@@ -683,18 +707,24 @@ describe("utils", () => {
 				cb("nope", null);
 			});
 
-			return util.createGitHubAuthToken("username", "password").catch(err => {
-				expect(err).toEqual("nope");
-				expect(logger.log).toHaveBeenCalledTimes(1);
-				expect(logger.log).toHaveBeenCalledWith("error", "nope");
-			});
+			return util
+				.createGitHubAuthToken("username", "password")
+				.catch(err => {
+					expect(err).toEqual("nope");
+					expect(logger.log).toHaveBeenCalledTimes(1);
+					expect(logger.log).toHaveBeenCalledWith("error", "nope");
+				});
 		});
 	});
 
 	describe("githubUnauthorized", () => {
 		beforeEach(() => {
-			util.prompt = jest.fn(() => Promise.resolve({ authCode: "1234567890" }));
-			util.createGitHubAuthToken = jest.fn(() => Promise.resolve("1234567890"));
+			util.prompt = jest.fn(() =>
+				Promise.resolve({ authCode: "1234567890" })
+			);
+			util.createGitHubAuthToken = jest.fn(() =>
+				Promise.resolve("1234567890")
+			);
 		});
 
 		it("should prompt if two-factor auth is enabled for the user", () => {
@@ -711,7 +741,8 @@ describe("utils", () => {
 						{
 							type: "input",
 							name: "authCode",
-							message: "What is the GitHub authentication code on your device"
+							message:
+								"What is the GitHub authentication code on your device"
 						}
 					]);
 				});
@@ -920,7 +951,9 @@ describe("utils", () => {
 							"To upgrade, run 'npm install -g tag-release@7.7.7-pre.0'"
 						]);
 						expect(chalk.yellow).toHaveBeenCalledTimes(2);
-						expect(chalk.yellow.mock.calls[0]).toEqual(["7.7.7-pre.0"]);
+						expect(chalk.yellow.mock.calls[0]).toEqual([
+							"7.7.7-pre.0"
+						]);
 						expect(chalk.yellow.mock.calls[1]).toEqual([
 							"'npm install -g tag-release@7.7.7-pre.0'"
 						]);
@@ -933,7 +966,8 @@ describe("utils", () => {
 						util.getAvailableVersionInfo = jest.fn(() =>
 							Promise.resolve({
 								latestFullVersion: "7.6.0",
-								latestPrereleaseVersion: "7.8.0-some-other-pre.0"
+								latestPrereleaseVersion:
+									"7.8.0-some-other-pre.0"
 							})
 						);
 					});
@@ -1035,7 +1069,9 @@ describe("utils", () => {
 		it("should run `child_process.execSync", () => {
 			util.hasLkScope();
 			expect(cp.execSync).toHaveBeenCalledTimes(1);
-			expect(cp.execSync).toHaveBeenCalledWith("npm config get @lk:registry");
+			expect(cp.execSync).toHaveBeenCalledWith(
+				"npm config get @lk:registry"
+			);
 		});
 
 		it(`should return true when the user has a registry for the "@lk" scope`, () => {

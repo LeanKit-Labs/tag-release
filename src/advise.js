@@ -85,7 +85,13 @@ Alternatively, You can specifiy a different config file by using the -c command:
 Did you mean to run 'tag-release --qa' instead?`,
 	qaNoChangeNoDevelop: `It appears this repository doesn't have any new changes or a develop branch.
 
-Are you sure you need to run 'tag-release --qa'?`
+Are you sure you need to run 'tag-release --qa'?`,
+	gitBranchAlreadyExists: `The branch you are trying to create appears to already exist. Please choose a different name.`,
+	localBranchDeleteFailure: `The feature branch failed to be deleted locally. It most likely doesn't exist.`,
+	upstreamBranchDeleteFailure: `The feature branch failed to be deleted in the upstream. It most likely doesn't exist.`,
+	saveDependencies: `It appears something went wrong attempting to save your dependencies.
+
+You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`
 };
 
 const MAXIMUM_WIDTH = 50;
