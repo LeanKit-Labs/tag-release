@@ -23,6 +23,7 @@ describe("pr workflows", () => {
 				run.getReposFromBumpCommit,
 				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
+				run.saveDependencies,
 				gitRebaseUpstreamDevelopWithConflictFlag
 			]);
 		});
@@ -36,7 +37,7 @@ describe("pr workflows", () => {
 				run.gitStageFiles,
 				run.gitRebaseContinue,
 				run.getFeatureBranch,
-				run.getReposFromBumpCommit,
+				run.getDependenciesFromFile,
 				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
 				run.githubUpstream,
@@ -56,7 +57,7 @@ describe("pr workflows", () => {
 	describe("prRebaseSuccess", () => {
 		it("should have all of the required steps", () => {
 			expect(prRebaseSuccess).toEqual([
-				run.getReposFromBumpCommit,
+				run.getDependenciesFromFile,
 				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
 				run.githubUpstream,
@@ -77,7 +78,7 @@ describe("pr workflows", () => {
 		it("should have all of the required steps", () => {
 			expect(prContinue).toEqual([
 				run.getPackageScope,
-				run.getReposFromBumpCommit,
+				run.getDependenciesFromFile,
 				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
 				run.githubUpstream,

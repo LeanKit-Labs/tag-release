@@ -40,6 +40,9 @@ describe("promote workflows", () => {
 				run.githubUpstream,
 				run.githubRelease,
 				run.cleanUpTmpFiles,
+				run.findBranchByTag,
+				run.deleteLocalFeatureBranch,
+				run.deleteUpstreamFeatureBranch,
 				run.gitRemovePromotionBranches
 			]);
 		});
@@ -74,6 +77,9 @@ describe("promote workflows", () => {
 				run.githubUpstream,
 				run.githubRelease,
 				run.cleanUpTmpFiles,
+				run.findBranchByTag,
+				run.deleteLocalFeatureBranch,
+				run.deleteUpstreamFeatureBranch,
 				run.gitRemovePromotionBranches
 			]);
 		});

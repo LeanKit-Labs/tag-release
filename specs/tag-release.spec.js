@@ -79,7 +79,9 @@ describe("tag-release", () => {
 	it("should run the pre-release workflow when the CLI flag is passed", () => {
 		tagRelease({ reset: true }).then(() => {
 			expect(sequence).toHaveBeenCalledTimes(1);
-			expect(sequence).toHaveBeenCalledWith(resetWorkflow, { reset: true });
+			expect(sequence).toHaveBeenCalledWith(resetWorkflow, {
+				reset: true
+			});
 		});
 	});
 
@@ -96,19 +98,23 @@ describe("tag-release", () => {
 	it("should run the promote workflow when the CLI flag is passed", () => {
 		tagRelease({ promote: true }).then(() => {
 			expect(sequence).toHaveBeenCalledTimes(1);
-			expect(sequence).toHaveBeenCalledWith(promoteWorkflow, { promote: true });
+			expect(sequence).toHaveBeenCalledWith(promoteWorkflow, {
+				promote: true
+			});
 		});
 	});
 
 	describe("continue", () => {
 		it("should run the continue workflow when the CLI flag is passed", () => {
-			tagRelease({ continue: true, branch: "feature-branch" }).then(() => {
-				expect(sequence).toHaveBeenCalledTimes(2);
-				expect(sequence).toHaveBeenCalledWith(continueWorkflow, {
-					continue: true,
-					branch: "feature-branch"
-				});
-			});
+			tagRelease({ continue: true, branch: "feature-branch" }).then(
+				() => {
+					expect(sequence).toHaveBeenCalledTimes(2);
+					expect(sequence).toHaveBeenCalledWith(continueWorkflow, {
+						continue: true,
+						branch: "feature-branch"
+					});
+				}
+			);
 		});
 
 		it("should run the promote continue workflow when continuing from a promote", () => {
@@ -125,13 +131,15 @@ describe("tag-release", () => {
 		});
 
 		it("should run the promote continue workflow when continuing from a pr workflow", () => {
-			tagRelease({ continue: true, branch: "feature-branch" }).then(() => {
-				expect(sequence).toHaveBeenCalledTimes(2);
-				expect(sequence).toHaveBeenCalledWith(prContinue, {
-					continue: true,
-					branch: "feature-branch"
-				});
-			});
+			tagRelease({ continue: true, branch: "feature-branch" }).then(
+				() => {
+					expect(sequence).toHaveBeenCalledTimes(2);
+					expect(sequence).toHaveBeenCalledWith(prContinue, {
+						continue: true,
+						branch: "feature-branch"
+					});
+				}
+			);
 		});
 	});
 

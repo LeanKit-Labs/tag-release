@@ -11,7 +11,10 @@ describe("advise", () => {
 		const expectedText =
 			"It looks like git couldn't merge master into develop.\n\nIt could be that your local environment is out of sync with your upstream.\n\nYou might consider reseting your develop by running 'git reset --hard upstream/develop'";
 		expect(wrap).toHaveBeenCalledTimes(1);
-		expect(wrap).toHaveBeenCalledWith(expectedText, { width: 50, indent: "" });
+		expect(wrap).toHaveBeenCalledWith(expectedText, {
+			width: 50,
+			indent: ""
+		});
 	});
 
 	it("should return the appropriate text for the given key", () => {

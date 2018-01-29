@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import git from "../../git";
 import util from "../../utils";
 import semver from "semver";
@@ -195,7 +196,11 @@ export function askSemverJump(state) {
 	];
 
 	const prereleaseChoices = [
-		{ name: "Pre-major (Breaking Change)", value: "premajor", short: "p-l" },
+		{
+			name: "Pre-major (Breaking Change)",
+			value: "premajor",
+			short: "p-l"
+		},
 		{ name: "Pre-minor (New Feature)", value: "preminor", short: "p-m" },
 		{ name: "Pre-patch (Bug Fix)", value: "prepatch", short: "p-s" },
 		{
@@ -208,7 +213,11 @@ export function askSemverJump(state) {
 	const choicesSource = prerelease ? prereleaseChoices : releaseChoices;
 
 	const choices = choicesSource.map(item => {
-		const version = `v${semver.inc(currentVersion, item.value, identifier)}`;
+		const version = `v${semver.inc(
+			currentVersion,
+			item.value,
+			identifier
+		)}`;
 		return Object.assign({}, item, {
 			name: `${item.name} ${chalk.gray(version)}`
 		});
@@ -381,7 +390,9 @@ export function npmPublish(state) {
 							return util
 								.exec(command)
 								.then(() => util.log.end())
-								.catch(() => util.advise("npmPublish", { exit: false }));
+								.catch(() =>
+									util.advise("npmPublish", { exit: false })
+								);
 						}
 					});
 			})
@@ -593,7 +604,7 @@ export function getPackageScope(state) {
 	const defaultOrProvidedScope = flag => {
 		return flag.charAt(0) === "@" ? `${flag}` : `@${flag}`;
 	};
-	const content = util.readJSONFile(path.join(__dirname, ".state.txt"));
+	const content = util.readJSONFile(path.join(__dirname, ".state.json"));
 	state.scope = content.scope ? content.scope : "@lk";
 
 	if (state.qa && typeof state.qa !== "boolean") {
@@ -615,7 +626,10 @@ export function getScopedRepos(state) {
 			Object.keys(dependencies).filter(key => key.includes(packageScope));
 
 		let repos = getScopedDependencies(content.devDependencies, scope);
-		repos = [...repos, ...getScopedDependencies(content.dependencies, scope)];
+		repos = [
+			...repos,
+			...getScopedDependencies(content.dependencies, scope)
+		];
 		repos = repos.map(key => key.replace(`${scope}/`, ""));
 
 		if (repos.length === 0) {
@@ -658,9 +672,9 @@ export function askVersion(state, dependency) {
 					{
 						type: "list",
 						name: "tag",
-						message: `Update ${chalk.yellow(pkg)} from ${chalk.yellow(
-							version
-						)} to:`,
+						message: `Update ${chalk.yellow(
+							pkg
+						)} from ${chalk.yellow(version)} to:`,
 						choices: tags
 					}
 				])
@@ -673,7 +687,9 @@ export function askVersion(state, dependency) {
 
 export function askVersions(state) {
 	const { dependencies } = state;
-	const prompts = dependencies.map(dependency => askVersion(state, dependency));
+	const prompts = dependencies.map(dependency =>
+		askVersion(state, dependency)
+	);
 
 	return sequence(prompts).then(deps => {
 		state.dependencies = deps;
@@ -744,13 +760,30 @@ export function askChangeReason(state) {
 export function gitCheckoutAndCreateBranch(state) {
 	const { branch, log, keepBranch } = state;
 
+	const onError = err => {
+		return () => {
+			let failHelpKey = "gitCommandFailed";
+			if (
+				err.message.includes(
+					`A branch named '${branch}' already exists`
+				)
+			) {
+				failHelpKey = "gitBranchAlreadyExists";
+			}
+
+			util.advise(failHelpKey, { exit: true });
+			return Promise.reject();
+		};
+	};
+
 	let result;
 	if (keepBranch) {
 		result = () => Promise.resolve();
 	} else if (log.length) {
-		result = () => git.checkoutAndCreateBranchWithoutTracking(branch);
+		result = () =>
+			git.checkoutAndCreateBranchWithoutTracking({ branch, onError });
 	} else {
-		result = () => git.checkoutAndCreateBranch(branch);
+		result = () => git.checkoutAndCreateBranch({ branch, onError });
 	}
 
 	return result();
@@ -813,7 +846,8 @@ export function gitRebaseUpstreamDevelop() {
 
 export function getReposFromBumpCommit(state) {
 	return git.getLatestCommitMessage().then(msg => {
-		const [, versions = "", reason = ""] = msg.match(/Bumped (.*): (.*)/) || [];
+		const [, versions = "", reason = ""] =
+			msg.match(/Bumped (.*): (.*)/) || [];
 		const repoVersion = /([\w-]+) to ([\d.]+)/;
 		const results = versions.split(",").reduce((memo, bump) => {
 			const [, repo, version] = repoVersion.exec(bump) || [];
@@ -853,10 +887,16 @@ export function getCurrentDependencyVersions(state) {
 		packages.forEach(pkg => {
 			const key = `${scope}/${pkg}`;
 			if (content.devDependencies && key in content.devDependencies) {
-				state.dependencies.push({ pkg, version: content.devDependencies[key] });
+				state.dependencies.push({
+					pkg,
+					version: content.devDependencies[key]
+				});
 			}
 			if (content.dependencies && key in content.dependencies) {
-				state.dependencies.push({ pkg, version: content.dependencies[key] });
+				state.dependencies.push({
+					pkg,
+					version: content.dependencies[key]
+				});
 			}
 		});
 	} catch (err) {
@@ -877,7 +917,8 @@ export function createGithubPullRequestAganistDevelop(state) {
 
 	const repository = github.getRepo(repositoryOwner, repositoryName);
 
-	const [, , reason = ""] = state.bumpComment.match(/Bumped (.*): (.*)/) || [];
+	const [, , reason = ""] =
+		state.bumpComment.match(/Bumped (.*): (.*)/) || [];
 	const options = {
 		title: reason,
 		head: `${repositoryOwner}:${branch}`,
@@ -907,7 +948,7 @@ export function saveState(state) {
 			scope
 		};
 
-		util.writeJSONFile(path.join(__dirname, ".state.txt"), content);
+		util.writeJSONFile(path.join(__dirname, ".state.json"), content);
 	} catch (err) {
 		util.advise("saveState");
 	}
@@ -916,7 +957,8 @@ export function saveState(state) {
 }
 
 export function cleanUpTmpFiles() {
-	util.deleteFile(path.join(__dirname, ".state.txt"));
+	util.deleteFile(path.join(__dirname, ".state.json"));
+	util.deleteFile(path.join(__dirname, ".dependencies.json"));
 
 	return git.cleanUp();
 }
@@ -1007,17 +1049,17 @@ export function verifyUpstream(state) {
 		return repository
 			.getDetails()
 			.then(response => {
-				let parent_ssh_url;
+				let parentSshUrl;
 				if (response.data.hasOwnProperty("parent")) {
-					parent_ssh_url = origin.url.includes("https")
+					parentSshUrl = origin.url.includes("https")
 						? response.data.parent.svn_url
 						: response.data.parent.ssh_url;
 				} else {
-					parent_ssh_url = origin.url.includes("https")
+					parentSshUrl = origin.url.includes("https")
 						? response.data.svn_url
 						: response.data.ssh_url;
 				}
-				const command = `git remote add upstream ${parent_ssh_url}`;
+				const command = `git remote add upstream ${parentSshUrl}`;
 				return util
 					.exec(command)
 					.then(util.log.end())
@@ -1123,4 +1165,104 @@ export function promptKeepBranchOrCreateNew(state) {
 			state.keepBranch = answers.keep;
 			return Promise.resolve();
 		});
+}
+
+export function findBranchByTag(state) {
+	const { promote: tag } = state;
+	return git.getAllBranchesWithTag(tag).then(response => {
+		const regexp = /[^*/ ]+$/;
+
+		let branches = response.split("\n").filter(b => b);
+
+		branches = branches.reduce((memo, branch) => {
+			branch = branch.trim();
+			const [myBranch] = regexp.exec(branch) || [];
+
+			if (!memo.includes(myBranch)) {
+				memo.push(myBranch);
+			}
+
+			return memo;
+		}, []);
+
+		if (branches.length > 1) {
+			return util
+				.prompt([
+					{
+						type: "list",
+						name: "branch",
+						message:
+							"Which branch contains the tag you are promoting?",
+						choices: branches
+					}
+				])
+				.then(({ branch }) => {
+					state.branchToRemove = branch;
+					return Promise.resolve();
+				});
+		}
+
+		state.branchToRemove = branches[0];
+		return Promise.resolve();
+	});
+}
+
+export function deleteLocalFeatureBranch(state) {
+	const { branchToRemove: branch } = state;
+
+	const onError = () => {
+		return () => {
+			util.advise("localBranchDeleteFailure", { exit: false });
+			return Promise.resolve();
+		};
+	};
+
+	return git.deleteBranch(
+		branch,
+		true,
+		"Cleaning local feature branch",
+		onError
+	);
+}
+
+export function deleteUpstreamFeatureBranch(state) {
+	const { branchToRemove: branch } = state;
+
+	const onError = () => {
+		return () => {
+			util.advise("upstreamBranchDeleteFailure", { exit: false });
+			return Promise.resolve();
+		};
+	};
+
+	return git.deleteUpstreamBranch(
+		branch,
+		true,
+		"Cleaning upstream feature branch",
+		onError
+	);
+}
+
+export function saveDependencies(state) {
+	const { dependencies } = state;
+
+	try {
+		const content = dependencies;
+
+		util.writeJSONFile(path.join(__dirname, ".dependencies.json"), content);
+	} catch (err) {
+		util.advise("saveDependencies");
+	}
+
+	return Promise.resolve();
+}
+
+export function getDependenciesFromFile(state) {
+	const content = util.readJSONFile(
+		path.join(__dirname, ".dependencies.json")
+	);
+
+	state.dependencies = content ? content : {};
+
+	return Promise.resolve();
 }

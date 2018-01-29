@@ -25,7 +25,9 @@ const git = {
 			onError = err => {
 				util.advise(failHelpKey, { exit: exitOnFail });
 
-				return showError ? () => Promise.reject(err) : () => Promise.reject();
+				return showError
+					? () => Promise.reject(err)
+					: () => Promise.reject();
 			};
 		}
 
@@ -38,13 +40,17 @@ const git = {
 			})
 			.catch(err => {
 				util.log.end();
-
 				return onError(err)();
 			});
 	},
 
 	getRemoteBranches() {
 		const args = "branch -r";
+		return git.runCommand({ args });
+	},
+
+	getAllBranchesWithTag(tag) {
+		const args = `branch -a --contains tags/${tag}`;
 		return git.runCommand({ args });
 	},
 
@@ -79,9 +85,9 @@ const git = {
 	},
 
 	merge(branch, fastForwardOnly = true, failHelpKey) {
-		const args = `merge ${branch}${fastForwardOnly
-			? " --ff-only"
-			: " --no-ff"}`;
+		const args = `merge ${branch}${
+			fastForwardOnly ? " --ff-only" : " --no-ff"
+		}`;
 		return git.runCommand(
 			failHelpKey && failHelpKey.length ? { args, failHelpKey } : { args }
 		);
@@ -141,7 +147,8 @@ const git = {
 				const latestTags = prereleaseTags.reduce((acc, cur) => {
 					const key = cur.slice(0, cur.lastIndexOf("."));
 					if (acc[key]) {
-						acc[key] = semver.compare(acc[key], cur) >= 0 ? acc[key] : cur;
+						acc[key] =
+							semver.compare(acc[key], cur) >= 0 ? acc[key] : cur;
 					} else {
 						acc[key] = cur;
 					}
@@ -195,7 +202,11 @@ const git = {
 	},
 
 	pushUpstreamMaster() {
-		return git.push("upstream master", false, "gitPushUpstreamFeatureBranch");
+		return git.push(
+			"upstream master",
+			false,
+			"gitPushUpstreamFeatureBranch"
+		);
 	},
 
 	pushUpstreamMasterWithTags() {
@@ -224,13 +235,19 @@ const git = {
 
 	stash() {
 		const args = "stash";
-		return git.runCommand({ args, logMessage: "Stashing uncommitted changes" });
+		return git.runCommand({
+			args,
+			logMessage: "Stashing uncommitted changes"
+		});
 	},
 
 	branchExists(branch) {
 		const args = `branch --list ${branch}`;
 		return git
-			.runCommand({ args, logMessage: `Verifying branch: "${branch}" exists` })
+			.runCommand({
+				args,
+				logMessage: `Verifying branch: "${branch}" exists`
+			})
 			.then(result => {
 				const branches = result.split("\n").filter(String);
 				return Promise.resolve(!!branches.length);
@@ -316,16 +333,28 @@ const git = {
 
 	removePromotionBranches() {
 		return git.getBranchList().then(branches => {
-			branches = branches.filter(branch => branch.includes("promote-release"));
+			branches = branches.filter(branch =>
+				branch.includes("promote-release")
+			);
 			return Promise.all(
 				branches.map(branch => git.deleteBranch(branch, false))
 			);
 		});
 	},
 
-	deleteBranch(branch, showOutput = true) {
+	deleteBranch(branch, showOutput = true, logMessage = "", onError = {}) {
 		const args = `branch -D ${branch}`;
-		return git.runCommand({ args, showOutput });
+		return git.runCommand({ args, showOutput, logMessage, onError });
+	},
+
+	deleteUpstreamBranch(
+		branch,
+		showOutput = true,
+		logMessage = "",
+		onError = {}
+	) {
+		const args = `push upstream :${branch}`;
+		return git.runCommand({ args, showOutput, logMessage, onError });
 	},
 
 	stageFiles() {
@@ -354,14 +383,14 @@ const git = {
 		});
 	},
 
-	checkoutAndCreateBranch(branch, tracking = "develop") {
+	checkoutAndCreateBranch({ branch, tracking = "develop", onError = {} }) {
 		const args = `checkout -b ${branch} upstream/${tracking}`;
-		return git.runCommand({ args });
+		return git.runCommand({ args, onError });
 	},
 
-	checkoutAndCreateBranchWithoutTracking(branch) {
+	checkoutAndCreateBranchWithoutTracking({ branch, onError = {} }) {
 		const args = `checkout -b ${branch}`;
-		return git.runCommand({ args });
+		return git.runCommand({ args, onError });
 	},
 
 	rebaseUpstreamBranch({ branch, onError }) {

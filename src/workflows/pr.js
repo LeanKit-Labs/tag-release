@@ -15,6 +15,7 @@ export default [
 	run.getReposFromBumpCommit,
 	run.verifyPackagesToPromote,
 	run.getCurrentDependencyVersions,
+	run.saveDependencies,
 	gitRebaseUpstreamDevelopWithConflictFlag
 ];
 
