@@ -254,6 +254,19 @@ const git = {
 			});
 	},
 
+	branchExistsUpstream(branch) {
+		const args = `ls-remote upstream ${branch}`;
+		return git
+			.runCommand({
+				args,
+				logMessage: `Checking if "${branch}" exists on upstream`
+			})
+			.then(result => {
+				const branches = result.split("\n").filter(String);
+				return Promise.resolve(!!branches.length);
+			});
+	},
+
 	createLocalBranch(branch, tracking = branch) {
 		const args = `branch ${branch} upstream/${tracking}`;
 		return git.runCommand({

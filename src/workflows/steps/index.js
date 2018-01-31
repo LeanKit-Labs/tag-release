@@ -1152,7 +1152,7 @@ export function useCurrentBranchOrCheckoutDevelop(state) {
 }
 
 export function promptKeepBranchOrCreateNew(state) {
-	const { log } = state;
+	const { log, branch } = state;
 
 	if (!log.length) {
 		return Promise.resolve();
@@ -1169,7 +1169,11 @@ export function promptKeepBranchOrCreateNew(state) {
 		])
 		.then(answers => {
 			state.keepBranch = answers.keep;
-			return Promise.resolve();
+			return git.branchExistsUpstream(branch).then(exists => {
+				if (exists) {
+					return git.merge(`upstream/${branch}`, true);
+				}
+			});
 		});
 }
 
@@ -1271,7 +1275,7 @@ export function getDependenciesFromFile(state) {
 	state.dependencies = content ? content : {};
 
 	return Promise.resolve();
-};
+}
 
 export function updatePackageLockJson(state) {
 	if (!util.fileExists(PACKAGELOCKJSON_PATH)) {
