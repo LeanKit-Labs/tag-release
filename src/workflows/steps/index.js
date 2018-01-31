@@ -1272,17 +1272,18 @@ export function getDependenciesFromFile(state) {
 		path.join(__dirname, ".dependencies.json")
 	);
 
-	state.dependencies = content ? content : {};
+	state.dependencies = content ? content : [];
 
 	return Promise.resolve();
 }
 
 export function updatePackageLockJson(state) {
-	if (!util.fileExists(PACKAGELOCKJSON_PATH)) {
+	const { dependencies, scope } = state;
+
+	if (!util.fileExists(PACKAGELOCKJSON_PATH) || !dependencies) {
 		return Promise.resolve();
 	}
 
-	const { dependencies, scope } = state;
 	const installs = dependencies.map(dep =>
 		npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
 	);

@@ -3666,6 +3666,13 @@ feature-last-branch`)
 			});
 		});
 
+		it("should do nothing if depedencies don't exist", () => {
+			state.dependencies = undefined;
+			return run.updatePackageLockJson(state).then(() => {
+				expect(sequence).toHaveBeenCalledTimes(0);
+			});
+		});
+
 		it("should call 'sequence' with an array of dependencies", () => {
 			return run.updatePackageLockJson(state).then(() => {
 				expect(sequence).toHaveBeenCalledTimes(1);
@@ -3805,7 +3812,7 @@ feature-last-branch`)
 			util.readJSONFile = jest.fn(() => "");
 			return run.getDependenciesFromFile(state).then(() => {
 				expect(state).toHaveProperty("dependencies");
-				expect(state.dependencies).toEqual({});
+				expect(state.dependencies).toEqual([]);
 			});
 		});
 	});
