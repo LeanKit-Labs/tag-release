@@ -1,5 +1,10 @@
 ## 5.x
 
+### 5.14.1
+
+* Fixed error when dependencies didn't exist during default tag-release flow
+* Fixed --qa not merging with upstream branch when exists
+
 ### 5.14.0
 
 * Added updating and adding package-lock.json for promote, pr, and default tag-release flow
