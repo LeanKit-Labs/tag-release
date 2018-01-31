@@ -388,6 +388,13 @@ describe("git", () => {
 					logMessage: "",
 					onError: {}
 				}
+			},
+			branchExistsUpstream: {
+				args: "feature-branch",
+				expectedRunCommandArgs: {
+					args: `ls-remote upstream feature-branch`,
+					logMessage: `Checking if "feature-branch" exists on upstream`
+				}
 			}
 		};
 

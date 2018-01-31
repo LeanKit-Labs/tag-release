@@ -3472,9 +3472,12 @@ describe("shared workflow steps", () => {
 	describe("promptKeepBranchOrCreateNew", () => {
 		beforeEach(() => {
 			state = {
-				log: "some random commit"
+				log: "some random commit",
+				branch: "feature-branch"
 			};
+			git.branchExistsUpstream = jest.fn(() => Promise.resolve(true));
 			util.prompt = jest.fn(() => Promise.resolve({ keep: true }));
+			git.merge = jest.fn(() => Promise.resolve());
 		});
 
 		it("should resolve with no new commits", () => {
@@ -3499,6 +3502,50 @@ describe("shared workflow steps", () => {
 					expect(util.prompt).toHaveBeenCalledTimes(1);
 					expect(state).toHaveProperty("keepBranch");
 					expect(state.keepBranch).toEqual(false);
+				});
+			});
+
+			describe("when branch exists upstream", () => {
+				beforeEach(() => {
+					git.branchExistsUpstream = jest.fn(() =>
+						Promise.resolve(true)
+					);
+				});
+
+				it("should merge with upstream branch", () => {
+					return run.promptKeepBranchOrCreateNew(state).then(() => {
+						expect(git.branchExistsUpstream).toHaveBeenCalledTimes(
+							1
+						);
+						expect(git.branchExistsUpstream).toHaveBeenCalledWith(
+							state.branch
+						);
+						expect(git.merge).toHaveBeenCalledTimes(1);
+						expect(git.merge).toHaveBeenCalledWith(
+							"upstream/feature-branch",
+							true
+						);
+					});
+				});
+			});
+
+			describe("when branch doesn't exists upstream", () => {
+				beforeEach(() => {
+					git.branchExistsUpstream = jest.fn(() =>
+						Promise.resolve(false)
+					);
+				});
+
+				it("shouldn't merge with upstream branch", () => {
+					return run.promptKeepBranchOrCreateNew(state).then(() => {
+						expect(git.branchExistsUpstream).toHaveBeenCalledTimes(
+							1
+						);
+						expect(git.branchExistsUpstream).toHaveBeenCalledWith(
+							state.branch
+						);
+						expect(git.merge).toHaveBeenCalledTimes(0);
+					});
 				});
 			});
 		});
@@ -3772,27 +3819,41 @@ feature-last-branch`)
 		});
 
 		it("should execute install successfully", () => {
-			return run.npmInstallPackage(dep)().then(() => {
-				expect(util.log.begin).toHaveBeenCalledTimes(1);
-				expect(util.log.begin).toHaveBeenCalledWith(`npm install ${dep}`);
-				expect(util.exec).toHaveBeenCalledTimes(1);
-				expect(util.exec).toHaveBeenCalledWith(`npm install ${dep}`);
-				expect(util.log.end).toHaveBeenCalledTimes(1);
-				expect(util.advise).toHaveBeenCalledTimes(0);
-			});
+			return run
+				.npmInstallPackage(dep)()
+				.then(() => {
+					expect(util.log.begin).toHaveBeenCalledTimes(1);
+					expect(util.log.begin).toHaveBeenCalledWith(
+						`npm install ${dep}`
+					);
+					expect(util.exec).toHaveBeenCalledTimes(1);
+					expect(util.exec).toHaveBeenCalledWith(
+						`npm install ${dep}`
+					);
+					expect(util.log.end).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledTimes(0);
+				});
 		});
 
 		it("should advise when install fails", () => {
 			util.exec = jest.fn(() => Promise.reject());
-			return run.npmInstallPackage(dep)().then(() => {
-				expect(util.log.begin).toHaveBeenCalledTimes(1);
-				expect(util.log.begin).toHaveBeenCalledWith(`npm install ${dep}`);
-				expect(util.exec).toHaveBeenCalledTimes(1);
-				expect(util.exec).toHaveBeenCalledWith(`npm install ${dep}`);
-				expect(util.log.end).toHaveBeenCalledTimes(1);
-				expect(util.advise).toHaveBeenCalledTimes(1);
-				expect(util.advise).toHaveBeenCalledWith("npmInstall", { exit: false });
-			});
+			return run
+				.npmInstallPackage(dep)()
+				.then(() => {
+					expect(util.log.begin).toHaveBeenCalledTimes(1);
+					expect(util.log.begin).toHaveBeenCalledWith(
+						`npm install ${dep}`
+					);
+					expect(util.exec).toHaveBeenCalledTimes(1);
+					expect(util.exec).toHaveBeenCalledWith(
+						`npm install ${dep}`
+					);
+					expect(util.log.end).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledWith("npmInstall", {
+						exit: false
+					});
+				});
 		});
 	});
 });
