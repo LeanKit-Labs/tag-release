@@ -1292,7 +1292,7 @@ export function updatePackageLockJson(state) {
 }
 
 export function npmInstallPackage(dependency) {
-	const command = `npm install ${dependency}`;
+	const command = `npm install ${dependency} -E`;
 
 	return () => {
 		util.log.begin(command);

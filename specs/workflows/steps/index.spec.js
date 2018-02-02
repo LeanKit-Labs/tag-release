@@ -3831,11 +3831,11 @@ feature-last-branch`)
 				.then(() => {
 					expect(util.log.begin).toHaveBeenCalledTimes(1);
 					expect(util.log.begin).toHaveBeenCalledWith(
-						`npm install ${dep}`
+						`npm install ${dep} -E`
 					);
 					expect(util.exec).toHaveBeenCalledTimes(1);
 					expect(util.exec).toHaveBeenCalledWith(
-						`npm install ${dep}`
+						`npm install ${dep} -E`
 					);
 					expect(util.log.end).toHaveBeenCalledTimes(1);
 					expect(util.advise).toHaveBeenCalledTimes(0);
@@ -3849,11 +3849,11 @@ feature-last-branch`)
 				.then(() => {
 					expect(util.log.begin).toHaveBeenCalledTimes(1);
 					expect(util.log.begin).toHaveBeenCalledWith(
-						`npm install ${dep}`
+						`npm install ${dep} -E`
 					);
 					expect(util.exec).toHaveBeenCalledTimes(1);
 					expect(util.exec).toHaveBeenCalledWith(
-						`npm install ${dep}`
+						`npm install ${dep} -E`
 					);
 					expect(util.log.end).toHaveBeenCalledTimes(1);
 					expect(util.advise).toHaveBeenCalledTimes(1);
