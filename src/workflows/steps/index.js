@@ -1221,10 +1221,7 @@ export function deleteLocalFeatureBranch(state) {
 	const { branchToRemove: branch } = state;
 
 	const onError = () => {
-		return () => {
-			util.advise("localBranchDeleteFailure", { exit: false });
-			return Promise.resolve();
-		};
+		return () => Promise.resolve();
 	};
 
 	return git.deleteBranch(
@@ -1239,10 +1236,7 @@ export function deleteUpstreamFeatureBranch(state) {
 	const { branchToRemove: branch } = state;
 
 	const onError = () => {
-		return () => {
-			util.advise("upstreamBranchDeleteFailure", { exit: false });
-			return Promise.resolve();
-		};
+		return () => Promise.resolve();
 	};
 
 	return git.deleteUpstreamBranch(
