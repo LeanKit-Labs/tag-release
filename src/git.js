@@ -10,7 +10,7 @@ const git = {
 		showOutput = true,
 		logMessage,
 		failHelpKey = "gitCommandFailed",
-		exitOnFail = true,
+		exitOnFail = false,
 		showError = true,
 		fullCommand = false,
 		onError
