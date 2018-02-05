@@ -3630,16 +3630,12 @@ feature-last-branch`)
 			});
 		});
 
-		it("should handle when deleteBranch fails", () => {
+		it("should resolve when deleteBranch fails", () => {
 			git.deleteBranch = jest.fn((...args) => {
 				return args[3]()();
 			});
 			return run.deleteLocalFeatureBranch(state).then(() => {
-				expect(util.advise).toHaveBeenCalledTimes(1);
-				expect(util.advise).toHaveBeenCalledWith(
-					"localBranchDeleteFailure",
-					{ exit: false }
-				);
+				expect(util.advise).toHaveBeenCalledTimes(0);
 			});
 		});
 	});
@@ -3698,16 +3694,12 @@ feature-last-branch`)
 			});
 		});
 
-		it("should handle when deleteBranch fails", () => {
+		it("should resolve when deleteBranch fails", () => {
 			git.deleteUpstreamBranch = jest.fn((...args) => {
 				return args[3]()();
 			});
 			return run.deleteUpstreamFeatureBranch(state).then(() => {
-				expect(util.advise).toHaveBeenCalledTimes(1);
-				expect(util.advise).toHaveBeenCalledWith(
-					"upstreamBranchDeleteFailure",
-					{ exit: false }
-				);
+				expect(util.advise).toHaveBeenCalledTimes(0);
 			});
 		});
 	});
@@ -3831,11 +3823,11 @@ feature-last-branch`)
 				.then(() => {
 					expect(util.log.begin).toHaveBeenCalledTimes(1);
 					expect(util.log.begin).toHaveBeenCalledWith(
-						`npm install ${dep}`
+						`npm install ${dep} -E`
 					);
 					expect(util.exec).toHaveBeenCalledTimes(1);
 					expect(util.exec).toHaveBeenCalledWith(
-						`npm install ${dep}`
+						`npm install ${dep} -E`
 					);
 					expect(util.log.end).toHaveBeenCalledTimes(1);
 					expect(util.advise).toHaveBeenCalledTimes(0);
@@ -3849,11 +3841,11 @@ feature-last-branch`)
 				.then(() => {
 					expect(util.log.begin).toHaveBeenCalledTimes(1);
 					expect(util.log.begin).toHaveBeenCalledWith(
-						`npm install ${dep}`
+						`npm install ${dep} -E`
 					);
 					expect(util.exec).toHaveBeenCalledTimes(1);
 					expect(util.exec).toHaveBeenCalledWith(
-						`npm install ${dep}`
+						`npm install ${dep} -E`
 					);
 					expect(util.log.end).toHaveBeenCalledTimes(1);
 					expect(util.advise).toHaveBeenCalledTimes(1);

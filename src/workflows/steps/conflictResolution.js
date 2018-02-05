@@ -48,7 +48,8 @@ const createChunksToBeInserted = (chunks, localChanges, state) => {
 		});
 
 		local.forEach(item => {
-			const [, pkg, version] = /"@lk\/([\w-]+)": "([\d.]+)"/.exec(item) || [];
+			const [, pkg, version] =
+				/"@lk\/([\w-]+)": "(\^?[\d.]+)"/.exec(item) || [];
 			localChanges[pkg] = version;
 		});
 
@@ -105,7 +106,7 @@ export function resolveChunkConflicts(state) {
 				chunk.forEach(line => {
 					if (line.includes(localKey)) {
 						const [, , version] =
-							/"@lk\/([\w-]+)": "([\d.]+)"/.exec(line) || [];
+							/"@lk\/([\w-]+)": "(\^?[\d.]+)"/.exec(line) || [];
 						logger.log(
 							`${chalk.white.bold(
 								`You had a local change of`
