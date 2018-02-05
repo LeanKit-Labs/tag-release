@@ -1,5 +1,11 @@
 ## 5.x
 
+### 5.14.2
+
+* Remove default exist in OnError for git commands
+* Removed advise when local or upstream branch removal fails
+* Fixed undefined message on conflict resolution message and now install exact versions of npm packages instead of with the default semver range operator
+
 ### 5.14.1
 
 * Fixed error when dependencies didn't exist during default tag-release flow
