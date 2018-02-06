@@ -12,6 +12,7 @@ import prWorkflow, {
 	prRebaseConflict,
 	prContinue
 } from "./workflows/pr";
+import devWorkflow from "./workflows/dev";
 
 export default state => {
 	if (state.continue) {
@@ -69,6 +70,10 @@ export default state => {
 
 	if (state.promote) {
 		workflow = promoteWorkflow;
+	}
+
+	if (state.dev) {
+		workflow = devWorkflow;
 	}
 
 	return sequence(workflow, state).then(() => console.log("Finished")); // eslint-disable-line no-console

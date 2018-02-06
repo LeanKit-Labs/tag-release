@@ -25,6 +25,10 @@ jest.mock("../src/workflows/continue", () => {
 	return "continue";
 });
 
+jest.mock("../src/workflows/dev", () => {
+	return "dev";
+});
+
 jest.mock("../src/workflows/qa", () => {
 	return {
 		default: "qa",
@@ -52,6 +56,7 @@ import prWorkflow, {
 	prRebaseConflict,
 	prContinue
 } from "../src/workflows/pr";
+import devWorkflow from "../src/workflows/dev";
 import tagRelease from "../src/tag-release";
 
 describe("tag-release", () => {
@@ -100,6 +105,15 @@ describe("tag-release", () => {
 			expect(sequence).toHaveBeenCalledTimes(1);
 			expect(sequence).toHaveBeenCalledWith(promoteWorkflow, {
 				promote: true
+			});
+		});
+	});
+
+	it("should run the dev workflow when the CLI flag is passed", () => {
+		tagRelease({ dev: true }).then(() => {
+			expect(sequence).toHaveBeenCalledTimes(1);
+			expect(sequence).toHaveBeenCalledWith(devWorkflow, {
+				dev: true
 			});
 		});
 	});
