@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.15.0
+
+* Added --dev feature for creating a origin feature branch into upstream feature branch pull request
+
 ### 5.14.2
 
 * Remove default exist in OnError for git commands
