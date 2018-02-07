@@ -684,7 +684,7 @@ describe("shared workflow steps", () => {
 	describe("updateLog", () => {
 		beforeEach(() => {
 			state.log = "the originally persisted log message";
-			util.editLog = jest.fn(() =>
+			util.editFile = jest.fn(() =>
 				Promise.resolve(" an updated commit message ")
 			);
 		});
@@ -710,8 +710,8 @@ describe("shared workflow steps", () => {
 
 			it("should launch the user's editor", () => {
 				return run.updateLog(state).then(() => {
-					expect(util.editLog).toHaveBeenCalledTimes(1);
-					expect(util.editLog).toHaveBeenCalledWith(
+					expect(util.editFile).toHaveBeenCalledTimes(1);
+					expect(util.editFile).toHaveBeenCalledWith(
 						"the originally persisted log message"
 					);
 				});
@@ -737,7 +737,7 @@ describe("shared workflow steps", () => {
 			it("should not launch the user's editor", () => {
 				util.prompt = jest.fn(() => Promise.resolve({ log: false }));
 				return run.updateLog(state).then(() => {
-					expect(util.editLog).not.toHaveBeenCalled();
+					expect(util.editFile).not.toHaveBeenCalled();
 				});
 			});
 		});
@@ -1281,8 +1281,10 @@ describe("shared workflow steps", () => {
 				return run.githubUpstream(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: "leankit-labs",
-							name: "tag-release"
+							upstream: {
+								owner: "leankit-labs",
+								name: "tag-release"
+							}
 						}
 					});
 				});
@@ -1297,8 +1299,10 @@ describe("shared workflow steps", () => {
 				return run.githubUpstream(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: "banditsoftware",
-							name: "web-lightning-ui"
+							upstream: {
+								owner: "banditsoftware",
+								name: "web-lightning-ui"
+							}
 						}
 					});
 				});
@@ -1315,8 +1319,10 @@ describe("shared workflow steps", () => {
 				return run.githubUpstream(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: "leankit-labs",
-							name: "tag-release"
+							upstream: {
+								owner: "leankit-labs",
+								name: "tag-release"
+							}
 						}
 					});
 				});
@@ -1331,8 +1337,10 @@ describe("shared workflow steps", () => {
 				return run.githubUpstream(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: "banditsoftware",
-							name: "web-lightning-ui"
+							upstream: {
+								owner: "banditsoftware",
+								name: "web-lightning-ui"
+							}
 						}
 					});
 				});
@@ -1343,7 +1351,14 @@ describe("shared workflow steps", () => {
 			it("should set the github object on state to an empty object", () => {
 				util.exec = jest.fn(() => Promise.resolve(""));
 				return run.githubUpstream(state).then(() => {
-					expect(state).toEqual({ github: {} });
+					expect(state).toEqual({
+						github: {
+							upstream: {
+								name: undefined,
+								owner: undefined
+							}
+						}
+					});
 				});
 			});
 		});
@@ -1358,18 +1373,29 @@ describe("shared workflow steps", () => {
 					}
 				}
 			};
-		});
 
-		it("should call `util.exec` with the appropriate arguments to get the origin repository url", () => {
 			util.exec = jest.fn(() =>
 				Promise.resolve(
 					"https://github.com/leankit-labs/tag-release.git"
 				)
 			);
+		});
+
+		it("should call `util.exec` with the appropriate arguments to get the origin repository url", () => {
 			return run.githubOrigin(state).then(() => {
 				expect(util.exec).toHaveBeenCalledTimes(1);
 				expect(util.exec).toHaveBeenCalledWith(
 					"git config remote.origin.url"
+				);
+			});
+		});
+
+		it(`should set "state.remotes.origin.url" if "state.remotes" is undefined`, () => {
+			state = {};
+			return run.githubOrigin(state).then(() => {
+				expect(state.remotes.origin).toHaveProperty("url");
+				expect(state.remotes.origin.url).toEqual(
+					"https://github.com/leankit-labs/tag-release.git"
 				);
 			});
 		});
@@ -1385,16 +1411,13 @@ describe("shared workflow steps", () => {
 
 		describe("when an https uri is returned", () => {
 			it("should extract the correct repository owner and name given https://github.com/leanKit-labs/tag-release.git", () => {
-				util.exec = jest.fn(() =>
-					Promise.resolve(
-						"https://github.com/leankit-labs/tag-release.git"
-					)
-				);
 				return run.githubOrigin(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: "leankit-labs",
-							name: "tag-release"
+							origin: {
+								owner: "leankit-labs",
+								name: "tag-release"
+							}
 						},
 						remotes: {
 							origin: {
@@ -1416,8 +1439,10 @@ describe("shared workflow steps", () => {
 				return run.githubOrigin(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: "banditsoftware",
-							name: "web-lightning-ui"
+							origin: {
+								owner: "banditsoftware",
+								name: "web-lightning-ui"
+							}
 						},
 						remotes: {
 							origin: {
@@ -1441,8 +1466,10 @@ describe("shared workflow steps", () => {
 				return run.githubOrigin(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: "leankit-labs",
-							name: "tag-release"
+							origin: {
+								owner: "leankit-labs",
+								name: "tag-release"
+							}
 						},
 						remotes: {
 							origin: {
@@ -1464,8 +1491,10 @@ describe("shared workflow steps", () => {
 				return run.githubOrigin(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: "banditsoftware",
-							name: "web-lightning-ui"
+							origin: {
+								owner: "banditsoftware",
+								name: "web-lightning-ui"
+							}
 						},
 						remotes: {
 							origin: {
@@ -1485,8 +1514,7 @@ describe("shared workflow steps", () => {
 				return run.githubOrigin(state).then(() => {
 					expect(state).toEqual({
 						github: {
-							owner: undefined,
-							name: undefined
+							origin: { owner: undefined, name: undefined }
 						},
 						remotes: {
 							origin: {
@@ -1539,7 +1567,12 @@ describe("shared workflow steps", () => {
 				versions: {
 					newVersion: "1.2.3"
 				},
-				github: { owner: "someone-awesome", name: "something-awesome" },
+				github: {
+					upstream: {
+						owner: "someone-awesome",
+						name: "something-awesome"
+					}
+				},
 				token: "z8259r",
 				prerelease: false
 			};
@@ -2080,7 +2113,12 @@ describe("shared workflow steps", () => {
 
 		beforeEach(() => {
 			state = {
-				github: { owner: "someone-awesome", name: "something-awesome" },
+				github: {
+					upstream: {
+						owner: "someone-awesome",
+						name: "something-awesome"
+					}
+				},
 				token: "z8259r"
 			};
 			util.prompt = jest.fn(() =>
@@ -2744,7 +2782,12 @@ describe("shared workflow steps", () => {
 
 		beforeEach(() => {
 			state = {
-				github: { owner: "someone-awesome", name: "something-awesome" },
+				github: {
+					upstream: {
+						owner: "someone-awesome",
+						name: "something-awesome"
+					}
+				},
 				token: "z8259r",
 				prerelease: false,
 				branch: "feature-branch",
@@ -2820,6 +2863,155 @@ describe("shared workflow steps", () => {
 			GitHub.mockImplementation(mockGitHub(true, false));
 
 			return run.createGithubPullRequestAganistDevelop(state).then(() => {
+				expect(logger.log).toHaveBeenCalledTimes(1);
+				expect(logger.log).toHaveBeenCalledWith("editIssues fail");
+			});
+		});
+	});
+
+	describe("createGithubPullRequestAganistBranch", () => {
+		let getRepo = jest.fn();
+		let getIssues = jest.fn();
+		let createPullRequest = jest.fn();
+		let editIssue = jest.fn();
+
+		const mockCreatePullRequest = (shouldResolve = true) => {
+			if (shouldResolve) {
+				createPullRequest = jest.fn(() =>
+					Promise.resolve({
+						data: {
+							html_url: "http://example.com", // eslint-disable-line camelcase
+							number: 47
+						}
+					})
+				);
+
+				return createPullRequest;
+			}
+
+			createPullRequest = jest.fn(() =>
+				Promise.reject("pullRequest fail")
+			);
+
+			return createPullRequest;
+		};
+
+		const mockEditIssues = (shouldResolve = true) => {
+			if (shouldResolve) {
+				editIssue = jest.fn(() => Promise.resolve());
+
+				return editIssue;
+			}
+
+			editIssue = jest.fn(() => Promise.reject("editIssues fail"));
+
+			return editIssue;
+		};
+
+		const mockGitHub = (
+			createPullRequestShouldResolve = true,
+			editIssueShouldResolve = true
+		) => {
+			createPullRequest = mockCreatePullRequest(
+				createPullRequestShouldResolve
+			);
+			editIssue = mockEditIssues(editIssueShouldResolve);
+			getRepo = jest.fn(() => ({
+				createPullRequest
+			}));
+			getIssues = jest.fn(() => ({
+				editIssue
+			}));
+
+			return jest.fn(() => ({ getRepo, getIssues }));
+		};
+
+		beforeEach(() => {
+			state = {
+				github: {
+					upstream: {
+						owner: "someone-awesome",
+						name: "something-awesome"
+					},
+					origin: { owner: "someone-awesome-origin" }
+				},
+				token: "z8259r",
+				prerelease: false,
+				branch: "feature-branch",
+				pullRequest: {
+					title: "This is my pull request title",
+					body: "This is my pull request body"
+				}
+			};
+
+			logger.log = jest.fn();
+			util.prompt = jest.fn(() =>
+				Promise.resolve({ name: "Something awesome" })
+			);
+			GitHub.mockImplementation(mockGitHub());
+		});
+
+		describe("when bumpComment is falsy", () => {
+			it("should call `editIssue` with issue number and label", () => {
+				state.bumpComment = "";
+				return run
+					.createGithubPullRequestAganistBranch(state)
+					.then(() => {
+						expect(editIssue).toHaveBeenCalledTimes(1);
+						expect(editIssue).toHaveBeenCalledWith(47, {
+							labels: ["Needs Developer Review"]
+						});
+					});
+			});
+		});
+
+		it("should create a new GitHub client instance given a valid auth token", () => {
+			return run.createGithubPullRequestAganistBranch(state).then(() => {
+				expect(GitHub).toHaveBeenCalledTimes(1);
+				expect(GitHub).toHaveBeenCalledWith({ token: "z8259r" });
+			});
+		});
+
+		it("should log the action to the console", () => {
+			return run.createGithubPullRequestAganistBranch(state).then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(1);
+				expect(util.log.end).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("should create an instance of a repository object with the previously fetched repository owner and name", () => {
+			return run.createGithubPullRequestAganistBranch(state).then(() => {
+				expect(getRepo).toHaveBeenCalledTimes(1);
+				expect(getRepo).toHaveBeenCalledWith(
+					"someone-awesome",
+					"something-awesome"
+				);
+			});
+		});
+
+		it("should call `editIssue` with issue number and label", () => {
+			logger.log = jest.fn();
+			return run.createGithubPullRequestAganistBranch(state).then(() => {
+				expect(editIssue).toHaveBeenCalledTimes(1);
+				expect(editIssue).toHaveBeenCalledWith(47, {
+					labels: ["Needs Developer Review"]
+				});
+			});
+		});
+
+		it("should log an error to the console when the call to the API to create a release fails", () => {
+			GitHub.mockImplementation(mockGitHub(false, true));
+
+			return run.createGithubPullRequestAganistBranch(state).then(() => {
+				expect(logger.log).toHaveBeenCalledTimes(1);
+				expect(logger.log).toHaveBeenCalledWith("pullRequest fail");
+			});
+		});
+
+		it("should log an error to the console when the call to the API to edit issues fails", () => {
+			GitHub.mockImplementation(mockGitHub(true, false));
+
+			return run.createGithubPullRequestAganistBranch(state).then(() => {
 				expect(logger.log).toHaveBeenCalledTimes(1);
 				expect(logger.log).toHaveBeenCalledWith("editIssues fail");
 			});
@@ -2977,7 +3169,12 @@ describe("shared workflow steps", () => {
 
 		beforeEach(() => {
 			state = {
-				github: { owner: "someone-awesome", name: "something-awesome" },
+				github: {
+					upstream: {
+						owner: "someone-awesome",
+						name: "something-awesome"
+					}
+				},
 				token: "z8259r"
 			};
 			GitHub.mockImplementation(mockGitHub());
@@ -3174,7 +3371,12 @@ describe("shared workflow steps", () => {
 
 		beforeEach(() => {
 			state = {
-				github: { owner: "someone-awesome", name: "something-awesome" },
+				github: {
+					origin: {
+						owner: "someone-awesome",
+						name: "something-awesome"
+					}
+				},
 				token: "z8259r",
 				remotes: {
 					origin: {
@@ -3853,6 +4055,216 @@ feature-last-branch`)
 						exit: false
 					});
 				});
+		});
+	});
+
+	describe("gitCreateBranchUpstream", () => {
+		beforeEach(() => {
+			state = {
+				branch: "feature-branch"
+			};
+
+			git.branchExistsUpstream = jest.fn(() => Promise.resolve(false));
+			git.createRemoteBranch = jest.fn(() => Promise.resolve());
+		});
+
+		it(`should call "createBranchUpstream" when branch doesn't exist`, () => {
+			return run.gitCreateBranchUpstream(state).then(() => {
+				expect(git.branchExistsUpstream).toHaveBeenCalledTimes(1);
+				expect(git.branchExistsUpstream).toHaveBeenCalledWith(
+					"feature-branch"
+				);
+				expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
+				expect(git.createRemoteBranch).toHaveBeenCalledWith(
+					"feature-branch",
+					"upstream"
+				);
+			});
+		});
+
+		it(`shouldn't call "createBranchUpstream" when branch exist`, () => {
+			git.branchExistsUpstream = jest.fn(() => Promise.resolve(true));
+			return run.gitCreateBranchUpstream(state).then(() => {
+				expect(git.branchExistsUpstream).toHaveBeenCalledTimes(1);
+				expect(git.branchExistsUpstream).toHaveBeenCalledWith(
+					"feature-branch"
+				);
+				expect(git.createRemoteBranch).toHaveBeenCalledTimes(0);
+			});
+		});
+	});
+
+	describe("gitCreateBranchOrigin", () => {
+		beforeEach(() => {
+			state = {
+				branch: "feature-branch"
+			};
+
+			git.branchExistsOrigin = jest.fn(() => Promise.resolve(false));
+			git.createRemoteBranch = jest.fn(() => Promise.resolve());
+		});
+
+		it(`should call "createBranchOrigin" when branch doesn't exist`, () => {
+			return run.gitCreateBranchOrigin(state).then(() => {
+				expect(git.branchExistsOrigin).toHaveBeenCalledTimes(1);
+				expect(git.branchExistsOrigin).toHaveBeenCalledWith(
+					"feature-branch"
+				);
+				expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
+				expect(git.createRemoteBranch).toHaveBeenCalledWith(
+					"feature-branch",
+					"origin",
+					true
+				);
+			});
+		});
+
+		describe("when branch exists", () => {
+			beforeEach(() => {
+				git.branchExistsOrigin = jest.fn(() => Promise.resolve(true));
+				git.pushRemoteBranch = jest.fn(() => Promise.resolve());
+				util.advise = jest.fn(() => Promise.resolve());
+			});
+
+			it(`should call "pushRemoteBranch"`, () => {
+				return run.gitCreateBranchOrigin(state).then(() => {
+					expect(git.branchExistsOrigin).toHaveBeenCalledTimes(1);
+					expect(git.branchExistsOrigin).toHaveBeenCalledWith(
+						"feature-branch"
+					);
+					expect(git.pushRemoteBranch).toHaveBeenCalledTimes(1);
+				});
+			});
+
+			it("should advise when push fails", () => {
+				git.pushRemoteBranch = jest.fn((...args) => {
+					return args[2]()();
+				});
+				return run.gitCreateBranchOrigin(state).then(() => {
+					expect(git.pushRemoteBranch).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledWith(
+						"remoteBranchOutOfDate",
+						{ exit: false }
+					);
+				});
+			});
+		});
+	});
+
+	describe("updatePullRequestTitle", () => {
+		let prTitle;
+		beforeEach(() => {
+			prTitle = "This is my test title.";
+			git.getLastCommitText = jest.fn(() => Promise.resolve(prTitle));
+
+			util.prompt = jest.fn(() => Promise.resolve({ title: prTitle }));
+		});
+
+		it("should prompt the user for a pull request title", () => {
+			return run.updatePullRequestTitle(state).then(() => {
+				expect(util.prompt).toHaveBeenCalledTimes(1);
+				expect(util.prompt).toHaveBeenCalledWith([
+					{
+						type: "input",
+						name: "title",
+						message: "What is the title of your pull request?",
+						default: prTitle
+					}
+				]);
+			});
+		});
+
+		it("should persist the given title to the workflow state", () => {
+			return run.updatePullRequestTitle(state).then(() => {
+				expect(state.pullRequest).toHaveProperty("title");
+				expect(state.pullRequest.title).toEqual(prTitle);
+			});
+		});
+	});
+
+	describe("updatePullRequestBody", () => {
+		beforeEach(() => {
+			util.prompt = jest.fn(() => Promise.resolve({ body: true }));
+			util.editFile = jest.fn(() =>
+				Promise.resolve(" an updated pull request body ")
+			);
+		});
+
+		it("should prompt asking the user if they wish to edit the body", () => {
+			return run.updatePullRequestBody(state).then(() => {
+				expect(util.prompt).toHaveBeenCalledTimes(1);
+				expect(util.prompt).toHaveBeenCalledWith([
+					{
+						type: "confirm",
+						name: "body",
+						message:
+							"Would you like to edit the body of your pull request?",
+						default: true
+					}
+				]);
+			});
+		});
+
+		describe("when the user chooses to edit the body", () => {
+			describe("when the template file exists", () => {
+				beforeEach(() => {
+					util.fileExists = jest.fn(() => true);
+					util.readFile = jest.fn(
+						() => "this is my template contents"
+					);
+				});
+
+				it("should launch the user's editor", () => {
+					return run.updatePullRequestBody(state).then(() => {
+						expect(util.editFile).toHaveBeenCalledTimes(1);
+						expect(util.editFile).toHaveBeenCalledWith(
+							"this is my template contents"
+						);
+					});
+				});
+
+				it("should trim the data from the editor, and persist the result to state", () => {
+					return run.updatePullRequestBody(state).then(() => {
+						expect(state.pullRequest).toHaveProperty("body");
+						expect(state.pullRequest.body).toEqual(
+							"an updated pull request body"
+						);
+					});
+				});
+
+				it("should log the action to the console", () => {
+					return run.updatePullRequestBody(state).then(() => {
+						expect(util.log.begin).toHaveBeenCalledTimes(1);
+						expect(util.log.begin).toHaveBeenCalledWith(
+							"pull request body preview"
+						);
+						expect(util.log.end).toHaveBeenCalledTimes(1);
+					});
+				});
+			});
+
+			describe("when the template file doesn't exists", () => {
+				beforeEach(() => {
+					util.fileExists = jest.fn(() => false);
+				});
+
+				it("should launch the user's editor", () => {
+					return run.updatePullRequestBody(state).then(() => {
+						expect(util.editFile).toHaveBeenCalledTimes(1);
+						expect(util.editFile).toHaveBeenCalledWith("");
+					});
+				});
+			});
+		});
+
+		describe("when the user declines to edit the body", () => {
+			it("should not launch the user's editor", () => {
+				util.prompt = jest.fn(() => Promise.resolve({ body: false }));
+				return run.updatePullRequestBody(state).then(() => {
+					expect(util.editFile).not.toHaveBeenCalled();
+				});
+			});
 		});
 	});
 });

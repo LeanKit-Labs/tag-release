@@ -21,6 +21,7 @@ let helpContent = `
     $ tag-release --qa myorg                # create host repo qa branch w/scope
     $ tag-release --pr                      # create host repo pr into develop
     $ tag-release --pr myorg                # create host repo pr w/scope
+    $ tag-release --dev                     # create origin branch into upstream branch pr
     $ tag-release --help --verbose          # display workflow diagram
 
   Link to README: ${chalk.yellow.underline.bold(

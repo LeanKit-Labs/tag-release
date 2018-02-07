@@ -395,6 +395,33 @@ describe("git", () => {
 					args: `ls-remote upstream feature-branch`,
 					logMessage: `Checking if "feature-branch" exists on upstream`
 				}
+			},
+			branchExistsOrigin: {
+				args: "feature-branch",
+				expectedRunCommandArgs: {
+					args: `ls-remote origin feature-branch`,
+					logMessage: `Checking if "feature-branch" exists on origin`
+				}
+			},
+			createRemoteBranch: {
+				args: "feature-branch",
+				expectedRunCommandArgs: {
+					args: `push upstream master:feature-branch`
+				}
+			},
+			getLastCommitText: {
+				args: true,
+				expectedRunCommandArgs: {
+					args: `log -1 --pretty=%B`,
+					showOutput: true
+				}
+			},
+			pushRemoteBranch: {
+				args: "feature-branch",
+				expectedRunCommandArgs: {
+					args: `push origin feature-branch`,
+					onError: {}
+				}
 			}
 		};
 
@@ -570,6 +597,65 @@ describe("git", () => {
 						onError: undefined
 					});
 				});
+			});
+
+			describe("createRemoteBranch", () => {
+				it("should create branch on upstream with base", () => {
+					return git
+						.createRemoteBranch("feature-branch", "upstream", true)
+						.then(() => {
+							expect(git.runCommand).toHaveBeenCalledTimes(1);
+							expect(git.runCommand).toHaveBeenCalledWith({
+								args:
+									"push upstream feature-branch:feature-branch"
+							});
+						});
+				});
+
+				it("should create branch on origin without base", () => {
+					return git
+						.createRemoteBranch("feature-branch", "origin", false)
+						.then(() => {
+							expect(git.runCommand).toHaveBeenCalledTimes(1);
+							expect(git.runCommand).toHaveBeenCalledWith({
+								args: "push origin master:feature-branch"
+							});
+						});
+				});
+
+				it("should create branch on origin with base", () => {
+					return git
+						.createRemoteBranch("feature-branch", "origin", true)
+						.then(() => {
+							expect(git.runCommand).toHaveBeenCalledTimes(1);
+							expect(git.runCommand).toHaveBeenCalledWith({
+								args:
+									"push origin feature-branch:feature-branch"
+							});
+						});
+				});
+			});
+
+			it(`should call "getLastCommitText" with appropriate args`, () => {
+				return git.getLastCommitText().then(() => {
+					expect(git.runCommand).toHaveBeenCalledTimes(1);
+					expect(git.runCommand).toHaveBeenCalledWith({
+						args: "log -1 --pretty=%B",
+						showOutput: false
+					});
+				});
+			});
+
+			it(`should call "pushRemoteBranch" with appropriate args`, () => {
+				return git
+					.pushRemoteBranch("feature-branch", "upstream", {})
+					.then(() => {
+						expect(git.runCommand).toHaveBeenCalledTimes(1);
+						expect(git.runCommand).toHaveBeenCalledWith({
+							args: "push upstream feature-branch",
+							onError: {}
+						});
+					});
 			});
 
 			describe("removePreReleaseCommits", () => {

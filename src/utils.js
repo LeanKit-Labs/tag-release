@@ -4,7 +4,7 @@ import inquirer from "inquirer";
 import editor from "editor";
 import logUpdate from "log-update";
 import detectIndent from "detect-indent";
-import { get } from "lodash";
+import { get, uniqueId } from "lodash";
 import chalk from "chalk";
 import logger from "better-console";
 import request from "request";
@@ -69,19 +69,18 @@ export default {
 			})
 		);
 	},
-	editLog(data) {
-		const tempFilePath = "./.shortlog";
-
+	editFile(data) {
+		const filePath = uniqueId("./.editFile_");
 		return new Promise((resolve, reject) => {
-			this.writeFile(tempFilePath, data);
-			editor(tempFilePath, code => {
+			this.writeFile(filePath, data);
+			editor(filePath, code => {
 				if (code === 0) {
-					const contents = this.readFile(tempFilePath);
-					fs.unlinkSync(tempFilePath);
+					const contents = this.readFile(filePath);
 					resolve(contents);
 				} else {
-					reject(`Unable to edit ${tempFilePath}`);
+					reject(`Unable to edit ${filePath}`);
 				}
+				fs.unlinkSync(filePath);
 			});
 		});
 	},

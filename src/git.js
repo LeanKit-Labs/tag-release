@@ -267,6 +267,19 @@ const git = {
 			});
 	},
 
+	branchExistsOrigin(branch) {
+		const args = `ls-remote origin ${branch}`;
+		return git
+			.runCommand({
+				args,
+				logMessage: `Checking if "${branch}" exists on origin`
+			})
+			.then(result => {
+				const branches = result.split("\n").filter(String);
+				return Promise.resolve(!!branches.length);
+			});
+	},
+
 	createLocalBranch(branch, tracking = branch) {
 		const args = `branch ${branch} upstream/${tracking}`;
 		return git.runCommand({
@@ -432,6 +445,23 @@ const git = {
 
 	status(showOutput = true) {
 		const args = "status";
+		return git.runCommand({ args, showOutput });
+	},
+
+	createRemoteBranch(branch, remote = "upstream", hasBase = false) {
+		const args = hasBase
+			? `push ${remote} ${branch}:${branch}`
+			: `push ${remote} master:${branch}`;
+		return git.runCommand({ args });
+	},
+
+	pushRemoteBranch(branch, remote = "origin", onError = {}) {
+		const args = `push ${remote} ${branch}`;
+		return git.runCommand({ args, onError });
+	},
+
+	getLastCommitText(showOutput = false) {
+		const args = "log -1 --pretty=%B";
 		return git.runCommand({ args, showOutput });
 	}
 };

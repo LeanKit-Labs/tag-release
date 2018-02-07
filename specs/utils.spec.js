@@ -68,7 +68,8 @@ jest.mock("lodash", () => {
 	return {
 		identity: _.identity,
 		isObject: _.isObject,
-		get: jest.fn()
+		get: jest.fn(),
+		uniqueId: jest.fn(arg => `${arg}1`)
 	};
 });
 
@@ -359,57 +360,59 @@ describe("utils", () => {
 		});
 	});
 
-	describe("editLog", () => {
+	describe("editFile", () => {
 		beforeEach(() => {
 			util.readFile = jest.fn(() => "monkeys");
 			util.writeFile = jest.fn();
 		});
 
 		it("should return a promise", () => {
-			const result = util.editLog("monkey");
+			const result = util.editFile("monkey", "./.editFile_1");
 			expect(isPromise(result)).toBeTruthy();
 		});
 
-		it("should write to a file at tempFilePath", () => {
-			return util.editLog("monkey").then(() => {
+		it("should write to a file at filePath", () => {
+			return util.editFile("monkey", "./.myPath").then(() => {
 				expect(editor).toHaveBeenCalledTimes(1);
 				expect(util.writeFile).toHaveBeenCalledTimes(1);
 				expect(util.writeFile).toHaveBeenCalledWith(
-					"./.shortlog",
+					"./.editFile_1",
 					"monkey"
 				);
 			});
 		});
 
 		it("should read tempFilePath after success", () => {
-			return util.editLog("monkey").then(() => {
+			return util.editFile("monkey", "./.editFile_1").then(() => {
 				expect(editor).toHaveBeenCalledTimes(1);
 				expect(util.readFile).toHaveBeenCalledTimes(1);
-				expect(util.readFile).toHaveBeenCalledWith("./.shortlog");
+				expect(util.readFile).toHaveBeenCalledWith("./.editFile_1");
 			});
 		});
 
 		it("should remove tempFilePath after success", () => {
-			return util.editLog("monkey").then(() => {
+			return util.editFile("monkey", "./.editFile_1").then(() => {
 				expect(editor).toHaveBeenCalledTimes(1);
 				expect(fs.unlinkSync).toHaveBeenCalledTimes(1);
-				expect(fs.unlinkSync).toHaveBeenCalledWith("./.shortlog");
+				expect(fs.unlinkSync).toHaveBeenCalledWith("./.editFile_1");
 			});
 		});
 
 		it("should resolve after success", () => {
-			return util.editLog("monkey").then(data => {
+			return util.editFile("monkey", "./.editFile_1").then(data => {
 				expect(editor).toHaveBeenCalledTimes(1);
 				expect(data).toEqual("monkeys");
 			});
 		});
 
 		it("should reject after failure", () => {
-			editor.mockImplementation((arg, cb) => cb("nope"));
+			editor.mockImplementationOnce((arg, cb) => cb("nope"));
 
-			return util.editLog("monkey").catch(err => {
+			return util.editFile("monkey", "./.myPath").catch(err => {
 				expect(editor).toHaveBeenCalledTimes(1);
-				expect(err).toEqual("Unable to edit ./.shortlog");
+				expect(fs.unlinkSync).toHaveBeenCalledTimes(1);
+				expect(fs.unlinkSync).toHaveBeenCalledWith("./.editFile_1");
+				expect(err).toEqual("Unable to edit ./.editFile_1");
 			});
 		});
 	});

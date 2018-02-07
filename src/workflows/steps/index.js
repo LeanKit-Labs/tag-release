@@ -8,9 +8,11 @@ import GitHub from "github-api";
 import sequence from "when/sequence";
 import path from "path";
 import removeWords from "remove-words";
+import { set } from "lodash";
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const PACKAGELOCKJSON_PATH = "./package-lock.json";
+const PULL_REQUEST_TEMPLATE_PATH = "./.github/PULL_REQUEST_TEMPLATE.md";
 
 export function getFeatureBranch(state) {
 	return git.getCurrentBranch().then(branch => {
@@ -252,7 +254,7 @@ export function updateLog(state) {
 		.then(answers => {
 			util.log.begin("log preview");
 			if (answers.log) {
-				return util.editLog(state.log).then(data => {
+				return util.editFile(state.log).then(data => {
 					state.log = data.trim();
 					util.log.end();
 				});
@@ -457,7 +459,9 @@ export function githubUpstream(state) {
 		.then(data => {
 			const [, owner, name] =
 				data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) || [];
-			state.github = { owner, name };
+			state.github = Object.assign({}, state.github, {
+				upstream: { owner, name }
+			});
 		})
 		.catch(error => logger.log("error", error));
 }
@@ -467,17 +471,20 @@ export function githubOrigin(state) {
 	return util
 		.exec(command)
 		.then(data => {
-			state.remotes.origin.url = data;
+			set(state, "remotes.origin.url", data.trim());
+
 			const [, owner, name] =
 				data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) || [];
-			state.github = { owner, name };
+			state.github = Object.assign({}, state.github, {
+				origin: { owner, name }
+			});
 		})
 		.catch(error => logger.log("error", error));
 }
 
 export function githubRelease(state) {
 	const {
-		github: { owner: repositoryOwner, name: repositoryName },
+		github: { upstream: { owner: repositoryOwner, name: repositoryName } },
 		log,
 		prerelease,
 		token,
@@ -914,7 +921,7 @@ export function getCurrentDependencyVersions(state) {
 
 export function createGithubPullRequestAganistDevelop(state) {
 	const {
-		github: { owner: repositoryOwner, name: repositoryName },
+		github: { upstream: { owner: repositoryOwner, name: repositoryName } },
 		token,
 		branch
 	} = state;
@@ -938,6 +945,53 @@ export function createGithubPullRequestAganistDevelop(state) {
 			const issues = github.getIssues(repositoryOwner, repositoryName);
 			return issues
 				.editIssue(number, { labels: ["Ready to Merge Into Develop"] })
+				.then(() => {
+					util.log.end();
+					logger.log(chalk.yellow.underline.bold(url));
+				})
+				.catch(err => logger.log(chalk.red(err)));
+		})
+		.catch(err => logger.log(chalk.red(err)));
+}
+
+export function createGithubPullRequestAganistBranch(state) {
+	const {
+		github: {
+			upstream: {
+				owner: repositoryUpstreamOwner,
+				name: repositoryUpstreamName
+			},
+			origin: { owner: repositoryOriginOwner }
+		},
+		token,
+		branch,
+		pullRequest: { title, body }
+	} = state;
+	const github = new GitHub({ token });
+	util.log.begin("creating pull request to github");
+
+	const repository = github.getRepo(
+		repositoryUpstreamOwner,
+		repositoryUpstreamName
+	);
+
+	const options = {
+		title,
+		body,
+		head: `${repositoryOriginOwner}:${branch}`,
+		base: `${branch}`
+	};
+
+	return repository
+		.createPullRequest(options)
+		.then(response => {
+			const { number, html_url: url } = response.data; // eslint-disable-line camelcase
+			const issues = github.getIssues(
+				repositoryUpstreamOwner,
+				repositoryUpstreamName
+			);
+			return issues
+				.editIssue(number, { labels: ["Needs Developer Review"] })
 				.then(() => {
 					util.log.end();
 					logger.log(chalk.yellow.underline.bold(url));
@@ -995,7 +1049,7 @@ export function gitCheckoutBranch(state) {
 }
 
 export function getTagsFromRepo(state, repositoryName) {
-	const { github: { owner: repositoryOwner }, token } = state;
+	const { github: { upstream: { owner: repositoryOwner } }, token } = state;
 	const github = new GitHub({ token });
 
 	const repository = github.getRepo(repositoryOwner, repositoryName);
@@ -1039,7 +1093,7 @@ export function verifyOrigin(state) {
 
 export function verifyUpstream(state) {
 	const {
-		github: { owner: repositoryOwner, name: repositoryName },
+		github: { origin: { owner: repositoryOwner, name: repositoryName } },
 		token,
 		remotes: { origin, upstream }
 	} = state;
@@ -1301,4 +1355,81 @@ export function npmInstallPackage(dependency) {
 				util.advise("npmInstall", { exit: false });
 			});
 	};
+}
+
+export function gitCreateBranchUpstream(state) {
+	const { branch } = state;
+
+	return git.branchExistsUpstream(branch).then(exists => {
+		if (!exists) {
+			return git.createRemoteBranch(branch, "upstream");
+		}
+	});
+}
+
+export function gitCreateBranchOrigin(state) {
+	const { branch } = state;
+
+	const onError = () => {
+		util.advise("remoteBranchOutOfDate", { exit: false });
+		return () => Promise.resolve();
+	};
+
+	return git.branchExistsOrigin(branch).then(exists => {
+		if (!exists) {
+			return git.createRemoteBranch(branch, "origin", true);
+		}
+		return git.pushRemoteBranch(branch, "origin", onError);
+	});
+}
+
+export function updatePullRequestTitle(state) {
+	return git.getLastCommitText().then(commitText => {
+		const questions = [
+			{
+				type: "input",
+				name: "title",
+				message: "What is the title of your pull request?",
+				default: commitText.trim()
+			}
+		];
+
+		return util.prompt(questions).then(response => {
+			state.pullRequest = Object.assign({}, state.pullRequest, {
+				title: response.title.trim()
+			});
+		});
+	});
+}
+
+export function updatePullRequestBody(state) {
+	return util
+		.prompt([
+			{
+				type: "confirm",
+				name: "body",
+				message:
+					"Would you like to edit the body of your pull request?",
+				default: true
+			}
+		])
+		.then(answers => {
+			util.log.begin("pull request body preview");
+			const contents = util.fileExists(PULL_REQUEST_TEMPLATE_PATH)
+				? util.readFile(PULL_REQUEST_TEMPLATE_PATH)
+				: "";
+			if (answers.body) {
+				return util.editFile(contents).then(data => {
+					state.pullRequest = Object.assign({}, state.pullRequest, {
+						body: data.trim()
+					});
+					util.log.end();
+				});
+			}
+
+			state.pullRequest = Object.assign({}, state.pullRequest, {
+				body: contents.trim()
+			});
+			return Promise.resolve();
+		});
 }

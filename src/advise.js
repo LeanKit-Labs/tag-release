@@ -92,7 +92,10 @@ Are you sure you need to run 'tag-release --qa'?`,
 	saveDependencies: `It appears something went wrong attempting to save your dependencies.
 
 You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
-	npmInstall: `Sorry, we were unable to install and update your package-lock.json`
+	npmInstall: `Sorry, we were unable to install and update your package-lock.json`,
+	remoteBranchOutOfDate: `It appears that your remote branch couldn't be updated.
+
+It's most likely because your base has changed so you may need to run 'git push -f remote branch-name'`
 };
 
 const MAXIMUM_WIDTH = 50;

@@ -53,6 +53,10 @@ commander
 	.option(
 		"--pr [scope]",
 		"Update lightning branch and create a PR to develop."
+	)
+	.option(
+		"--dev",
+		"Creates a PR from origin feature branch to upstream feature branch"
 	);
 
 commander.on("--help", () => {
