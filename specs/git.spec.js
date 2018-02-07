@@ -602,19 +602,22 @@ describe("git", () => {
 			describe("createRemoteBranch", () => {
 				it("should create branch on upstream with base", () => {
 					return git
-						.createRemoteBranch("feature-branch", "upstream", true)
+						.createRemoteBranch(
+							"feature-branch",
+							"upstream",
+							"develop"
+						)
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
-								args:
-									"push upstream feature-branch:feature-branch"
+								args: "push upstream develop:feature-branch"
 							});
 						});
 				});
 
 				it("should create branch on origin without base", () => {
 					return git
-						.createRemoteBranch("feature-branch", "origin", false)
+						.createRemoteBranch("feature-branch", "origin")
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
@@ -625,7 +628,11 @@ describe("git", () => {
 
 				it("should create branch on origin with base", () => {
 					return git
-						.createRemoteBranch("feature-branch", "origin", true)
+						.createRemoteBranch(
+							"feature-branch",
+							"origin",
+							"feature-branch"
+						)
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({

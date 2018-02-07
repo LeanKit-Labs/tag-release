@@ -4068,17 +4068,36 @@ feature-last-branch`)
 			git.createRemoteBranch = jest.fn(() => Promise.resolve());
 		});
 
-		it(`should call "createBranchUpstream" when branch doesn't exist`, () => {
-			return run.gitCreateBranchUpstream(state).then(() => {
-				expect(git.branchExistsUpstream).toHaveBeenCalledTimes(1);
-				expect(git.branchExistsUpstream).toHaveBeenCalledWith(
-					"feature-branch"
-				);
-				expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
-				expect(git.createRemoteBranch).toHaveBeenCalledWith(
-					"feature-branch",
-					"upstream"
-				);
+		describe("when branch doesn't exist", () => {
+			it(`should call "createBranchUpstream" with appropriate args when repo has develop branch`, () => {
+				state.hasDevelopBranch = true;
+				return run.gitCreateBranchUpstream(state).then(() => {
+					expect(git.branchExistsUpstream).toHaveBeenCalledTimes(1);
+					expect(git.branchExistsUpstream).toHaveBeenCalledWith(
+						"feature-branch"
+					);
+					expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
+					expect(git.createRemoteBranch).toHaveBeenCalledWith(
+						"feature-branch",
+						"upstream",
+						"develop"
+					);
+				});
+			});
+
+			it(`should call "createBranchUpstream" with appropriate args when repo doesn't have develop branch`, () => {
+				return run.gitCreateBranchUpstream(state).then(() => {
+					expect(git.branchExistsUpstream).toHaveBeenCalledTimes(1);
+					expect(git.branchExistsUpstream).toHaveBeenCalledWith(
+						"feature-branch"
+					);
+					expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
+					expect(git.createRemoteBranch).toHaveBeenCalledWith(
+						"feature-branch",
+						"upstream",
+						"master"
+					);
+				});
 			});
 		});
 
@@ -4114,7 +4133,7 @@ feature-last-branch`)
 				expect(git.createRemoteBranch).toHaveBeenCalledWith(
 					"feature-branch",
 					"origin",
-					true
+					"feature-branch"
 				);
 			});
 		});

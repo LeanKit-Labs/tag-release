@@ -1358,11 +1358,12 @@ export function npmInstallPackage(dependency) {
 }
 
 export function gitCreateBranchUpstream(state) {
-	const { branch } = state;
+	const { hasDevelopBranch, branch } = state;
 
 	return git.branchExistsUpstream(branch).then(exists => {
 		if (!exists) {
-			return git.createRemoteBranch(branch, "upstream");
+			const base = hasDevelopBranch ? "develop" : "master";
+			return git.createRemoteBranch(branch, "upstream", base);
 		}
 	});
 }
@@ -1377,7 +1378,7 @@ export function gitCreateBranchOrigin(state) {
 
 	return git.branchExistsOrigin(branch).then(exists => {
 		if (!exists) {
-			return git.createRemoteBranch(branch, "origin", true);
+			return git.createRemoteBranch(branch, "origin", branch);
 		}
 		return git.pushRemoteBranch(branch, "origin", onError);
 	});

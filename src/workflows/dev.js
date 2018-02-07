@@ -2,6 +2,7 @@ import * as run from "./steps/index";
 
 export default [
 	run.gitFetchUpstream,
+	run.checkHasDevelopBranch,
 	run.getFeatureBranch,
 	run.gitCreateBranchOrigin,
 	run.gitCreateBranchUpstream,

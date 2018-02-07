@@ -448,10 +448,8 @@ const git = {
 		return git.runCommand({ args, showOutput });
 	},
 
-	createRemoteBranch(branch, remote = "upstream", hasBase = false) {
-		const args = hasBase
-			? `push ${remote} ${branch}:${branch}`
-			: `push ${remote} master:${branch}`;
+	createRemoteBranch(branch, remote = "upstream", base = "master") {
+		const args = `push ${remote} ${base}:${branch}`;
 		return git.runCommand({ args });
 	},
 
