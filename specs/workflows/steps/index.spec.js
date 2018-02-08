@@ -2312,52 +2312,32 @@ describe("shared workflow steps", () => {
 
 	describe("gitCheckoutAndCreateBranch", () => {
 		beforeEach(() => {
+			state = {
+				branch: "feature-new-menu",
+				keepBranch: false
+			};
 			git.checkoutAndCreateBranch = jest.fn(() => Promise.resolve());
-			git.checkoutAndCreateBranchWithoutTracking = jest.fn(() =>
-				Promise.resolve()
-			);
-			state.branch = "feature-new-menu";
-			state.log = "";
-			state.keepBranch = false;
 		});
 
-		it("should call `git.checkoutAndCreateBranch` without a log", () => {
+		describe("when keepBranch is true", () => {
+			it(`should resolve and not call "checkoutAndCreateBranch"`, () => {
+				state.keepBranch = true;
+				return run.gitCheckoutAndCreateBranch(state).then(() => {
+					expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(
+						0
+					);
+				});
+			});
+		});
+
+		it("should call `git.checkoutAndCreateBranch`", () => {
 			return run.gitCheckoutAndCreateBranch(state).then(() => {
-				expect(
-					git.checkoutAndCreateBranchWithoutTracking
-				).toHaveBeenCalledTimes(0);
 				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(1);
-			});
-		});
-
-		it("should call `git.checkoutAndCreateBranch` with a log", () => {
-			state.log = "this is some commit";
-			return run.gitCheckoutAndCreateBranch(state).then(() => {
-				expect(
-					git.checkoutAndCreateBranchWithoutTracking
-				).toHaveBeenCalledTimes(1);
-				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(0);
-			});
-		});
-
-		it("should resolve when keepBranch is true and not checkoutAndCreateBranch", () => {
-			state.keepBranch = true;
-			return run.gitCheckoutAndCreateBranch(state).then(() => {
-				expect(
-					git.checkoutAndCreateBranchWithoutTracking
-				).toHaveBeenCalledTimes(0);
-				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(0);
 			});
 		});
 
 		describe("when handling error", () => {
 			beforeEach(() => {
-				state = {
-					branch: "feature-new-menu",
-					log: "",
-					keepBranch: false
-				};
-
 				git.checkoutAndCreateBranch = jest.fn((...args) => {
 					return args[0].onError({
 						message: `A branch named '${
@@ -2371,9 +2351,6 @@ describe("shared workflow steps", () => {
 
 			it("should handle branch already exists error", () => {
 				return run.gitCheckoutAndCreateBranch(state).catch(() => {
-					expect(
-						git.checkoutAndCreateBranchWithoutTracking
-					).toHaveBeenCalledTimes(0);
 					expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(
 						1
 					);
@@ -2390,9 +2367,6 @@ describe("shared workflow steps", () => {
 					return args[0].onError({ message: "some generic error" })();
 				});
 				return run.gitCheckoutAndCreateBranch(state).catch(() => {
-					expect(
-						git.checkoutAndCreateBranchWithoutTracking
-					).toHaveBeenCalledTimes(0);
 					expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(
 						1
 					);
@@ -4120,11 +4094,11 @@ feature-last-branch`)
 						"feature-branch"
 					);
 					expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
-					expect(git.createRemoteBranch).toHaveBeenCalledWith(
-						"feature-branch",
-						"upstream",
-						"develop"
-					);
+					expect(git.createRemoteBranch).toHaveBeenCalledWith({
+						branch: "feature-branch",
+						remote: "upstream",
+						base: "develop"
+					});
 				});
 			});
 
@@ -4135,11 +4109,11 @@ feature-last-branch`)
 						"feature-branch"
 					);
 					expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
-					expect(git.createRemoteBranch).toHaveBeenCalledWith(
-						"feature-branch",
-						"upstream",
-						"master"
-					);
+					expect(git.createRemoteBranch).toHaveBeenCalledWith({
+						branch: "feature-branch",
+						remote: "upstream",
+						base: "master"
+					});
 				});
 			});
 		});
@@ -4173,11 +4147,11 @@ feature-last-branch`)
 					"feature-branch"
 				);
 				expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
-				expect(git.createRemoteBranch).toHaveBeenCalledWith(
-					"feature-branch",
-					"origin",
-					"feature-branch"
-				);
+				expect(git.createRemoteBranch).toHaveBeenCalledWith({
+					branch: "feature-branch",
+					remote: "origin",
+					base: "feature-branch"
+				});
 			});
 		});
 
@@ -4199,8 +4173,8 @@ feature-last-branch`)
 			});
 
 			it("should advise when push fails", () => {
-				git.pushRemoteBranch = jest.fn((...args) => {
-					return args[2]()();
+				git.pushRemoteBranch = jest.fn(args => {
+					return args.onError()();
 				});
 				return run.gitCreateBranchOrigin(state).then(() => {
 					expect(git.pushRemoteBranch).toHaveBeenCalledTimes(1);

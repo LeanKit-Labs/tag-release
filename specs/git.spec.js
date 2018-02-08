@@ -223,26 +223,30 @@ describe("git", () => {
 				expectedRunCommandArgs: { args: `tag -a v1.0.0 -m v1.0.0` }
 			},
 			push: {
-				args: "test-branch",
-				expectedRunCommandArgs: { args: "push test-branch --tags" }
+				args: { branch: "test-branch", remote: "upstream" },
+				expectedRunCommandArgs: {
+					args: "push -u upstream test-branch --tags"
+				}
 			},
 			pushUpstreamMaster: {
 				expectedRunCommandArgs: {
-					args: "push upstream master",
+					args: "push -u upstream master",
 					failHelpKey: "gitPushUpstreamFeatureBranch"
 				}
 			},
 			pushUpstreamMasterWithTags: {
-				expectedRunCommandArgs: { args: "push upstream master --tags" }
+				expectedRunCommandArgs: {
+					args: "push -u upstream master --tags"
+				}
 			},
 			pushOriginMaster: {
-				expectedRunCommandArgs: { args: "push origin master" }
+				expectedRunCommandArgs: { args: "push -u origin master" }
 			},
 			pushOriginMasterWithTags: {
-				expectedRunCommandArgs: { args: "push origin master --tags" }
+				expectedRunCommandArgs: { args: "push -u origin master --tags" }
 			},
 			pushUpstreamDevelop: {
-				expectedRunCommandArgs: { args: "push upstream develop" }
+				expectedRunCommandArgs: { args: "push -u upstream develop" }
 			},
 			uncommittedChangesExist: {
 				expectedRunCommandArgs: {
@@ -360,13 +364,6 @@ describe("git", () => {
 			checkoutAndCreateBranch: {
 				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
-					args: `checkout -b feature-branch upstream/develop`,
-					onError: {}
-				}
-			},
-			checkoutAndCreateBranchWithoutTracking: {
-				args: { branch: "feature-branch" },
-				expectedRunCommandArgs: {
 					args: `checkout -b feature-branch`,
 					onError: {}
 				}
@@ -404,7 +401,7 @@ describe("git", () => {
 				}
 			},
 			createRemoteBranch: {
-				args: "feature-branch",
+				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
 					args: `push upstream master:feature-branch`
 				}
@@ -417,9 +414,9 @@ describe("git", () => {
 				}
 			},
 			pushRemoteBranch: {
-				args: "feature-branch",
+				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
-					args: `push origin feature-branch`,
+					args: `push -u origin feature-branch`,
 					onError: {}
 				}
 			}
@@ -479,12 +476,18 @@ describe("git", () => {
 			});
 
 			it(`should call "git.push" without tags when specified`, () => {
-				return git.push("upstream test-branch", false).then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "push upstream test-branch"
+				return git
+					.push({
+						branch: "test-branch",
+						remote: "upstream",
+						includeTags: false
+					})
+					.then(() => {
+						expect(git.runCommand).toHaveBeenCalledTimes(1);
+						expect(git.runCommand).toHaveBeenCalledWith({
+							args: "push -u upstream test-branch"
+						});
 					});
-				});
 			});
 
 			it(`should call "git.merge" with provided promotion tag`, () => {
@@ -541,22 +544,6 @@ describe("git", () => {
 					});
 			});
 
-			it(`should call "checkoutAndCreateBranch" with provided tracking`, () => {
-				return git
-					.checkoutAndCreateBranch({
-						branch: "feature-branch",
-						tracking: "tracking-branch"
-					})
-					.then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args:
-								"checkout -b feature-branch upstream/tracking-branch",
-							onError: {}
-						});
-					});
-			});
-
 			it(`should call "git.runCommand" with provided failHelpKey when passed to "git.rebase"`, () => {
 				return git
 					.rebase({
@@ -602,11 +589,11 @@ describe("git", () => {
 			describe("createRemoteBranch", () => {
 				it("should create branch on upstream with base", () => {
 					return git
-						.createRemoteBranch(
-							"feature-branch",
-							"upstream",
-							"develop"
-						)
+						.createRemoteBranch({
+							branch: "feature-branch",
+							remote: "upstream",
+							base: "develop"
+						})
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
@@ -617,7 +604,10 @@ describe("git", () => {
 
 				it("should create branch on origin without base", () => {
 					return git
-						.createRemoteBranch("feature-branch", "origin")
+						.createRemoteBranch({
+							branch: "feature-branch",
+							remote: "origin"
+						})
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
@@ -628,11 +618,11 @@ describe("git", () => {
 
 				it("should create branch on origin with base", () => {
 					return git
-						.createRemoteBranch(
-							"feature-branch",
-							"origin",
-							"feature-branch"
-						)
+						.createRemoteBranch({
+							branch: "feature-branch",
+							remote: "origin",
+							base: "feature-branch"
+						})
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
@@ -655,11 +645,15 @@ describe("git", () => {
 
 			it(`should call "pushRemoteBranch" with appropriate args`, () => {
 				return git
-					.pushRemoteBranch("feature-branch", "upstream", {})
+					.pushRemoteBranch({
+						branch: "feature-branch",
+						remote: "upstream",
+						onError: {}
+					})
 					.then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
 						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "push upstream feature-branch",
+							args: "push -u upstream feature-branch",
 							onError: {}
 						});
 					});

@@ -194,35 +194,54 @@ const git = {
 		return git.runCommand({ args });
 	},
 
-	push(branch, includeTags = true, failHelpKey) {
-		const args = `push ${branch}${includeTags ? " --tags" : ""}`;
+	push({ branch, remote, includeTags = true, failHelpKey }) {
+		const args = `push -u ${remote} ${branch}${
+			includeTags ? " --tags" : ""
+		}`;
 		return git.runCommand(
 			failHelpKey && failHelpKey.length ? { args, failHelpKey } : { args }
 		);
 	},
 
 	pushUpstreamMaster() {
-		return git.push(
-			"upstream master",
-			false,
-			"gitPushUpstreamFeatureBranch"
-		);
+		return git.push({
+			branch: "master",
+			remote: "upstream",
+			includeTags: false,
+			failHelpKey: "gitPushUpstreamFeatureBranch"
+		});
 	},
 
 	pushUpstreamMasterWithTags() {
-		return git.push("upstream master", true);
+		return git.push({
+			branch: "master",
+			remote: "upstream",
+			includeTags: true
+		});
 	},
 
 	pushOriginMaster() {
-		return git.push("origin master", false);
+		return git.push({
+			branch: "master",
+			remote: "origin",
+			includeTags: false
+		});
 	},
 
 	pushOriginMasterWithTags() {
-		return git.push("origin master", true);
+		return git.push({
+			branch: "master",
+			remote: "origin",
+			includeTags: true
+		});
 	},
 
 	pushUpstreamDevelop() {
-		return git.push("upstream develop", false);
+		return git.push({
+			branch: "develop",
+			remote: "upstream",
+			includeTags: false
+		});
 	},
 
 	uncommittedChangesExist() {
@@ -409,12 +428,7 @@ const git = {
 		});
 	},
 
-	checkoutAndCreateBranch({ branch, tracking = "develop", onError = {} }) {
-		const args = `checkout -b ${branch} upstream/${tracking}`;
-		return git.runCommand({ args, onError });
-	},
-
-	checkoutAndCreateBranchWithoutTracking({ branch, onError = {} }) {
+	checkoutAndCreateBranch({ branch, onError = {} }) {
 		const args = `checkout -b ${branch}`;
 		return git.runCommand({ args, onError });
 	},
@@ -448,13 +462,13 @@ const git = {
 		return git.runCommand({ args, showOutput });
 	},
 
-	createRemoteBranch(branch, remote = "upstream", base = "master") {
+	createRemoteBranch({ branch, remote = "upstream", base = "master" }) {
 		const args = `push ${remote} ${base}:${branch}`;
 		return git.runCommand({ args });
 	},
 
-	pushRemoteBranch(branch, remote = "origin", onError = {}) {
-		const args = `push ${remote} ${branch}`;
+	pushRemoteBranch({ branch, remote = "origin", onError = {} }) {
+		const args = `push -u ${remote} ${branch}`;
 		return git.runCommand({ args, onError });
 	},
 

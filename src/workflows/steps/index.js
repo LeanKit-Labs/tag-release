@@ -774,7 +774,7 @@ export function askChangeReason(state) {
 }
 
 export function gitCheckoutAndCreateBranch(state) {
-	const { branch, log, keepBranch } = state;
+	const { branch, keepBranch } = state;
 
 	const onError = err => {
 		return () => {
@@ -792,15 +792,9 @@ export function gitCheckoutAndCreateBranch(state) {
 		};
 	};
 
-	let result;
-	if (keepBranch) {
-		result = () => Promise.resolve();
-	} else if (log.length) {
-		result = () =>
-			git.checkoutAndCreateBranchWithoutTracking({ branch, onError });
-	} else {
-		result = () => git.checkoutAndCreateBranch({ branch, onError });
-	}
+	const result = keepBranch
+		? () => Promise.resolve()
+		: () => git.checkoutAndCreateBranch({ branch, onError });
 
 	return result();
 }
@@ -1373,7 +1367,7 @@ export function gitCreateBranchUpstream(state) {
 	return git.branchExistsUpstream(branch).then(exists => {
 		if (!exists) {
 			const base = hasDevelopBranch ? "develop" : "master";
-			return git.createRemoteBranch(branch, "upstream", base);
+			return git.createRemoteBranch({ branch, remote: "upstream", base });
 		}
 	});
 }
@@ -1388,9 +1382,13 @@ export function gitCreateBranchOrigin(state) {
 
 	return git.branchExistsOrigin(branch).then(exists => {
 		if (!exists) {
-			return git.createRemoteBranch(branch, "origin", branch);
+			return git.createRemoteBranch({
+				branch,
+				remote: "origin",
+				base: branch
+			});
 		}
-		return git.pushRemoteBranch(branch, "origin", onError);
+		return git.pushRemoteBranch({ branch, remote: "origin", onError });
 	});
 }
 
