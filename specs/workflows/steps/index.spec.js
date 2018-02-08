@@ -931,7 +931,8 @@ describe("shared workflow steps", () => {
 				expect(git.diff).toHaveBeenCalledTimes(1);
 				expect(git.diff).toHaveBeenCalledWith([
 					"./CHANGELOG.md",
-					"./package.json"
+					"./package.json",
+					"./package-lock.json"
 				]);
 			});
 		});
@@ -3844,17 +3845,23 @@ feature-last-branch`)
 
 	describe("updatePackageLockJson", () => {
 		beforeEach(() => {
-			state.dependencies = [
-				{
-					pkg: "over-watch",
-					version: "1.1.1"
-				},
-				{
-					pkg: "watch-over",
-					version: "2.2.2"
-				}
-			];
+			state = {
+				currentVersion: "12.1.1",
+				dependencies: [
+					{
+						pkg: "over-watch",
+						version: "1.1.1"
+					},
+					{
+						pkg: "watch-over",
+						version: "2.2.2"
+					}
+				]
+			};
+
 			util.fileExists = jest.fn(() => true);
+			util.readJSONFile = jest.fn(() => ({ version: "1.2.3" }));
+			util.writeJSONFile = jest.fn(() => {});
 		});
 
 		it("should do nothing if package-lock.json doesn't exist", () => {
@@ -3864,17 +3871,53 @@ feature-last-branch`)
 			});
 		});
 
-		it("should do nothing if depedencies don't exist", () => {
-			state.dependencies = undefined;
-			return run.updatePackageLockJson(state).then(() => {
-				expect(sequence).toHaveBeenCalledTimes(0);
+		describe("dependencies", () => {
+			describe("exists", () => {
+				it(`should call "sequence" with an array of dependencies`, () => {
+					return run.updatePackageLockJson(state).then(() => {
+						expect(sequence).toHaveBeenCalledTimes(1);
+						expect(sequence).toHaveBeenCalledWith(
+							expect.any(Array)
+						);
+					});
+				});
+			});
+
+			describe("doesn't exist", () => {
+				it(`shouldn't call "sequence"`, () => {
+					state.dependencies = undefined;
+					return run.updatePackageLockJson(state).then(() => {
+						expect(sequence).toHaveBeenCalledTimes(0);
+					});
+				});
 			});
 		});
 
-		it("should call 'sequence' with an array of dependencies", () => {
-			return run.updatePackageLockJson(state).then(() => {
-				expect(sequence).toHaveBeenCalledTimes(1);
-				expect(sequence).toHaveBeenCalledWith(expect.any(Array));
+		describe("currentVersion", () => {
+			describe("exists", () => {
+				it("should read and write file", () => {
+					return run.updatePackageLockJson(state).then(() => {
+						expect(util.readJSONFile).toHaveBeenCalledTimes(1);
+						expect(util.readJSONFile).toHaveBeenCalledWith(
+							"./package-lock.json"
+						);
+						expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
+						expect(util.writeJSONFile).toHaveBeenCalledWith(
+							"./package-lock.json",
+							{ version: "12.1.1" }
+						);
+					});
+				});
+			});
+
+			describe("doesn't exist", () => {
+				it("shouldn't read or write file", () => {
+					state.currentVersion = undefined;
+					return run.updatePackageLockJson(state).then(() => {
+						expect(util.readJSONFile).toHaveBeenCalledTimes(0);
+						expect(util.writeJSONFile).toHaveBeenCalledTimes(0);
+					});
+				});
 			});
 		});
 	});

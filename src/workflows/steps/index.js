@@ -283,6 +283,7 @@ export function updateVersion(state) {
 
 	util.writeJSONFile(configPath, pkg);
 	state.versions = { oldVersion, newVersion };
+	state.currentVersion = newVersion;
 	logger.log(
 		chalk.green(`Updated ${configPath} from ${oldVersion} to ${newVersion}`)
 	);
@@ -313,26 +314,28 @@ export function updateChangelog(state) {
 export function gitDiff(state) {
 	const { configPath } = state;
 
-	return git.diff([CHANGELOG_PATH, configPath]).then(diff => {
-		logger.log(diff);
-		return util
-			.prompt([
-				{
-					type: "confirm",
-					name: "proceed",
-					message: "Are you OK with this diff?",
-					default: true
-				}
-			])
-			.then(answers => {
-				util.log.begin("confirming changes to commit");
-				util.log.end();
+	return git
+		.diff([CHANGELOG_PATH, configPath, PACKAGELOCKJSON_PATH])
+		.then(diff => {
+			logger.log(diff);
+			return util
+				.prompt([
+					{
+						type: "confirm",
+						name: "proceed",
+						message: "Are you OK with this diff?",
+						default: true
+					}
+				])
+				.then(answers => {
+					util.log.begin("confirming changes to commit");
+					util.log.end();
 
-				if (!answers.proceed) {
-					process.exit(0); // eslint-disable-line no-process-exit
-				}
-			});
-	});
+					if (!answers.proceed) {
+						process.exit(0); // eslint-disable-line no-process-exit
+					}
+				});
+		});
 }
 
 export function gitAdd(state) {
@@ -1326,17 +1329,24 @@ export function getDependenciesFromFile(state) {
 }
 
 export function updatePackageLockJson(state) {
-	const { dependencies, scope } = state;
+	const { dependencies, currentVersion, scope } = state;
 
-	if (!util.fileExists(PACKAGELOCKJSON_PATH) || !dependencies) {
-		return Promise.resolve();
+	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+		if (currentVersion) {
+			let pkg = {};
+			pkg = util.readJSONFile(PACKAGELOCKJSON_PATH);
+			pkg.version = currentVersion;
+			util.writeJSONFile(PACKAGELOCKJSON_PATH, pkg);
+		}
+
+		if (dependencies) {
+			const installs = dependencies.map(dep =>
+				npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
+			);
+			return sequence(installs).then(() => Promise.resolve());
+		}
 	}
-
-	const installs = dependencies.map(dep =>
-		npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
-	);
-
-	return sequence(installs).then(() => Promise.resolve());
+	return Promise.resolve();
 }
 
 export function npmInstallPackage(dependency) {
