@@ -283,6 +283,7 @@ export function updateVersion(state) {
 
 	util.writeJSONFile(configPath, pkg);
 	state.versions = { oldVersion, newVersion };
+	state.currentVersion = newVersion;
 	logger.log(
 		chalk.green(`Updated ${configPath} from ${oldVersion} to ${newVersion}`)
 	);
@@ -313,26 +314,28 @@ export function updateChangelog(state) {
 export function gitDiff(state) {
 	const { configPath } = state;
 
-	return git.diff([CHANGELOG_PATH, configPath]).then(diff => {
-		logger.log(diff);
-		return util
-			.prompt([
-				{
-					type: "confirm",
-					name: "proceed",
-					message: "Are you OK with this diff?",
-					default: true
-				}
-			])
-			.then(answers => {
-				util.log.begin("confirming changes to commit");
-				util.log.end();
+	return git
+		.diff([CHANGELOG_PATH, configPath, PACKAGELOCKJSON_PATH])
+		.then(diff => {
+			logger.log(diff);
+			return util
+				.prompt([
+					{
+						type: "confirm",
+						name: "proceed",
+						message: "Are you OK with this diff?",
+						default: true
+					}
+				])
+				.then(answers => {
+					util.log.begin("confirming changes to commit");
+					util.log.end();
 
-				if (!answers.proceed) {
-					process.exit(0); // eslint-disable-line no-process-exit
-				}
-			});
-	});
+					if (!answers.proceed) {
+						process.exit(0); // eslint-disable-line no-process-exit
+					}
+				});
+		});
 }
 
 export function gitAdd(state) {
@@ -436,7 +439,7 @@ export function gitPushUpstreamFeatureBranch(state) {
 	const { branch } = state;
 
 	if (branch && branch.length) {
-		return git.push(`upstream ${branch}`);
+		return git.push({ branch, remote: "upstream" });
 	}
 }
 
@@ -444,7 +447,7 @@ export function gitForcePushUpstreamFeatureBranch(state) {
 	const { branch } = state;
 
 	if (branch && branch.length) {
-		return git.push(`-f upstream ${branch}`);
+		return git.push({ branch: `-f ${branch}`, remote: "upstream" });
 	}
 }
 
@@ -771,7 +774,7 @@ export function askChangeReason(state) {
 }
 
 export function gitCheckoutAndCreateBranch(state) {
-	const { branch, log, keepBranch } = state;
+	const { branch, keepBranch } = state;
 
 	const onError = err => {
 		return () => {
@@ -789,15 +792,9 @@ export function gitCheckoutAndCreateBranch(state) {
 		};
 	};
 
-	let result;
-	if (keepBranch) {
-		result = () => Promise.resolve();
-	} else if (log.length) {
-		result = () =>
-			git.checkoutAndCreateBranchWithoutTracking({ branch, onError });
-	} else {
-		result = () => git.checkoutAndCreateBranch({ branch, onError });
-	}
+	const result = keepBranch
+		? () => Promise.resolve()
+		: () => git.checkoutAndCreateBranch({ branch, onError });
 
 	return result();
 }
@@ -1223,11 +1220,13 @@ export function promptKeepBranchOrCreateNew(state) {
 		])
 		.then(answers => {
 			state.keepBranch = answers.keep;
-			return git.branchExistsUpstream(branch).then(exists => {
-				if (exists) {
-					return git.merge(`upstream/${branch}`, true);
-				}
-			});
+			return git
+				.branchExistsRemote({ branch, remote: "upstream" })
+				.then(exists => {
+					if (exists) {
+						return git.merge(`upstream/${branch}`, true);
+					}
+				});
 		});
 }
 
@@ -1293,7 +1292,7 @@ export function deleteUpstreamFeatureBranch(state) {
 		return () => Promise.resolve();
 	};
 
-	return git.deleteUpstreamBranch(
+	return git.deleteBranchUpstream(
 		branch,
 		true,
 		"Cleaning upstream feature branch",
@@ -1302,10 +1301,13 @@ export function deleteUpstreamFeatureBranch(state) {
 }
 
 export function saveDependencies(state) {
-	const { dependencies } = state;
+	const { dependencies, changeReason } = state;
 
 	try {
-		const content = dependencies;
+		const content = {
+			dependencies,
+			changeReason
+		};
 
 		util.writeJSONFile(path.join(__dirname, ".dependencies.json"), content);
 	} catch (err) {
@@ -1320,23 +1322,32 @@ export function getDependenciesFromFile(state) {
 		path.join(__dirname, ".dependencies.json")
 	);
 
-	state.dependencies = content ? content : [];
+	if (content) {
+		Object.assign(state, content);
+	}
 
 	return Promise.resolve();
 }
 
 export function updatePackageLockJson(state) {
-	const { dependencies, scope } = state;
+	const { dependencies, currentVersion, scope } = state;
 
-	if (!util.fileExists(PACKAGELOCKJSON_PATH) || !dependencies) {
-		return Promise.resolve();
+	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+		if (currentVersion) {
+			let pkg = {};
+			pkg = util.readJSONFile(PACKAGELOCKJSON_PATH);
+			pkg.version = currentVersion;
+			util.writeJSONFile(PACKAGELOCKJSON_PATH, pkg);
+		}
+
+		if (dependencies) {
+			const installs = dependencies.map(dep =>
+				npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
+			);
+			return sequence(installs).then(() => Promise.resolve());
+		}
 	}
-
-	const installs = dependencies.map(dep =>
-		npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
-	);
-
-	return sequence(installs).then(() => Promise.resolve());
+	return Promise.resolve();
 }
 
 export function npmInstallPackage(dependency) {
@@ -1358,28 +1369,35 @@ export function npmInstallPackage(dependency) {
 }
 
 export function gitCreateBranchUpstream(state) {
-	const { branch } = state;
+	const { hasDevelopBranch, branch } = state;
+	const remote = "upstream";
 
-	return git.branchExistsUpstream(branch).then(exists => {
+	return git.branchExistsRemote({ branch, remote }).then(exists => {
 		if (!exists) {
-			return git.createRemoteBranch(branch, "upstream");
+			const base = hasDevelopBranch ? "develop" : "master";
+			return git.createRemoteBranch({ branch, remote, base });
 		}
 	});
 }
 
 export function gitCreateBranchOrigin(state) {
 	const { branch } = state;
+	const remote = "origin";
 
 	const onError = () => {
 		util.advise("remoteBranchOutOfDate", { exit: false });
 		return () => Promise.resolve();
 	};
 
-	return git.branchExistsOrigin(branch).then(exists => {
+	return git.branchExistsRemote({ branch, remote }).then(exists => {
 		if (!exists) {
-			return git.createRemoteBranch(branch, "origin", true);
+			return git.createRemoteBranch({
+				branch,
+				remote: "origin",
+				base: branch
+			});
 		}
-		return git.pushRemoteBranch(branch, "origin", onError);
+		return git.pushRemoteBranch({ branch, remote, onError });
 	});
 }
 

@@ -931,7 +931,8 @@ describe("shared workflow steps", () => {
 				expect(git.diff).toHaveBeenCalledTimes(1);
 				expect(git.diff).toHaveBeenCalledWith([
 					"./CHANGELOG.md",
-					"./package.json"
+					"./package.json",
+					"./package-lock.json"
 				]);
 			});
 		});
@@ -1205,9 +1206,10 @@ describe("shared workflow steps", () => {
 			state = { branch: "feature-branch" };
 			return run.gitPushUpstreamFeatureBranch(state).then(() => {
 				expect(git.push).toHaveBeenCalledTimes(1);
-				expect(git.push).toHaveBeenCalledWith(
-					"upstream feature-branch"
-				);
+				expect(git.push).toHaveBeenCalledWith({
+					branch: "feature-branch",
+					remote: "upstream"
+				});
 			});
 		});
 
@@ -1226,9 +1228,10 @@ describe("shared workflow steps", () => {
 			state = { branch: "feature-branch" };
 			return run.gitForcePushUpstreamFeatureBranch(state).then(() => {
 				expect(git.push).toHaveBeenCalledTimes(1);
-				expect(git.push).toHaveBeenCalledWith(
-					"-f upstream feature-branch"
-				);
+				expect(git.push).toHaveBeenCalledWith({
+					branch: "-f feature-branch",
+					remote: "upstream"
+				});
 			});
 		});
 
@@ -2311,52 +2314,32 @@ describe("shared workflow steps", () => {
 
 	describe("gitCheckoutAndCreateBranch", () => {
 		beforeEach(() => {
+			state = {
+				branch: "feature-new-menu",
+				keepBranch: false
+			};
 			git.checkoutAndCreateBranch = jest.fn(() => Promise.resolve());
-			git.checkoutAndCreateBranchWithoutTracking = jest.fn(() =>
-				Promise.resolve()
-			);
-			state.branch = "feature-new-menu";
-			state.log = "";
-			state.keepBranch = false;
 		});
 
-		it("should call `git.checkoutAndCreateBranch` without a log", () => {
+		describe("when keepBranch is true", () => {
+			it(`should resolve and not call "checkoutAndCreateBranch"`, () => {
+				state.keepBranch = true;
+				return run.gitCheckoutAndCreateBranch(state).then(() => {
+					expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(
+						0
+					);
+				});
+			});
+		});
+
+		it("should call `git.checkoutAndCreateBranch`", () => {
 			return run.gitCheckoutAndCreateBranch(state).then(() => {
-				expect(
-					git.checkoutAndCreateBranchWithoutTracking
-				).toHaveBeenCalledTimes(0);
 				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(1);
-			});
-		});
-
-		it("should call `git.checkoutAndCreateBranch` with a log", () => {
-			state.log = "this is some commit";
-			return run.gitCheckoutAndCreateBranch(state).then(() => {
-				expect(
-					git.checkoutAndCreateBranchWithoutTracking
-				).toHaveBeenCalledTimes(1);
-				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(0);
-			});
-		});
-
-		it("should resolve when keepBranch is true and not checkoutAndCreateBranch", () => {
-			state.keepBranch = true;
-			return run.gitCheckoutAndCreateBranch(state).then(() => {
-				expect(
-					git.checkoutAndCreateBranchWithoutTracking
-				).toHaveBeenCalledTimes(0);
-				expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(0);
 			});
 		});
 
 		describe("when handling error", () => {
 			beforeEach(() => {
-				state = {
-					branch: "feature-new-menu",
-					log: "",
-					keepBranch: false
-				};
-
 				git.checkoutAndCreateBranch = jest.fn((...args) => {
 					return args[0].onError({
 						message: `A branch named '${
@@ -2370,9 +2353,6 @@ describe("shared workflow steps", () => {
 
 			it("should handle branch already exists error", () => {
 				return run.gitCheckoutAndCreateBranch(state).catch(() => {
-					expect(
-						git.checkoutAndCreateBranchWithoutTracking
-					).toHaveBeenCalledTimes(0);
 					expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(
 						1
 					);
@@ -2389,9 +2369,6 @@ describe("shared workflow steps", () => {
 					return args[0].onError({ message: "some generic error" })();
 				});
 				return run.gitCheckoutAndCreateBranch(state).catch(() => {
-					expect(
-						git.checkoutAndCreateBranchWithoutTracking
-					).toHaveBeenCalledTimes(0);
 					expect(git.checkoutAndCreateBranch).toHaveBeenCalledTimes(
 						1
 					);
@@ -3677,7 +3654,7 @@ describe("shared workflow steps", () => {
 				log: "some random commit",
 				branch: "feature-branch"
 			};
-			git.branchExistsUpstream = jest.fn(() => Promise.resolve(true));
+			git.branchExistsRemote = jest.fn(() => Promise.resolve(true));
 			util.prompt = jest.fn(() => Promise.resolve({ keep: true }));
 			git.merge = jest.fn(() => Promise.resolve());
 		});
@@ -3709,19 +3686,18 @@ describe("shared workflow steps", () => {
 
 			describe("when branch exists upstream", () => {
 				beforeEach(() => {
-					git.branchExistsUpstream = jest.fn(() =>
+					git.branchExistsRemote = jest.fn(() =>
 						Promise.resolve(true)
 					);
 				});
 
 				it("should merge with upstream branch", () => {
 					return run.promptKeepBranchOrCreateNew(state).then(() => {
-						expect(git.branchExistsUpstream).toHaveBeenCalledTimes(
-							1
-						);
-						expect(git.branchExistsUpstream).toHaveBeenCalledWith(
-							state.branch
-						);
+						expect(git.branchExistsRemote).toHaveBeenCalledTimes(1);
+						expect(git.branchExistsRemote).toHaveBeenCalledWith({
+							branch: state.branch,
+							remote: "upstream"
+						});
 						expect(git.merge).toHaveBeenCalledTimes(1);
 						expect(git.merge).toHaveBeenCalledWith(
 							"upstream/feature-branch",
@@ -3733,19 +3709,18 @@ describe("shared workflow steps", () => {
 
 			describe("when branch doesn't exists upstream", () => {
 				beforeEach(() => {
-					git.branchExistsUpstream = jest.fn(() =>
+					git.branchExistsRemote = jest.fn(() =>
 						Promise.resolve(false)
 					);
 				});
 
 				it("shouldn't merge with upstream branch", () => {
 					return run.promptKeepBranchOrCreateNew(state).then(() => {
-						expect(git.branchExistsUpstream).toHaveBeenCalledTimes(
-							1
-						);
-						expect(git.branchExistsUpstream).toHaveBeenCalledWith(
-							state.branch
-						);
+						expect(git.branchExistsRemote).toHaveBeenCalledTimes(1);
+						expect(git.branchExistsRemote).toHaveBeenCalledWith({
+							branch: state.branch,
+							remote: "upstream"
+						});
 						expect(git.merge).toHaveBeenCalledTimes(0);
 					});
 				});
@@ -3844,17 +3819,23 @@ feature-last-branch`)
 
 	describe("updatePackageLockJson", () => {
 		beforeEach(() => {
-			state.dependencies = [
-				{
-					pkg: "over-watch",
-					version: "1.1.1"
-				},
-				{
-					pkg: "watch-over",
-					version: "2.2.2"
-				}
-			];
+			state = {
+				currentVersion: "12.1.1",
+				dependencies: [
+					{
+						pkg: "over-watch",
+						version: "1.1.1"
+					},
+					{
+						pkg: "watch-over",
+						version: "2.2.2"
+					}
+				]
+			};
+
 			util.fileExists = jest.fn(() => true);
+			util.readJSONFile = jest.fn(() => ({ version: "1.2.3" }));
+			util.writeJSONFile = jest.fn(() => {});
 		});
 
 		it("should do nothing if package-lock.json doesn't exist", () => {
@@ -3864,17 +3845,53 @@ feature-last-branch`)
 			});
 		});
 
-		it("should do nothing if depedencies don't exist", () => {
-			state.dependencies = undefined;
-			return run.updatePackageLockJson(state).then(() => {
-				expect(sequence).toHaveBeenCalledTimes(0);
+		describe("dependencies", () => {
+			describe("exists", () => {
+				it(`should call "sequence" with an array of dependencies`, () => {
+					return run.updatePackageLockJson(state).then(() => {
+						expect(sequence).toHaveBeenCalledTimes(1);
+						expect(sequence).toHaveBeenCalledWith(
+							expect.any(Array)
+						);
+					});
+				});
+			});
+
+			describe("doesn't exist", () => {
+				it(`shouldn't call "sequence"`, () => {
+					state.dependencies = undefined;
+					return run.updatePackageLockJson(state).then(() => {
+						expect(sequence).toHaveBeenCalledTimes(0);
+					});
+				});
 			});
 		});
 
-		it("should call 'sequence' with an array of dependencies", () => {
-			return run.updatePackageLockJson(state).then(() => {
-				expect(sequence).toHaveBeenCalledTimes(1);
-				expect(sequence).toHaveBeenCalledWith(expect.any(Array));
+		describe("currentVersion", () => {
+			describe("exists", () => {
+				it("should read and write file", () => {
+					return run.updatePackageLockJson(state).then(() => {
+						expect(util.readJSONFile).toHaveBeenCalledTimes(1);
+						expect(util.readJSONFile).toHaveBeenCalledWith(
+							"./package-lock.json"
+						);
+						expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
+						expect(util.writeJSONFile).toHaveBeenCalledWith(
+							"./package-lock.json",
+							{ version: "12.1.1" }
+						);
+					});
+				});
+			});
+
+			describe("doesn't exist", () => {
+				it("shouldn't read or write file", () => {
+					state.currentVersion = undefined;
+					return run.updatePackageLockJson(state).then(() => {
+						expect(util.readJSONFile).toHaveBeenCalledTimes(0);
+						expect(util.writeJSONFile).toHaveBeenCalledTimes(0);
+					});
+				});
 			});
 		});
 	});
@@ -3885,19 +3902,19 @@ feature-last-branch`)
 				branchToRemove: "feature-branch"
 			};
 
-			git.deleteUpstreamBranch = jest.fn(() => Promise.resolve());
+			git.deleteBranchUpstream = jest.fn(() => Promise.resolve());
 
 			util.advise = jest.fn(() => Promise.resolve());
 		});
 
 		it("should delete local branch", () => {
 			return run.deleteUpstreamFeatureBranch(state).then(() => {
-				expect(git.deleteUpstreamBranch).toHaveBeenCalledTimes(1);
+				expect(git.deleteBranchUpstream).toHaveBeenCalledTimes(1);
 			});
 		});
 
 		it("should resolve when deleteBranch fails", () => {
-			git.deleteUpstreamBranch = jest.fn((...args) => {
+			git.deleteBranchUpstream = jest.fn((...args) => {
 				return args[3]()();
 			});
 			return run.deleteUpstreamFeatureBranch(state).then(() => {
@@ -3920,7 +3937,8 @@ feature-last-branch`)
 						pkg: "my-other-slice-project",
 						version: "8.15.0-some-other-identifier.2"
 					}
-				]
+				],
+				changeReason: "random reason"
 			};
 
 			util.writeJSONFile = jest.fn(() => {});
@@ -3937,16 +3955,19 @@ feature-last-branch`)
 		it("should call `util.writeJSONFile` with path and content", () => {
 			return run.saveDependencies(state).then(() => {
 				expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
-				expect(util.writeJSONFile).toHaveBeenCalledWith("my_path/", [
-					{
-						pkg: "my-slice-project",
-						version: "1.1.1-some-identifier.0"
-					},
-					{
-						pkg: "my-other-slice-project",
-						version: "8.15.0-some-other-identifier.2"
-					}
-				]);
+				expect(util.writeJSONFile).toHaveBeenCalledWith("my_path/", {
+					changeReason: "random reason",
+					dependencies: [
+						{
+							pkg: "my-slice-project",
+							version: "1.1.1-some-identifier.0"
+						},
+						{
+							pkg: "my-other-slice-project",
+							version: "8.15.0-some-other-identifier.2"
+						}
+					]
+				});
 			});
 		});
 
@@ -3966,16 +3987,19 @@ feature-last-branch`)
 
 	describe("getDependenciesFromFile", () => {
 		beforeEach(() => {
-			util.readJSONFile = jest.fn(() => [
-				{
-					pkg: "my-slice-project",
-					version: "1.1.1-some-identifier.0"
-				},
-				{
-					pkg: "my-other-slice-project",
-					version: "8.15.0-some-other-identifier.2"
-				}
-			]);
+			util.readJSONFile = jest.fn(() => ({
+				changeReason: "random reason",
+				dependencies: [
+					{
+						pkg: "my-slice-project",
+						version: "1.1.1-some-identifier.0"
+					},
+					{
+						pkg: "my-other-slice-project",
+						version: "8.15.0-some-other-identifier.2"
+					}
+				]
+			}));
 		});
 
 		it(`should use dependencies read from ".dependencies.json"`, () => {
@@ -3994,19 +4018,31 @@ feature-last-branch`)
 			});
 		});
 
-		it(`should use empty object when no dependencies read from ".dependencies.json"`, () => {
-			util.readJSONFile = jest.fn(() => ({}));
+		it(`should use changeReason read from ".dependencies.json"`, () => {
 			return run.getDependenciesFromFile(state).then(() => {
-				expect(state).toHaveProperty("dependencies");
-				expect(state.dependencies).toEqual({});
+				expect(state).toHaveProperty("changeReason");
+				expect(state.changeReason).toEqual("random reason");
 			});
 		});
 
-		it("should default to {} when readJSONFile fails", () => {
-			util.readJSONFile = jest.fn(() => "");
+		it(`should use {} when no dependencies/changeReason read from ".dependencies.json"`, () => {
+			util.readJSONFile = jest.fn(() => ({}));
+			return run.getDependenciesFromFile(state).then(() => {
+				expect(state).toEqual({});
+			});
+		});
+
+		it("shouldn't set state when nothing read from file", () => {
+			util.readJSONFile = jest.fn(() => undefined);
+			state = {
+				dependencies: [],
+				changeReason: "not set to null"
+			};
 			return run.getDependenciesFromFile(state).then(() => {
 				expect(state).toHaveProperty("dependencies");
+				expect(state).toHaveProperty("changeReason");
 				expect(state.dependencies).toEqual([]);
+				expect(state.changeReason).toEqual("not set to null");
 			});
 		});
 	});
@@ -4064,31 +4100,53 @@ feature-last-branch`)
 				branch: "feature-branch"
 			};
 
-			git.branchExistsUpstream = jest.fn(() => Promise.resolve(false));
+			git.branchExistsRemote = jest.fn(() => Promise.resolve(false));
 			git.createRemoteBranch = jest.fn(() => Promise.resolve());
 		});
 
-		it(`should call "createBranchUpstream" when branch doesn't exist`, () => {
-			return run.gitCreateBranchUpstream(state).then(() => {
-				expect(git.branchExistsUpstream).toHaveBeenCalledTimes(1);
-				expect(git.branchExistsUpstream).toHaveBeenCalledWith(
-					"feature-branch"
-				);
-				expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
-				expect(git.createRemoteBranch).toHaveBeenCalledWith(
-					"feature-branch",
-					"upstream"
-				);
+		describe("when branch doesn't exist", () => {
+			it(`should call "createBranchUpstream" with appropriate args when repo has develop branch`, () => {
+				state.hasDevelopBranch = true;
+				return run.gitCreateBranchUpstream(state).then(() => {
+					expect(git.branchExistsRemote).toHaveBeenCalledTimes(1);
+					expect(git.branchExistsRemote).toHaveBeenCalledWith({
+						branch: "feature-branch",
+						remote: "upstream"
+					});
+					expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
+					expect(git.createRemoteBranch).toHaveBeenCalledWith({
+						branch: "feature-branch",
+						remote: "upstream",
+						base: "develop"
+					});
+				});
+			});
+
+			it(`should call "createBranchUpstream" with appropriate args when repo doesn't have develop branch`, () => {
+				return run.gitCreateBranchUpstream(state).then(() => {
+					expect(git.branchExistsRemote).toHaveBeenCalledTimes(1);
+					expect(git.branchExistsRemote).toHaveBeenCalledWith({
+						branch: "feature-branch",
+						remote: "upstream"
+					});
+					expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
+					expect(git.createRemoteBranch).toHaveBeenCalledWith({
+						branch: "feature-branch",
+						remote: "upstream",
+						base: "master"
+					});
+				});
 			});
 		});
 
 		it(`shouldn't call "createBranchUpstream" when branch exist`, () => {
-			git.branchExistsUpstream = jest.fn(() => Promise.resolve(true));
+			git.branchExistsRemote = jest.fn(() => Promise.resolve(true));
 			return run.gitCreateBranchUpstream(state).then(() => {
-				expect(git.branchExistsUpstream).toHaveBeenCalledTimes(1);
-				expect(git.branchExistsUpstream).toHaveBeenCalledWith(
-					"feature-branch"
-				);
+				expect(git.branchExistsRemote).toHaveBeenCalledTimes(1);
+				expect(git.branchExistsRemote).toHaveBeenCalledWith({
+					branch: "feature-branch",
+					remote: "upstream"
+				});
 				expect(git.createRemoteBranch).toHaveBeenCalledTimes(0);
 			});
 		});
@@ -4100,45 +4158,47 @@ feature-last-branch`)
 				branch: "feature-branch"
 			};
 
-			git.branchExistsOrigin = jest.fn(() => Promise.resolve(false));
+			git.branchExistsRemote = jest.fn(() => Promise.resolve(false));
 			git.createRemoteBranch = jest.fn(() => Promise.resolve());
 		});
 
 		it(`should call "createBranchOrigin" when branch doesn't exist`, () => {
 			return run.gitCreateBranchOrigin(state).then(() => {
-				expect(git.branchExistsOrigin).toHaveBeenCalledTimes(1);
-				expect(git.branchExistsOrigin).toHaveBeenCalledWith(
-					"feature-branch"
-				);
+				expect(git.branchExistsRemote).toHaveBeenCalledTimes(1);
+				expect(git.branchExistsRemote).toHaveBeenCalledWith({
+					branch: "feature-branch",
+					remote: "origin"
+				});
 				expect(git.createRemoteBranch).toHaveBeenCalledTimes(1);
-				expect(git.createRemoteBranch).toHaveBeenCalledWith(
-					"feature-branch",
-					"origin",
-					true
-				);
+				expect(git.createRemoteBranch).toHaveBeenCalledWith({
+					branch: "feature-branch",
+					remote: "origin",
+					base: "feature-branch"
+				});
 			});
 		});
 
 		describe("when branch exists", () => {
 			beforeEach(() => {
-				git.branchExistsOrigin = jest.fn(() => Promise.resolve(true));
+				git.branchExistsRemote = jest.fn(() => Promise.resolve(true));
 				git.pushRemoteBranch = jest.fn(() => Promise.resolve());
 				util.advise = jest.fn(() => Promise.resolve());
 			});
 
 			it(`should call "pushRemoteBranch"`, () => {
 				return run.gitCreateBranchOrigin(state).then(() => {
-					expect(git.branchExistsOrigin).toHaveBeenCalledTimes(1);
-					expect(git.branchExistsOrigin).toHaveBeenCalledWith(
-						"feature-branch"
-					);
+					expect(git.branchExistsRemote).toHaveBeenCalledTimes(1);
+					expect(git.branchExistsRemote).toHaveBeenCalledWith({
+						branch: "feature-branch",
+						remote: "origin"
+					});
 					expect(git.pushRemoteBranch).toHaveBeenCalledTimes(1);
 				});
 			});
 
 			it("should advise when push fails", () => {
-				git.pushRemoteBranch = jest.fn((...args) => {
-					return args[2]()();
+				git.pushRemoteBranch = jest.fn(args => {
+					return args.onError()();
 				});
 				return run.gitCreateBranchOrigin(state).then(() => {
 					expect(git.pushRemoteBranch).toHaveBeenCalledTimes(1);
