@@ -38,8 +38,6 @@ describe("shared workflows", () => {
 		it("should have all of the required steps", () => {
 			expect(createPullRequest).toEqual([
 				run.getDependenciesFromFile,
-				run.verifyPackagesToPromote,
-				run.getCurrentDependencyVersions,
 				run.githubUpstream,
 				run.askVersions,
 				run.updateDependencies,

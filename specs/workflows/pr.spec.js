@@ -38,8 +38,6 @@ describe("pr workflows", () => {
 				run.gitRebaseContinue,
 				run.getFeatureBranch,
 				run.getDependenciesFromFile,
-				run.verifyPackagesToPromote,
-				run.getCurrentDependencyVersions,
 				run.githubUpstream,
 				run.askVersions,
 				run.updateDependencies,
@@ -59,8 +57,6 @@ describe("pr workflows", () => {
 		it("should have all of the required steps", () => {
 			expect(prRebaseSuccess).toEqual([
 				run.getDependenciesFromFile,
-				run.verifyPackagesToPromote,
-				run.getCurrentDependencyVersions,
 				run.githubUpstream,
 				run.askVersions,
 				run.updateDependencies,
@@ -81,8 +77,6 @@ describe("pr workflows", () => {
 			expect(prContinue).toEqual([
 				run.getPackageScope,
 				run.getDependenciesFromFile,
-				run.verifyPackagesToPromote,
-				run.getCurrentDependencyVersions,
 				run.githubUpstream,
 				run.askVersions,
 				run.updateDependencies,

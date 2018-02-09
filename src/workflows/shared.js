@@ -27,8 +27,6 @@ export const rebaseUpdateLogCommitTagRelease = [
 
 export const createPullRequest = [
 	run.getDependenciesFromFile,
-	run.verifyPackagesToPromote,
-	run.getCurrentDependencyVersions,
 	run.githubUpstream,
 	run.askVersions,
 	run.updateDependencies,

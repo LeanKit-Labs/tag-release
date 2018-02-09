@@ -1301,10 +1301,13 @@ export function deleteUpstreamFeatureBranch(state) {
 }
 
 export function saveDependencies(state) {
-	const { dependencies } = state;
+	const { dependencies, changeReason } = state;
 
 	try {
-		const content = dependencies;
+		const content = {
+			dependencies,
+			changeReason
+		};
 
 		util.writeJSONFile(path.join(__dirname, ".dependencies.json"), content);
 	} catch (err) {
@@ -1319,7 +1322,9 @@ export function getDependenciesFromFile(state) {
 		path.join(__dirname, ".dependencies.json")
 	);
 
-	state.dependencies = content ? content : [];
+	if (content) {
+		Object.assign(state, content);
+	}
 
 	return Promise.resolve();
 }

@@ -3937,7 +3937,8 @@ feature-last-branch`)
 						pkg: "my-other-slice-project",
 						version: "8.15.0-some-other-identifier.2"
 					}
-				]
+				],
+				changeReason: "random reason"
 			};
 
 			util.writeJSONFile = jest.fn(() => {});
@@ -3954,16 +3955,19 @@ feature-last-branch`)
 		it("should call `util.writeJSONFile` with path and content", () => {
 			return run.saveDependencies(state).then(() => {
 				expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
-				expect(util.writeJSONFile).toHaveBeenCalledWith("my_path/", [
-					{
-						pkg: "my-slice-project",
-						version: "1.1.1-some-identifier.0"
-					},
-					{
-						pkg: "my-other-slice-project",
-						version: "8.15.0-some-other-identifier.2"
-					}
-				]);
+				expect(util.writeJSONFile).toHaveBeenCalledWith("my_path/", {
+					changeReason: "random reason",
+					dependencies: [
+						{
+							pkg: "my-slice-project",
+							version: "1.1.1-some-identifier.0"
+						},
+						{
+							pkg: "my-other-slice-project",
+							version: "8.15.0-some-other-identifier.2"
+						}
+					]
+				});
 			});
 		});
 
@@ -3983,16 +3987,19 @@ feature-last-branch`)
 
 	describe("getDependenciesFromFile", () => {
 		beforeEach(() => {
-			util.readJSONFile = jest.fn(() => [
-				{
-					pkg: "my-slice-project",
-					version: "1.1.1-some-identifier.0"
-				},
-				{
-					pkg: "my-other-slice-project",
-					version: "8.15.0-some-other-identifier.2"
-				}
-			]);
+			util.readJSONFile = jest.fn(() => ({
+				changeReason: "random reason",
+				dependencies: [
+					{
+						pkg: "my-slice-project",
+						version: "1.1.1-some-identifier.0"
+					},
+					{
+						pkg: "my-other-slice-project",
+						version: "8.15.0-some-other-identifier.2"
+					}
+				]
+			}));
 		});
 
 		it(`should use dependencies read from ".dependencies.json"`, () => {
@@ -4011,19 +4018,31 @@ feature-last-branch`)
 			});
 		});
 
-		it(`should use empty object when no dependencies read from ".dependencies.json"`, () => {
-			util.readJSONFile = jest.fn(() => ({}));
+		it(`should use changeReason read from ".dependencies.json"`, () => {
 			return run.getDependenciesFromFile(state).then(() => {
-				expect(state).toHaveProperty("dependencies");
-				expect(state.dependencies).toEqual({});
+				expect(state).toHaveProperty("changeReason");
+				expect(state.changeReason).toEqual("random reason");
 			});
 		});
 
-		it("should default to {} when readJSONFile fails", () => {
-			util.readJSONFile = jest.fn(() => "");
+		it(`should use {} when no dependencies/changeReason read from ".dependencies.json"`, () => {
+			util.readJSONFile = jest.fn(() => ({}));
+			return run.getDependenciesFromFile(state).then(() => {
+				expect(state).toEqual({});
+			});
+		});
+
+		it("shouldn't set state when nothing read from file", () => {
+			util.readJSONFile = jest.fn(() => undefined);
+			state = {
+				dependencies: [],
+				changeReason: "not set to null"
+			};
 			return run.getDependenciesFromFile(state).then(() => {
 				expect(state).toHaveProperty("dependencies");
+				expect(state).toHaveProperty("changeReason");
 				expect(state.dependencies).toEqual([]);
+				expect(state.changeReason).toEqual("not set to null");
 			});
 		});
 	});
