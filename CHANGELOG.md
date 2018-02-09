@@ -1,5 +1,16 @@
 ## 5.x
 
+### 5.15.1
+
+* Fixed issues with conflicts during --pr
+* Fixed pushing to upstream for pre-release
+* Renamed method deleteUpstreamBranch to deleteBranchUpstream
+* Removed some duplicated code
+* Only add tracking on push
+* Fixed updating package-lock.json version
+* Added tests for --dev workflow
+* Added basing --dev upstream branch creation off develop when exists
+
 ### 5.15.0
 
 * Added --dev feature for creating a origin feature branch into upstream feature branch pull request
