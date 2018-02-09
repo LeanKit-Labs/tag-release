@@ -386,18 +386,11 @@ describe("git", () => {
 					onError: {}
 				}
 			},
-			branchExistsUpstream: {
-				args: "feature-branch",
+			branchExistsRemote: {
+				args: { branch: "feature-branch", remote: "upstream" },
 				expectedRunCommandArgs: {
 					args: `ls-remote upstream feature-branch`,
 					logMessage: `Checking if "feature-branch" exists on upstream`
-				}
-			},
-			branchExistsOrigin: {
-				args: "feature-branch",
-				expectedRunCommandArgs: {
-					args: `ls-remote origin feature-branch`,
-					logMessage: `Checking if "feature-branch" exists on origin`
 				}
 			},
 			createRemoteBranch: {
@@ -657,6 +650,23 @@ describe("git", () => {
 							onError: {}
 						});
 					});
+			});
+
+			describe("branchExistsRemote", () => {
+				it(`should return if branch exists on "origin" remote`, () => {
+					return git
+						.branchExistsRemote({
+							branch: "feature-branch",
+							remote: "origin"
+						})
+						.then(() => {
+							expect(git.runCommand).toHaveBeenCalledTimes(1);
+							expect(git.runCommand).toHaveBeenCalledWith({
+								args: "ls-remote origin feature-branch",
+								logMessage: `Checking if "feature-branch" exists on origin`
+							});
+						});
+				});
 			});
 
 			describe("removePreReleaseCommits", () => {

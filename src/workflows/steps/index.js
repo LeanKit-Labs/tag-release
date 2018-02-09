@@ -1220,11 +1220,13 @@ export function promptKeepBranchOrCreateNew(state) {
 		])
 		.then(answers => {
 			state.keepBranch = answers.keep;
-			return git.branchExistsUpstream(branch).then(exists => {
-				if (exists) {
-					return git.merge(`upstream/${branch}`, true);
-				}
-			});
+			return git
+				.branchExistsRemote({ branch, remote: "upstream" })
+				.then(exists => {
+					if (exists) {
+						return git.merge(`upstream/${branch}`, true);
+					}
+				});
 		});
 }
 
@@ -1363,24 +1365,26 @@ export function npmInstallPackage(dependency) {
 
 export function gitCreateBranchUpstream(state) {
 	const { hasDevelopBranch, branch } = state;
+	const remote = "upstream";
 
-	return git.branchExistsUpstream(branch).then(exists => {
+	return git.branchExistsRemote({ branch, remote }).then(exists => {
 		if (!exists) {
 			const base = hasDevelopBranch ? "develop" : "master";
-			return git.createRemoteBranch({ branch, remote: "upstream", base });
+			return git.createRemoteBranch({ branch, remote, base });
 		}
 	});
 }
 
 export function gitCreateBranchOrigin(state) {
 	const { branch } = state;
+	const remote = "origin";
 
 	const onError = () => {
 		util.advise("remoteBranchOutOfDate", { exit: false });
 		return () => Promise.resolve();
 	};
 
-	return git.branchExistsOrigin(branch).then(exists => {
+	return git.branchExistsRemote({ branch, remote }).then(exists => {
 		if (!exists) {
 			return git.createRemoteBranch({
 				branch,
@@ -1388,7 +1392,7 @@ export function gitCreateBranchOrigin(state) {
 				base: branch
 			});
 		}
-		return git.pushRemoteBranch({ branch, remote: "origin", onError });
+		return git.pushRemoteBranch({ branch, remote, onError });
 	});
 }
 

@@ -273,25 +273,12 @@ const git = {
 			});
 	},
 
-	branchExistsUpstream(branch) {
-		const args = `ls-remote upstream ${branch}`;
+	branchExistsRemote({ branch, remote }) {
+		const args = `ls-remote ${remote} ${branch}`;
 		return git
 			.runCommand({
 				args,
-				logMessage: `Checking if "${branch}" exists on upstream`
-			})
-			.then(result => {
-				const branches = result.split("\n").filter(String);
-				return Promise.resolve(!!branches.length);
-			});
-	},
-
-	branchExistsOrigin(branch) {
-		const args = `ls-remote origin ${branch}`;
-		return git
-			.runCommand({
-				args,
-				logMessage: `Checking if "${branch}" exists on origin`
+				logMessage: `Checking if "${branch}" exists on ${remote}`
 			})
 			.then(result => {
 				const branches = result.split("\n").filter(String);
