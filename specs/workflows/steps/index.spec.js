@@ -3900,19 +3900,19 @@ feature-last-branch`)
 				branchToRemove: "feature-branch"
 			};
 
-			git.deleteUpstreamBranch = jest.fn(() => Promise.resolve());
+			git.deleteBranchUpstream = jest.fn(() => Promise.resolve());
 
 			util.advise = jest.fn(() => Promise.resolve());
 		});
 
 		it("should delete local branch", () => {
 			return run.deleteUpstreamFeatureBranch(state).then(() => {
-				expect(git.deleteUpstreamBranch).toHaveBeenCalledTimes(1);
+				expect(git.deleteBranchUpstream).toHaveBeenCalledTimes(1);
 			});
 		});
 
 		it("should resolve when deleteBranch fails", () => {
-			git.deleteUpstreamBranch = jest.fn((...args) => {
+			git.deleteBranchUpstream = jest.fn((...args) => {
 				return args[3]()();
 			});
 			return run.deleteUpstreamFeatureBranch(state).then(() => {

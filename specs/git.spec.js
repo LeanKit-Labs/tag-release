@@ -377,7 +377,7 @@ describe("git", () => {
 					args: `branch -a --contains tags/v1.1.1-tag.1`
 				}
 			},
-			deleteUpstreamBranch: {
+			deleteBranchUpstream: {
 				args: "feature-branch",
 				expectedRunCommandArgs: {
 					args: `push upstream :feature-branch`,

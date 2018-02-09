@@ -379,7 +379,7 @@ const git = {
 		return git.runCommand({ args, showOutput, logMessage, onError });
 	},
 
-	deleteUpstreamBranch(
+	deleteBranchUpstream(
 		branch,
 		showOutput = true,
 		logMessage = "",

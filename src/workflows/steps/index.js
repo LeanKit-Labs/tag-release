@@ -1292,7 +1292,7 @@ export function deleteUpstreamFeatureBranch(state) {
 		return () => Promise.resolve();
 	};
 
-	return git.deleteUpstreamBranch(
+	return git.deleteBranchUpstream(
 		branch,
 		true,
 		"Cleaning upstream feature branch",
