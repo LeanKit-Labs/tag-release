@@ -1206,9 +1206,10 @@ describe("shared workflow steps", () => {
 			state = { branch: "feature-branch" };
 			return run.gitPushUpstreamFeatureBranch(state).then(() => {
 				expect(git.push).toHaveBeenCalledTimes(1);
-				expect(git.push).toHaveBeenCalledWith(
-					"upstream feature-branch"
-				);
+				expect(git.push).toHaveBeenCalledWith({
+					branch: "feature-branch",
+					remote: "upstream"
+				});
 			});
 		});
 
@@ -1227,9 +1228,10 @@ describe("shared workflow steps", () => {
 			state = { branch: "feature-branch" };
 			return run.gitForcePushUpstreamFeatureBranch(state).then(() => {
 				expect(git.push).toHaveBeenCalledTimes(1);
-				expect(git.push).toHaveBeenCalledWith(
-					"-f upstream feature-branch"
-				);
+				expect(git.push).toHaveBeenCalledWith({
+					branch: "-f feature-branch",
+					remote: "upstream"
+				});
 			});
 		});
 

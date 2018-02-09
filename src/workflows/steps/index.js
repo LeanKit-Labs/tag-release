@@ -439,7 +439,7 @@ export function gitPushUpstreamFeatureBranch(state) {
 	const { branch } = state;
 
 	if (branch && branch.length) {
-		return git.push(`upstream ${branch}`);
+		return git.push({ branch, remote: "upstream" });
 	}
 }
 
@@ -447,7 +447,7 @@ export function gitForcePushUpstreamFeatureBranch(state) {
 	const { branch } = state;
 
 	if (branch && branch.length) {
-		return git.push(`-f upstream ${branch}`);
+		return git.push({ branch: `-f ${branch}`, remote: "upstream" });
 	}
 }
 
