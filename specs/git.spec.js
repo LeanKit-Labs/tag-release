@@ -128,8 +128,8 @@ describe("git", () => {
 				}
 			},
 			checkout: {
-				args: "test-branch",
-				expectedRunCommandArgs: { args: "checkout test-branch" }
+				args: "feature-branch",
+				expectedRunCommandArgs: { args: "checkout feature-branch" }
 			},
 			checkoutMaster: {
 				expectedRunCommandArgs: { args: "checkout master" }
@@ -141,17 +141,17 @@ describe("git", () => {
 				}
 			},
 			merge: {
-				args: "upstream/test-branch",
+				args: { branch: "feature-branch", remote: "upstream" },
 				expectedRunCommandArgs: {
-					args: "merge upstream/test-branch --ff-only"
+					args: "merge upstream/feature-branch --ff-only"
 				}
 			},
 			rebase: {
-				args: { branch: "upstream/test-branch", onError },
+				args: { branch: "upstream/feature-branch", onError },
 				expectedRunCommandArgs: {
-					args: "rebase upstream/test-branch --preserve-merges",
+					args: "rebase upstream/feature-branch --preserve-merges",
 					onError,
-					showError: true
+					exitOnFail: true
 				}
 			},
 			mergeMaster: {
@@ -223,9 +223,9 @@ describe("git", () => {
 				expectedRunCommandArgs: { args: `tag -a v1.0.0 -m v1.0.0` }
 			},
 			push: {
-				args: { branch: "test-branch", remote: "upstream" },
+				args: { branch: "feature-branch", remote: "upstream" },
 				expectedRunCommandArgs: {
-					args: "push -u upstream test-branch --tags"
+					args: "push -u upstream feature-branch --tags"
 				}
 			},
 			pushUpstreamMaster: {
@@ -261,24 +261,24 @@ describe("git", () => {
 				}
 			},
 			branchExists: {
-				args: "test-branch",
+				args: "feature-branch",
 				expectedRunCommandArgs: {
-					args: "branch --list test-branch",
-					logMessage: `Verifying branch: "test-branch" exists`
+					args: "branch --list feature-branch",
+					logMessage: `Verifying branch: "feature-branch" exists`
 				}
 			},
 			createLocalBranch: {
-				args: "test-branch",
+				args: "feature-branch",
 				expectedRunCommandArgs: {
-					args: "branch test-branch upstream/test-branch",
-					logMessage: `Creating local branch "test-branch"`
+					args: "branch feature-branch upstream/feature-branch",
+					logMessage: `Creating local branch "feature-branch"`
 				}
 			},
 			resetBranch: {
-				args: "test-branch",
+				args: "feature-branch",
 				expectedRunCommandArgs: {
-					args: "reset --hard upstream/test-branch",
-					logMessage: `Hard reset on branch: "test-branch"`
+					args: "reset --hard upstream/feature-branch",
+					logMessage: `Hard reset on branch: "feature-branch"`
 				}
 			},
 			checkoutTag: {
@@ -299,7 +299,7 @@ describe("git", () => {
 				expectedRunCommandArgs: {
 					args: "rebase upstream/master --preserve-merges",
 					onError,
-					showError: true
+					exitOnFail: true
 				}
 			},
 			getBranchList: {
@@ -346,16 +346,16 @@ describe("git", () => {
 				expectedRunCommandArgs: {
 					args: `rebase upstream/feature-branch --preserve-merges`,
 					onError,
-					showError: true
+					exitOnFail: true
 				}
 			},
 			rebaseUpstreamDevelop: {
 				args: { onError },
 				expectedRunCommandArgs: {
 					args: `rebase upstream/develop --preserve-merges`,
-					failHelpKey: `gitRebaseInteractive`,
-					onError,
-					showError: false
+					failHelpKey: `gitRebaseUpstreamDevelop`,
+					exitOnFail: true,
+					onError
 				}
 			},
 			getLatestCommitMessage: {
@@ -440,10 +440,10 @@ describe("git", () => {
 
 		describe("alternate behaviors", () => {
 			it("should call `git.runCommand` with failHelpKey when provided in the call to `git.checkout`", () => {
-				return git.checkout("test-branch", "test-key").then(() => {
+				return git.checkout("feature-branch", "test-key").then(() => {
 					expect(git.runCommand).toHaveBeenCalledTimes(1);
 					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "checkout test-branch",
+						args: "checkout feature-branch",
 						failHelpKey: "test-key"
 					});
 				});
@@ -460,10 +460,25 @@ describe("git", () => {
 			});
 
 			it(`should call "git.merge" without fast-forward when specified`, () => {
-				return git.merge("upstream/test-branch", false).then(() => {
+				return git
+					.merge({
+						branch: "feature-branch",
+						remote: "upstream",
+						fastForwardOnly: false
+					})
+					.then(() => {
+						expect(git.runCommand).toHaveBeenCalledTimes(1);
+						expect(git.runCommand).toHaveBeenCalledWith({
+							args: "merge upstream/feature-branch --no-ff"
+						});
+					});
+			});
+
+			it(`should call "git.merge" without remote when not specified`, () => {
+				return git.merge({ branch: "feature-branch" }).then(() => {
 					expect(git.runCommand).toHaveBeenCalledTimes(1);
 					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "merge upstream/test-branch --no-ff"
+						args: "merge feature-branch --ff-only"
 					});
 				});
 			});
@@ -471,14 +486,14 @@ describe("git", () => {
 			it(`should call "git.push" without tags when specified`, () => {
 				return git
 					.push({
-						branch: "test-branch",
+						branch: "feature-branch",
 						remote: "upstream",
 						includeTags: false
 					})
 					.then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
 						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "push -u upstream test-branch"
+							args: "push -u upstream feature-branch"
 						});
 					});
 			});
@@ -550,7 +565,7 @@ describe("git", () => {
 							args: "rebase feature-branch --preserve-merges",
 							failHelpKey: "test-key",
 							onError,
-							showError: true
+							exitOnFail: true
 						});
 					});
 			});
@@ -561,9 +576,9 @@ describe("git", () => {
 					expect(git.rebase).toHaveBeenCalledTimes(1);
 					expect(git.rebase).toHaveBeenCalledWith({
 						branch: "upstream/develop",
-						failHelpKey: "gitRebaseInteractive",
+						failHelpKey: "gitRebaseUpstreamDevelop",
 						onError: undefined,
-						showError: false
+						exitOnFail: true
 					});
 				});
 			});
@@ -677,6 +692,7 @@ describe("git", () => {
 						.spyOn(path, "join")
 						.mockImplementation(() => "my_path/");
 				});
+
 				it("should call 'git.runCommand' with appropriate arguments", () => {
 					return git.removePreReleaseCommits().then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
@@ -686,10 +702,11 @@ describe("git", () => {
 							failHelpKey: "gitRebaseInteractive",
 							fullCommand: true,
 							logMessage: "Removing pre-release commit history",
-							showError: false
+							exitOnFail: true
 						});
 					});
 				});
+
 				afterEach(() => {
 					joinSpy.mockRestore();
 				});

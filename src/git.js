@@ -84,8 +84,8 @@ const git = {
 		return git.checkout(branch);
 	},
 
-	merge(branch, fastForwardOnly = true, failHelpKey) {
-		const args = `merge ${branch}${
+	merge({ branch, remote, fastForwardOnly = true, failHelpKey }) {
+		const args = `merge ${remote ? `${remote}/${branch}` : `${branch}`}${
 			fastForwardOnly ? " --ff-only" : " --no-ff"
 		}`;
 		return git.runCommand(
@@ -93,29 +93,41 @@ const git = {
 		);
 	},
 
-	rebase({ branch, failHelpKey, onError, showError = true }) {
+	rebase({ branch, failHelpKey, onError, exitOnFail = true }) {
 		const args = `rebase ${branch} --preserve-merges`;
 		return git.runCommand(
 			failHelpKey && failHelpKey.length
-				? { args, failHelpKey, showError, onError }
-				: { args, showError, onError }
+				? { args, failHelpKey, exitOnFail, onError }
+				: { args, exitOnFail, onError }
 		);
 	},
 
 	mergeMaster() {
-		return git.merge("master", true, "gitMergeMaster");
+		return git.merge({
+			branch: "master",
+			failHelpKey: "gitMergeMaster"
+		});
 	},
 
 	mergeUpstreamMaster() {
-		return git.merge("upstream/master");
+		return git.merge({
+			branch: "master",
+			remote: "upstream"
+		});
 	},
 
 	mergeUpstreamDevelop() {
-		return git.merge("upstream/develop");
+		return git.merge({
+			branch: "develop",
+			remote: "upstream"
+		});
 	},
 
 	mergePromotionBranch(tag) {
-		return git.merge(`promote-release-${tag}`, false);
+		return git.merge({
+			branch: `promote-release-${tag}`,
+			fastForwardOnly: false
+		});
 	},
 
 	getCurrentBranch() {
@@ -342,7 +354,7 @@ const git = {
 			args,
 			logMessage: "Removing pre-release commit history",
 			failHelpKey: "gitRebaseInteractive",
-			showError: false,
+			exitOnFail: true,
 			fullCommand: true
 		});
 	},
@@ -427,8 +439,8 @@ const git = {
 	rebaseUpstreamDevelop({ onError } = {}) {
 		return git.rebase({
 			branch: "upstream/develop",
-			failHelpKey: "gitRebaseInteractive",
-			showError: false,
+			failHelpKey: "gitRebaseUpstreamDevelop",
+			exitOnFail: true,
 			onError
 		});
 	},

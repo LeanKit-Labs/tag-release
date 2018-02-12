@@ -98,11 +98,11 @@ describe("shared workflow steps", () => {
 
 			return run.gitMergeUpstreamBranch(state).then(() => {
 				expect(git.merge).toHaveBeenCalledTimes(1);
-				expect(git.merge).toHaveBeenCalledWith(
-					"upstream/feature-branch",
-					true,
-					"gitMergeUpstreamBranch"
-				);
+				expect(git.merge).toHaveBeenCalledWith({
+					branch: "feature-branch",
+					remote: "upstream",
+					failHelpKey: "gitMergeUpstreamBranch"
+				});
 			});
 		});
 	});
@@ -2358,8 +2358,7 @@ describe("shared workflow steps", () => {
 					);
 					expect(util.advise).toHaveBeenCalledTimes(1);
 					expect(util.advise).toHaveBeenCalledWith(
-						"gitBranchAlreadyExists",
-						{ exit: true }
+						"gitBranchAlreadyExists"
 					);
 				});
 			});
@@ -2374,8 +2373,7 @@ describe("shared workflow steps", () => {
 					);
 					expect(util.advise).toHaveBeenCalledTimes(1);
 					expect(util.advise).toHaveBeenCalledWith(
-						"gitCommandFailed",
-						{ exit: true }
+						"gitCommandFailed"
 					);
 				});
 			});
@@ -3699,10 +3697,11 @@ describe("shared workflow steps", () => {
 							remote: "upstream"
 						});
 						expect(git.merge).toHaveBeenCalledTimes(1);
-						expect(git.merge).toHaveBeenCalledWith(
-							"upstream/feature-branch",
-							true
-						);
+						expect(git.merge).toHaveBeenCalledWith({
+							branch: "feature-branch",
+							remote: "upstream",
+							failHelpKey: "gitMergeUpstreamBranch"
+						});
 					});
 				});
 			});

@@ -26,7 +26,11 @@ export function gitFetchUpstream() {
 
 export function gitMergeUpstreamBranch(state) {
 	const { branch } = state;
-	return git.merge(`upstream/${branch}`, true, "gitMergeUpstreamBranch");
+	return git.merge({
+		branch,
+		remote: "upstream",
+		failHelpKey: "gitMergeUpstreamBranch"
+	});
 }
 
 export function gitMergeUpstreamMaster() {
@@ -779,15 +783,12 @@ export function gitCheckoutAndCreateBranch(state) {
 	const onError = err => {
 		return () => {
 			let failHelpKey = "gitCommandFailed";
-			if (
-				err.message.includes(
-					`A branch named '${branch}' already exists`
-				)
-			) {
+			const msg = `A branch named '${branch}' already exists`;
+			if (err.message.includes(msg)) {
 				failHelpKey = "gitBranchAlreadyExists";
 			}
 
-			util.advise(failHelpKey, { exit: true });
+			util.advise(failHelpKey);
 			return Promise.reject();
 		};
 	};
@@ -1224,7 +1225,11 @@ export function promptKeepBranchOrCreateNew(state) {
 				.branchExistsRemote({ branch, remote: "upstream" })
 				.then(exists => {
 					if (exists) {
-						return git.merge(`upstream/${branch}`, true);
+						return git.merge({
+							branch,
+							remote: "upstream",
+							failHelpKey: "gitMergeUpstreamBranch"
+						});
 					}
 				});
 		});

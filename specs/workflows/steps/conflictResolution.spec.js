@@ -35,6 +35,7 @@ describe("conflict resolution workflow steps", () => {
 	}
 }`
 		);
+		util.advise = jest.fn(() => Promise.resolve());
 	});
 
 	describe("gitRebaseUpstreamDevelopWithConflictFlag", () => {
@@ -42,10 +43,12 @@ describe("conflict resolution workflow steps", () => {
 			git.rebaseUpstreamDevelop = jest.fn(() =>
 				Promise.resolve({ conflict: false })
 			);
-			return run.gitRebaseUpstreamDevelopWithConflictFlag(state).then(() => {
-				expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
-				expect(state.conflict).toEqual(false);
-			});
+			return run
+				.gitRebaseUpstreamDevelopWithConflictFlag(state)
+				.then(() => {
+					expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
+					expect(state.conflict).toEqual(false);
+				});
 		});
 
 		it("onError should resolve to true when conflict is in package.json", () => {
@@ -53,21 +56,31 @@ describe("conflict resolution workflow steps", () => {
 				return onError("error")();
 			});
 			git.status = jest.fn(() => Promise.resolve("package.json"));
-			return run.gitRebaseUpstreamDevelopWithConflictFlag(state).then(() => {
-				expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
-				expect(state.conflict).toEqual(true);
-			});
+			return run
+				.gitRebaseUpstreamDevelopWithConflictFlag(state)
+				.then(() => {
+					expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
+					expect(state.conflict).toEqual(true);
+				});
 		});
 
 		it("onError should reject with false when there isn't a conflict in package.json", () => {
 			git.rebaseUpstreamDevelop = jest.fn(({ onError }) => {
 				return onError("error")();
 			});
-			git.status = jest.fn(() => Promise.resolve("just some random string"));
-			return run.gitRebaseUpstreamDevelopWithConflictFlag(state).catch(() => {
-				expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
-				expect(state.conflict).toEqual(undefined);
-			});
+			git.status = jest.fn(() =>
+				Promise.resolve("just some random string")
+			);
+			return run
+				.gitRebaseUpstreamDevelopWithConflictFlag(state)
+				.catch(() => {
+					expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledWith(
+						"gitRebaseUpstreamDevelop"
+					);
+					expect(state.conflict).toEqual(undefined);
+				});
 		});
 	});
 
@@ -247,7 +260,9 @@ describe("conflict resolution workflow steps", () => {
 				scope: "@lk",
 				cr: {
 					chunks: {
-						'		"@lk/some-package": "2.5.0",': ['		"@lk/my-package": "11.2.0",']
+						'		"@lk/some-package": "2.5.0",': [
+							'		"@lk/my-package": "11.2.0",'
+						]
 					},
 					localChanges: {
 						"my-perfect-package": "1.1.1-something.3",
@@ -273,7 +288,9 @@ describe("conflict resolution workflow steps", () => {
 				scope: "@lk",
 				cr: {
 					chunks: {
-						'		"@lk/some-package": "2.5.0",': ['		"@lk/my-package": "11.2.0",']
+						'		"@lk/some-package": "2.5.0",': [
+							'		"@lk/my-package": "11.2.0",'
+						]
 					},
 					localChanges: {
 						"my-package": "11.2.0",
