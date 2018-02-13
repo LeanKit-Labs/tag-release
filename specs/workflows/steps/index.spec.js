@@ -913,6 +913,7 @@ describe("shared workflow steps", () => {
 			util.prompt = jest.fn(() => Promise.resolve({ proceed: true }));
 			logger.lg = jest.fn(arg => arg);
 			process.exit = jest.fn(() => {});
+			util.fileExists = jest.fn(() => true);
 		});
 
 		afterEach(() => {
@@ -926,14 +927,29 @@ describe("shared workflow steps", () => {
 			});
 		});
 
-		it("should call `git.diff` with the appropriate arguments", () => {
-			return run.gitDiff(state).then(() => {
-				expect(git.diff).toHaveBeenCalledTimes(1);
-				expect(git.diff).toHaveBeenCalledWith([
-					"./CHANGELOG.md",
-					"./package.json",
-					"./package-lock.json"
-				]);
+		describe(`when ./package-lock.json exists`, () => {
+			it("should call `git.diff` with the appropriate arguments", () => {
+				return run.gitDiff(state).then(() => {
+					expect(git.diff).toHaveBeenCalledTimes(1);
+					expect(git.diff).toHaveBeenCalledWith([
+						"./CHANGELOG.md",
+						"./package.json",
+						"./package-lock.json"
+					]);
+				});
+			});
+		});
+
+		describe(`when ./package-lock.json doesn't exists`, () => {
+			it("should call `git.diff` with the appropriate arguments", () => {
+				util.fileExists = jest.fn(() => false);
+				return run.gitDiff(state).then(() => {
+					expect(git.diff).toHaveBeenCalledTimes(1);
+					expect(git.diff).toHaveBeenCalledWith([
+						"./CHANGELOG.md",
+						"./package.json"
+					]);
+				});
 			});
 		});
 
