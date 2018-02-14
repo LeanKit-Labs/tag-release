@@ -1,5 +1,10 @@
 ## 5.x
 
+### 5.15.2
+
+* Removed diff on package-lock.json when it doesn't exist
+* Fixed errors messages provided to users, including some undefined messages
+
 ### 5.15.1
 
 * Fixed issues with conflicts during --pr
