@@ -60,6 +60,10 @@ To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`
 To add a remote origin run 'git remote add origin https://github.com/username/repo.git'
 
 You can double check by running 'git remote -v'`,
+	gitRebaseUpstreamDevelop: `It looks like there was some conflict(s) while trying to rebase with upstream/develop.
+
+Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue'. Tag-release
+will handle adding the conflicting files and continuing with the rebase.`,
 	gitRebaseInteractive: `It looks like there was some conflict(s) while trying to rebase with upstream/master.
 
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue'. Tag-release

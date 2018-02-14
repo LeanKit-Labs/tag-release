@@ -152,7 +152,7 @@ export function gitRebaseUpstreamDevelopWithConflictFlag(state) {
 				if (response.includes("package.json")) {
 					return Promise.resolve({ conflict: true });
 				}
-				return Promise.reject();
+				util.advise("gitRebaseUpstreamDevelop");
 			});
 	};
 

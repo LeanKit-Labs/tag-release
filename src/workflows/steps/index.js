@@ -26,7 +26,11 @@ export function gitFetchUpstream() {
 
 export function gitMergeUpstreamBranch(state) {
 	const { branch } = state;
-	return git.merge(`upstream/${branch}`, true, "gitMergeUpstreamBranch");
+	return git.merge({
+		branch,
+		remote: "upstream",
+		failHelpKey: "gitMergeUpstreamBranch"
+	});
 }
 
 export function gitMergeUpstreamMaster() {
@@ -313,29 +317,32 @@ export function updateChangelog(state) {
 
 export function gitDiff(state) {
 	const { configPath } = state;
+	const files = [CHANGELOG_PATH, configPath];
 
-	return git
-		.diff([CHANGELOG_PATH, configPath, PACKAGELOCKJSON_PATH])
-		.then(diff => {
-			logger.log(diff);
-			return util
-				.prompt([
-					{
-						type: "confirm",
-						name: "proceed",
-						message: "Are you OK with this diff?",
-						default: true
-					}
-				])
-				.then(answers => {
-					util.log.begin("confirming changes to commit");
-					util.log.end();
+	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+		files.push(PACKAGELOCKJSON_PATH);
+	}
 
-					if (!answers.proceed) {
-						process.exit(0); // eslint-disable-line no-process-exit
-					}
-				});
-		});
+	return git.diff(files).then(diff => {
+		logger.log(diff);
+		return util
+			.prompt([
+				{
+					type: "confirm",
+					name: "proceed",
+					message: "Are you OK with this diff?",
+					default: true
+				}
+			])
+			.then(answers => {
+				util.log.begin("confirming changes to commit");
+				util.log.end();
+
+				if (!answers.proceed) {
+					process.exit(0); // eslint-disable-line no-process-exit
+				}
+			});
+	});
 }
 
 export function gitAdd(state) {
@@ -779,15 +786,12 @@ export function gitCheckoutAndCreateBranch(state) {
 	const onError = err => {
 		return () => {
 			let failHelpKey = "gitCommandFailed";
-			if (
-				err.message.includes(
-					`A branch named '${branch}' already exists`
-				)
-			) {
+			const msg = `A branch named '${branch}' already exists`;
+			if (err.message.includes(msg)) {
 				failHelpKey = "gitBranchAlreadyExists";
 			}
 
-			util.advise(failHelpKey, { exit: true });
+			util.advise(failHelpKey);
 			return Promise.reject();
 		};
 	};
@@ -1224,7 +1228,11 @@ export function promptKeepBranchOrCreateNew(state) {
 				.branchExistsRemote({ branch, remote: "upstream" })
 				.then(exists => {
 					if (exists) {
-						return git.merge(`upstream/${branch}`, true);
+						return git.merge({
+							branch,
+							remote: "upstream",
+							failHelpKey: "gitMergeUpstreamBranch"
+						});
 					}
 				});
 		});
