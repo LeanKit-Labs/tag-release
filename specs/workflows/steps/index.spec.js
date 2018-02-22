@@ -1027,11 +1027,13 @@ describe("shared workflow steps", () => {
 		it("should call `git.add` with the appropriate arguments", () => {
 			return run.gitAdd(state).then(() => {
 				expect(git.add).toHaveBeenCalledTimes(1);
-				expect(git.add).toHaveBeenCalledWith([
-					"./CHANGELOG.md",
-					"./manifest.json",
-					"./package-lock.json"
-				]);
+				expect(git.add).toHaveBeenCalledWith({
+					files: [
+						"./CHANGELOG.md",
+						"./manifest.json",
+						"./package-lock.json"
+					]
+				});
 			});
 		});
 
@@ -1040,10 +1042,9 @@ describe("shared workflow steps", () => {
 				util.fileExists = jest.fn(() => false);
 				return run.gitAdd(state).then(() => {
 					expect(git.add).toHaveBeenCalledTimes(1);
-					expect(git.add).toHaveBeenCalledWith([
-						"./CHANGELOG.md",
-						"./manifest.json"
-					]);
+					expect(git.add).toHaveBeenCalledWith({
+						files: ["./CHANGELOG.md", "./manifest.json"]
+					});
 				});
 			});
 		});
@@ -1058,7 +1059,9 @@ describe("shared workflow steps", () => {
 		it("should call `git.add` with the appropriate arguments", () => {
 			return run.gitStageConfigFile(state).then(() => {
 				expect(git.add).toHaveBeenCalledTimes(1);
-				expect(git.add).toHaveBeenCalledWith(["./package.json"]);
+				expect(git.add).toHaveBeenCalledWith({
+					files: ["./package.json"]
+				});
 			});
 		});
 	});
@@ -1080,7 +1083,10 @@ describe("shared workflow steps", () => {
 			git.tag = jest.fn(() => Promise.resolve());
 			return run.gitTag(state).then(() => {
 				expect(git.tag).toHaveBeenCalledTimes(1);
-				expect(git.tag).toHaveBeenCalledWith("v1.2.3", "v1.2.3");
+				expect(git.tag).toHaveBeenCalledWith({
+					tag: "v1.2.3",
+					annotation: "v1.2.3"
+				});
 			});
 		});
 	});
@@ -1264,7 +1270,9 @@ describe("shared workflow steps", () => {
 				expect(git.push).toHaveBeenCalledTimes(1);
 				expect(git.push).toHaveBeenCalledWith({
 					branch: "feature-branch",
-					remote: "upstream"
+					remote: "upstream",
+					option: "-u",
+					includeTags: true
 				});
 			});
 		});
@@ -1877,7 +1885,9 @@ describe("shared workflow steps", () => {
 			git.checkoutTag = jest.fn(() => Promise.resolve());
 			return run.gitCheckoutTag(state).then(() => {
 				expect(git.checkoutTag).toHaveBeenCalledTimes(1);
-				expect(git.checkoutTag).toHaveBeenCalledWith("v1.1.1");
+				expect(git.checkoutTag).toHaveBeenCalledWith({
+					tag: "v1.1.1"
+				});
 			});
 		});
 
@@ -1886,7 +1896,9 @@ describe("shared workflow steps", () => {
 			git.checkoutTag = jest.fn(() => Promise.resolve());
 			return run.gitCheckoutTag(state).then(() => {
 				expect(git.checkoutTag).toHaveBeenCalledTimes(1);
-				expect(git.checkoutTag).toHaveBeenCalledWith("v1.1.1");
+				expect(git.checkoutTag).toHaveBeenCalledWith({
+					tag: "v1.1.1"
+				});
 			});
 		});
 	});
@@ -3266,17 +3278,16 @@ describe("shared workflow steps", () => {
 	});
 
 	describe("verifyRemotes", () => {
-		it("should call `util.exec` with the appropriate arguments to get the remotes", () => {
-			util.exec = jest.fn(() => Promise.resolve(""));
+		it("should call `git.remote` with the appropriate arguments to get the remotes", () => {
+			git.remote = jest.fn(() => Promise.resolve(""));
 			return run.verifyRemotes(state).then(() => {
-				expect(util.exec).toHaveBeenCalledTimes(1);
-				expect(util.exec).toHaveBeenCalledWith("git remote");
+				expect(git.remote).toHaveBeenCalledTimes(1);
 			});
 		});
 
 		describe("when setting state", () => {
 			it("should set origin and upstream to true", () => {
-				util.exec = jest.fn(() =>
+				git.remote = jest.fn(() =>
 					Promise.resolve("origin\nupstream\n")
 				);
 				return run.verifyRemotes(state).then(() => {
@@ -3288,7 +3299,7 @@ describe("shared workflow steps", () => {
 			});
 
 			it("should set origin and upstream to false", () => {
-				util.exec = jest.fn(() => Promise.resolve(""));
+				git.remote = jest.fn(() => Promise.resolve(""));
 				return run.verifyRemotes(state).then(() => {
 					expect(state.remotes).toHaveProperty("origin");
 					expect(state.remotes).toHaveProperty("upstream");
@@ -3298,7 +3309,7 @@ describe("shared workflow steps", () => {
 			});
 
 			it("should set origin to false and upstream to true", () => {
-				util.exec = jest.fn(() => Promise.resolve("upstream\n"));
+				git.remote = jest.fn(() => Promise.resolve("upstream\n"));
 				return run.verifyRemotes(state).then(() => {
 					expect(state.remotes).toHaveProperty("origin");
 					expect(state.remotes).toHaveProperty("upstream");
@@ -3308,7 +3319,7 @@ describe("shared workflow steps", () => {
 			});
 
 			it("should set origin to true and upstream to false", () => {
-				util.exec = jest.fn(() => Promise.resolve("origin\n"));
+				git.remote = jest.fn(() => Promise.resolve("origin\n"));
 				return run.verifyRemotes(state).then(() => {
 					expect(state.remotes).toHaveProperty("origin");
 					expect(state.remotes).toHaveProperty("upstream");
@@ -3878,8 +3889,8 @@ feature-last-branch`)
 		});
 
 		it("should resolve when deleteBranch fails", () => {
-			git.deleteBranch = jest.fn((...args) => {
-				return args[3]()();
+			git.deleteBranch = jest.fn(args => {
+				return args.onError()();
 			});
 			return run.deleteLocalFeatureBranch(state).then(() => {
 				expect(util.advise).toHaveBeenCalledTimes(0);
@@ -3984,9 +3995,10 @@ feature-last-branch`)
 		});
 
 		it("should resolve when deleteBranch fails", () => {
-			git.deleteBranchUpstream = jest.fn((...args) => {
-				return args[3]()();
+			git.deleteBranchUpstream = jest.fn(args => {
+				return args.onError()();
 			});
+
 			return run.deleteUpstreamFeatureBranch(state).then(() => {
 				expect(util.advise).toHaveBeenCalledTimes(0);
 			});

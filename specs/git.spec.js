@@ -162,7 +162,7 @@ describe("git", () => {
 				}
 			},
 			checkout: {
-				args: "feature-branch",
+				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: { args: "checkout feature-branch" }
 			},
 			checkoutMaster: {
@@ -181,7 +181,7 @@ describe("git", () => {
 				}
 			},
 			rebase: {
-				args: { branch: "upstream/feature-branch", onError },
+				args: { branch: "feature-branch", onError },
 				expectedRunCommandArgs: {
 					args: "rebase upstream/feature-branch --preserve-merges",
 					onError,
@@ -235,7 +235,7 @@ describe("git", () => {
 				}
 			},
 			add: {
-				args: ["CHANGELOG.md", "package.json"],
+				args: { files: ["CHANGELOG.md", "package.json"] },
 				expectedRunCommandArgs: {
 					args: "add CHANGELOG.md package.json"
 				}
@@ -253,34 +253,34 @@ describe("git", () => {
 				}
 			},
 			tag: {
-				args: "v1.0.0",
+				args: { tag: "v1.0.0" },
 				expectedRunCommandArgs: { args: `tag -a v1.0.0 -m v1.0.0` }
 			},
 			push: {
 				args: { branch: "feature-branch", remote: "upstream" },
 				expectedRunCommandArgs: {
-					args: "push -u upstream feature-branch --tags"
+					args: "push upstream feature-branch"
 				}
 			},
 			pushUpstreamMaster: {
 				expectedRunCommandArgs: {
-					args: "push -u upstream master",
+					args: "push upstream master",
 					failHelpKey: "gitPushUpstreamFeatureBranch"
 				}
 			},
 			pushUpstreamMasterWithTags: {
 				expectedRunCommandArgs: {
-					args: "push -u upstream master --tags"
+					args: "push upstream master --tags"
 				}
 			},
 			pushOriginMaster: {
-				expectedRunCommandArgs: { args: "push -u origin master" }
+				expectedRunCommandArgs: { args: "push origin master" }
 			},
 			pushOriginMasterWithTags: {
-				expectedRunCommandArgs: { args: "push -u origin master --tags" }
+				expectedRunCommandArgs: { args: "push origin master --tags" }
 			},
 			pushUpstreamDevelop: {
-				expectedRunCommandArgs: { args: "push -u upstream develop" }
+				expectedRunCommandArgs: { args: "push upstream develop" }
 			},
 			uncommittedChangesExist: {
 				expectedRunCommandArgs: {
@@ -316,7 +316,7 @@ describe("git", () => {
 				}
 			},
 			checkoutTag: {
-				args: "v1.1.1-blah.0",
+				args: { tag: "v1.1.1-blah.0" },
 				expectedRunCommandArgs: {
 					args:
 						"checkout -b promote-release-v1.1.1-blah.0 v1.1.1-blah.0"
@@ -343,12 +343,11 @@ describe("git", () => {
 				}
 			},
 			deleteBranch: {
-				args: "promote-release-v1.1.1-feature.0",
+				args: { branch: "promote-release-v1.1.1-feature.0" },
 				expectedRunCommandArgs: {
 					args: "branch -D promote-release-v1.1.1-feature.0",
-					logMessage: "",
 					onError: {},
-					showOutput: true
+					showOutput: undefined
 				}
 			},
 			stageFiles: {
@@ -403,7 +402,7 @@ describe("git", () => {
 				}
 			},
 			status: {
-				expectedRunCommandArgs: { args: `status`, showOutput: true }
+				expectedRunCommandArgs: { args: `status` }
 			},
 			getAllBranchesWithTag: {
 				args: "v1.1.1-tag.1",
@@ -412,10 +411,9 @@ describe("git", () => {
 				}
 			},
 			deleteBranchUpstream: {
-				args: "feature-branch",
+				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
 					args: `push upstream :feature-branch`,
-					showOutput: true,
 					logMessage: "",
 					onError: {}
 				}
@@ -430,7 +428,7 @@ describe("git", () => {
 			createRemoteBranch: {
 				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
-					args: `push upstream master:feature-branch`
+					args: `push -u upstream master:feature-branch`
 				}
 			},
 			getLastCommitText: {
@@ -443,8 +441,12 @@ describe("git", () => {
 			pushRemoteBranch: {
 				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
-					args: `push -u origin feature-branch`,
-					onError: {}
+					args: `push -u origin feature-branch`
+				}
+			},
+			remote: {
+				expectedRunCommandArgs: {
+					args: `remote`
 				}
 			}
 		};
@@ -474,13 +476,18 @@ describe("git", () => {
 
 		describe("alternate behaviors", () => {
 			it("should call `git.runCommand` with failHelpKey when provided in the call to `git.checkout`", () => {
-				return git.checkout("feature-branch", "test-key").then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "checkout feature-branch",
+				return git
+					.checkout({
+						branch: "feature-branch",
 						failHelpKey: "test-key"
+					})
+					.then(() => {
+						expect(git.runCommand).toHaveBeenCalledTimes(1);
+						expect(git.runCommand).toHaveBeenCalledWith({
+							args: "checkout feature-branch",
+							failHelpKey: "test-key"
+						});
 					});
-				});
 			});
 
 			it("should call `git.shortLog` with the appropriate options when a tag is given", () => {
@@ -517,17 +524,17 @@ describe("git", () => {
 				});
 			});
 
-			it(`should call "git.push" without tags when specified`, () => {
+			it(`should call "git.push" with tags when specified`, () => {
 				return git
 					.push({
 						branch: "feature-branch",
 						remote: "upstream",
-						includeTags: false
+						includeTags: true
 					})
 					.then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
 						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "push -u upstream feature-branch"
+							args: "push upstream feature-branch --tags"
 						});
 					});
 			});
@@ -551,7 +558,7 @@ describe("git", () => {
 			});
 
 			it(`should call "checkoutTag" with provided promotion tag`, () => {
-				return git.checkoutTag("v1.1.1").then(() => {
+				return git.checkoutTag({ tag: "v1.1.1" }).then(() => {
 					expect(git.runCommand).toHaveBeenCalledTimes(1);
 					expect(git.runCommand).toHaveBeenCalledWith({
 						args: "checkout -b promote-release-v1.1.1 v1.1.1"
@@ -561,12 +568,14 @@ describe("git", () => {
 
 			it(`should call "deleteBranch" with provided branch`, () => {
 				return git
-					.deleteBranch("promote-release-v1.1.1", false)
+					.deleteBranch({
+						branch: "promote-release-v1.1.1",
+						showOutput: false
+					})
 					.then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
 						expect(git.runCommand).toHaveBeenCalledWith({
 							args: "branch -D promote-release-v1.1.1",
-							logMessage: "",
 							onError: {},
 							showOutput: false
 						});
@@ -596,7 +605,8 @@ describe("git", () => {
 					.then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
 						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "rebase feature-branch --preserve-merges",
+							args:
+								"rebase upstream/feature-branch --preserve-merges",
 							failHelpKey: "test-key",
 							onError,
 							exitOnFail: true
@@ -609,7 +619,8 @@ describe("git", () => {
 				return git.rebaseUpstreamDevelop().then(() => {
 					expect(git.rebase).toHaveBeenCalledTimes(1);
 					expect(git.rebase).toHaveBeenCalledWith({
-						branch: "upstream/develop",
+						branch: "develop",
+						remote: "upstream",
 						failHelpKey: "gitRebaseUpstreamDevelop",
 						onError: undefined,
 						exitOnFail: true
@@ -622,7 +633,8 @@ describe("git", () => {
 				return git.rebaseUpstreamMaster().then(() => {
 					expect(git.rebase).toHaveBeenCalledTimes(1);
 					expect(git.rebase).toHaveBeenCalledWith({
-						branch: "upstream/master",
+						branch: "master",
+						remote: "upstream",
 						onError: undefined
 					});
 				});
@@ -639,7 +651,7 @@ describe("git", () => {
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
-								args: "push upstream develop:feature-branch"
+								args: "push -u upstream develop:feature-branch"
 							});
 						});
 				});
@@ -653,7 +665,7 @@ describe("git", () => {
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
-								args: "push origin master:feature-branch"
+								args: "push -u origin master:feature-branch"
 							});
 						});
 				});
@@ -669,7 +681,7 @@ describe("git", () => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
 								args:
-									"push origin feature-branch:feature-branch"
+									"push -u origin feature-branch:feature-branch"
 							});
 						});
 				});
@@ -762,8 +774,14 @@ describe("git", () => {
 					);
 					return git.removePromotionBranches().then(result => {
 						expect(result).toEqual([
-							"promote-release-v1.1.1-feature.0",
-							"promote-release-v1.1.1-feature.1"
+							{
+								branch: "promote-release-v1.1.1-feature.0",
+								showOutput: false
+							},
+							{
+								branch: "promote-release-v1.1.1-feature.1",
+								showOutput: false
+							}
 						]);
 						expect(git.deleteBranch).toHaveBeenCalledTimes(2);
 					});
