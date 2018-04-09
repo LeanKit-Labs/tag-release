@@ -1459,3 +1459,23 @@ export function updatePullRequestBody(state) {
 			return Promise.resolve();
 		});
 }
+
+export function gitCheckoutDevelopOrMaster(state) {
+	const { hasDevelopBranch } = state;
+
+	if (hasDevelopBranch) {
+		return git.checkoutDevelop();
+	}
+
+	return git.checkoutMaster();
+}
+
+export function gitRebaseUpstreamDevelopOrMaster(state) {
+	const { hasDevelopBranch } = state;
+
+	if (hasDevelopBranch) {
+		return git.rebaseUpstreamDevelop();
+	}
+
+	return git.rebaseUpstreamMaster();
+}
