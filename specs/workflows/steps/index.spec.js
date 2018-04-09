@@ -2326,6 +2326,21 @@ describe("shared workflow steps", () => {
 				expect(state.changeReason).toEqual("this is a reason");
 			});
 		});
+
+		it("should strip quotes from changeReason before saving to state", () => {
+			util.prompt = jest.fn(() =>
+				Promise.resolve({
+					changeReason: `this is a reason with "double quotes" and 'single quotes'`
+				})
+			);
+
+			return run.askChangeReason(state).then(() => {
+				expect(state).toHaveProperty("changeReason");
+				expect(state.changeReason).toEqual(
+					"this is a reason with double quotes and 'single quotes'"
+				);
+			});
+		});
 	});
 
 	describe("gitCheckoutAndCreateBranch", () => {

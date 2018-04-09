@@ -775,7 +775,7 @@ export function askChangeReason(state) {
 			}
 		])
 		.then(({ changeReason }) => {
-			state.changeReason = changeReason;
+			state.changeReason = changeReason.replace(/["]+/g, "");
 			return Promise.resolve();
 		});
 }
