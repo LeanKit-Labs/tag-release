@@ -775,7 +775,7 @@ export function askChangeReason(state) {
 			}
 		])
 		.then(({ changeReason }) => {
-			state.changeReason = changeReason;
+			state.changeReason = changeReason.replace(/["]+/g, "");
 			return Promise.resolve();
 		});
 }
@@ -1458,4 +1458,24 @@ export function updatePullRequestBody(state) {
 			});
 			return Promise.resolve();
 		});
+}
+
+export function gitCheckoutDevelopOrMaster(state) {
+	const { hasDevelopBranch } = state;
+
+	if (hasDevelopBranch) {
+		return git.checkoutDevelop();
+	}
+
+	return git.checkoutMaster();
+}
+
+export function gitRebaseUpstreamDevelopOrMaster(state) {
+	const { hasDevelopBranch } = state;
+
+	if (hasDevelopBranch) {
+		return git.rebaseUpstreamDevelop();
+	}
+
+	return git.rebaseUpstreamMaster();
 }

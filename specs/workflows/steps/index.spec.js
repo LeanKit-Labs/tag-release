@@ -2326,6 +2326,21 @@ describe("shared workflow steps", () => {
 				expect(state.changeReason).toEqual("this is a reason");
 			});
 		});
+
+		it("should strip quotes from changeReason before saving to state", () => {
+			util.prompt = jest.fn(() =>
+				Promise.resolve({
+					changeReason: `this is a reason with "double quotes" and 'single quotes'`
+				})
+			);
+
+			return run.askChangeReason(state).then(() => {
+				expect(state).toHaveProperty("changeReason");
+				expect(state.changeReason).toEqual(
+					"this is a reason with double quotes and 'single quotes'"
+				);
+			});
+		});
 	});
 
 	describe("gitCheckoutAndCreateBranch", () => {
@@ -4338,6 +4353,52 @@ feature-last-branch`)
 				util.prompt = jest.fn(() => Promise.resolve({ body: false }));
 				return run.updatePullRequestBody(state).then(() => {
 					expect(util.editFile).not.toHaveBeenCalled();
+				});
+			});
+		});
+	});
+
+	describe("gitCheckoutDevelopOrMaster", () => {
+		beforeEach(() => {
+			git.checkoutDevelop = jest.fn(() => Promise.resolve());
+			git.checkoutMaster = jest.fn(() => Promise.resolve());
+		});
+
+		describe("hasDevelopBranch", () => {
+			it("should call checkoutDevelop when true", () => {
+				state.hasDevelopBranch = true;
+				return run.gitCheckoutDevelopOrMaster(state).then(() => {
+					expect(git.checkoutDevelop).toHaveBeenCalledTimes(1);
+				});
+			});
+
+			it("should call checkoutMaster when false", () => {
+				state.hasDevelopBranch = false;
+				return run.gitCheckoutDevelopOrMaster(state).then(() => {
+					expect(git.checkoutMaster).toHaveBeenCalledTimes(1);
+				});
+			});
+		});
+	});
+
+	describe("gitRebaseUpstreamDevelopOrMaster", () => {
+		beforeEach(() => {
+			git.rebaseUpstreamDevelop = jest.fn(() => Promise.resolve());
+			git.rebaseUpstreamMaster = jest.fn(() => Promise.resolve());
+		});
+
+		describe("hasDevelopBranch", () => {
+			it("should call checkoutDevelop when true", () => {
+				state.hasDevelopBranch = true;
+				return run.gitRebaseUpstreamDevelopOrMaster(state).then(() => {
+					expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
+				});
+			});
+
+			it("should call checkoutMaster when false", () => {
+				state.hasDevelopBranch = false;
+				return run.gitRebaseUpstreamDevelopOrMaster(state).then(() => {
+					expect(git.rebaseUpstreamMaster).toHaveBeenCalledTimes(1);
 				});
 			});
 		});
