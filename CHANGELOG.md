@@ -1,5 +1,10 @@
 ## 5.x
 
+### 5.15.3
+
+* Fixed quotes breaking changeReason during --qa
+* Fixed updating local master or develop before creating upstream branch with --dev
+
 ### 5.15.2
 
 * Removed diff on package-lock.json when it doesn't exist
