@@ -281,11 +281,13 @@ export default {
 				if (semver.gt(latestFullVersion, currentVersion)) {
 					logger.log(
 						chalk.red(
-							`There is an updated ${
+							`tag-release@${chalk.yellow(
+								currentVersion
+							)}: There is an updated ${
 								prerelease ? "full " : ""
 							}version (${chalk.yellow(
 								latestFullVersion
-							)}) of tag-release available.`
+							)}) available.`
 						)
 					);
 					logUpgradeCommand(latestFullVersion);
@@ -294,11 +296,11 @@ export default {
 
 				logger.log(
 					chalk.green(
-						`You're running the latest ${
-							prerelease ? "pre-release " : ""
-						}version (${chalk.yellow(
+						`tag-release@${chalk.yellow(
 							currentVersion
-						)}) of tag-release.`
+						)}: You're running the latest ${
+							prerelease ? "pre-release " : ""
+						}version.`
 					)
 				);
 				return Promise.resolve();
@@ -308,9 +310,11 @@ export default {
 				if (semver.gt(latestPrereleaseVersion, currentVersion)) {
 					logger.log(
 						chalk.red(
-							`There is an updated pre-release version (${chalk.yellow(
+							`tag-release@${chalk.yellow(
+								currentVersion
+							)}: There is an updated pre-release version (${chalk.yellow(
 								latestPrereleaseVersion
-							)}) of tag-release available.`
+							)}) available.`
 						)
 					);
 					logUpgradeCommand(latestPrereleaseVersion);

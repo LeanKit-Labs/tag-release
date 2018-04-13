@@ -883,7 +883,7 @@ describe("utils", () => {
 					return util.detectVersion().then(() => {
 						expect(chalk.green).toHaveBeenCalledTimes(1);
 						expect(chalk.green).toHaveBeenCalledWith(
-							"You're running the latest version (4.5.0) of tag-release."
+							"tag-release@4.5.0: You're running the latest version."
 						);
 					});
 				});
@@ -898,14 +898,15 @@ describe("utils", () => {
 					return util.detectVersion().then(() => {
 						expect(chalk.red).toHaveBeenCalledTimes(2);
 						expect(chalk.red.mock.calls[0]).toEqual([
-							"There is an updated version (4.5.0) of tag-release available."
+							"tag-release@4.4.0: There is an updated version (4.5.0) available."
 						]);
 						expect(chalk.red.mock.calls[1]).toEqual([
 							"To upgrade, run 'npm install -g tag-release'"
 						]);
-						expect(chalk.yellow).toHaveBeenCalledTimes(2);
-						expect(chalk.yellow.mock.calls[0]).toEqual(["4.5.0"]);
-						expect(chalk.yellow.mock.calls[1]).toEqual([
+						expect(chalk.yellow).toHaveBeenCalledTimes(3);
+						expect(chalk.yellow.mock.calls[0]).toEqual(["4.4.0"]);
+						expect(chalk.yellow.mock.calls[1]).toEqual(["4.5.0"]);
+						expect(chalk.yellow.mock.calls[2]).toEqual([
 							"'npm install -g tag-release'"
 						]);
 					});
@@ -932,7 +933,7 @@ describe("utils", () => {
 					return util.detectVersion().then(() => {
 						expect(chalk.green).toHaveBeenCalledTimes(1);
 						expect(chalk.green).toHaveBeenCalledWith(
-							"You're running the latest pre-release version (7.7.7-pre.0) of tag-release."
+							"tag-release@7.7.7-pre.0: You're running the latest pre-release version."
 						);
 					});
 				});
@@ -947,16 +948,19 @@ describe("utils", () => {
 					return util.detectVersion().then(() => {
 						expect(chalk.red).toHaveBeenCalledTimes(2);
 						expect(chalk.red.mock.calls[0]).toEqual([
-							"There is an updated pre-release version (7.7.7-pre.0) of tag-release available."
+							"tag-release@7.7.1-pre.0: There is an updated pre-release version (7.7.7-pre.0) available."
 						]);
 						expect(chalk.red.mock.calls[1]).toEqual([
 							"To upgrade, run 'npm install -g tag-release@7.7.7-pre.0'"
 						]);
-						expect(chalk.yellow).toHaveBeenCalledTimes(2);
+						expect(chalk.yellow).toHaveBeenCalledTimes(3);
 						expect(chalk.yellow.mock.calls[0]).toEqual([
-							"7.7.7-pre.0"
+							"7.7.1-pre.0"
 						]);
 						expect(chalk.yellow.mock.calls[1]).toEqual([
+							"7.7.7-pre.0"
+						]);
+						expect(chalk.yellow.mock.calls[2]).toEqual([
 							"'npm install -g tag-release@7.7.7-pre.0'"
 						]);
 					});
@@ -978,16 +982,19 @@ describe("utils", () => {
 						return util.detectVersion().then(() => {
 							expect(chalk.red).toHaveBeenCalledTimes(2);
 							expect(chalk.red.mock.calls[0]).toEqual([
-								"There is an updated pre-release version (7.8.0-some-other-pre.0) of tag-release available."
+								"tag-release@7.7.1-pre.0: There is an updated pre-release version (7.8.0-some-other-pre.0) available."
 							]);
 							expect(chalk.red.mock.calls[1]).toEqual([
 								"To upgrade, run 'npm install -g tag-release@7.8.0-some-other-pre.0'"
 							]);
-							expect(chalk.yellow).toHaveBeenCalledTimes(2);
+							expect(chalk.yellow).toHaveBeenCalledTimes(3);
 							expect(chalk.yellow.mock.calls[0]).toEqual([
-								"7.8.0-some-other-pre.0"
+								"7.7.1-pre.0"
 							]);
 							expect(chalk.yellow.mock.calls[1]).toEqual([
+								"7.8.0-some-other-pre.0"
+							]);
+							expect(chalk.yellow.mock.calls[2]).toEqual([
 								"'npm install -g tag-release@7.8.0-some-other-pre.0'"
 							]);
 						});
@@ -1010,14 +1017,17 @@ describe("utils", () => {
 					return util.detectVersion().then(() => {
 						expect(chalk.red).toHaveBeenCalledTimes(2);
 						expect(chalk.red.mock.calls[0]).toEqual([
-							"There is an updated full version (7.8.0) of tag-release available."
+							"tag-release@7.7.7-pre.0: There is an updated full version (7.8.0) available."
 						]);
 						expect(chalk.red.mock.calls[1]).toEqual([
 							"To upgrade, run 'npm install -g tag-release'"
 						]);
-						expect(chalk.yellow).toHaveBeenCalledTimes(2);
-						expect(chalk.yellow.mock.calls[0]).toEqual(["7.8.0"]);
-						expect(chalk.yellow.mock.calls[1]).toEqual([
+						expect(chalk.yellow).toHaveBeenCalledTimes(3);
+						expect(chalk.yellow.mock.calls[0]).toEqual([
+							"7.7.7-pre.0"
+						]);
+						expect(chalk.yellow.mock.calls[1]).toEqual(["7.8.0"]);
+						expect(chalk.yellow.mock.calls[2]).toEqual([
 							"'npm install -g tag-release'"
 						]);
 					});
