@@ -16,6 +16,11 @@ import cowsay from "cowsay";
 import advise from "./advise.js";
 
 const GIT_CONFIG_COMMAND = "git config --global";
+const MAX_BUFFER_SIZE = 5000; // eslint-disable-line no-magic-numbers
+
+const getMaxBuffer = size => {
+	return 1024 * size; // eslint-disable-line no-magic-numbers
+};
 
 export default {
 	readFile(path) {
@@ -51,9 +56,10 @@ export default {
 	fileExists(path) {
 		return fs.existsSync(path);
 	},
-	exec(command) {
+	exec(command, size = MAX_BUFFER_SIZE) {
+		const maxBuffer = getMaxBuffer(size);
 		return new Promise((resolve, reject) =>
-			childProcess.exec(command, (error, stdout) => {
+			childProcess.exec(command, { maxBuffer }, (error, stdout) => {
 				if (error === null) {
 					resolve(stdout);
 				} else {

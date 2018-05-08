@@ -323,26 +323,40 @@ export function gitDiff(state) {
 		files.push(PACKAGELOCKJSON_PATH);
 	}
 
-	return git.diff(files).then(diff => {
-		logger.log(diff);
-		return util
-			.prompt([
-				{
-					type: "confirm",
-					name: "proceed",
-					message: "Are you OK with this diff?",
-					default: true
-				}
-			])
-			.then(answers => {
-				util.log.begin("confirming changes to commit");
-				util.log.end();
+	const onError = err => {
+		return () => {
+			let failHelpKey = "gitCommandFailed";
+			if (err.message.includes("maxBuffer exceeded")) {
+				failHelpKey = "maxBufferExceeded";
+			}
 
-				if (!answers.proceed) {
-					process.exit(0); // eslint-disable-line no-process-exit
-				}
-			});
-	});
+			util.advise(failHelpKey);
+			return Promise.reject();
+		};
+	};
+
+	return git
+		.diff({ files, maxBuffer: state.maxbuffer, onError })
+		.then(diff => {
+			logger.log(diff);
+			return util
+				.prompt([
+					{
+						type: "confirm",
+						name: "proceed",
+						message: "Are you OK with this diff?",
+						default: true
+					}
+				])
+				.then(answers => {
+					util.log.begin("confirming changes to commit");
+					util.log.end();
+
+					if (!answers.proceed) {
+						process.exit(0); // eslint-disable-line no-process-exit
+					}
+				});
+		});
 }
 
 export function gitAdd(state) {

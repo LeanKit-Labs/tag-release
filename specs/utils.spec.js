@@ -1,5 +1,5 @@
 jest.mock("child_process", () => ({
-	exec: jest.fn((command, cb) => {
+	exec: jest.fn((command, args, cb) => {
 		cb(null, "success");
 	}),
 	execSync: jest.fn(() => {
@@ -310,8 +310,23 @@ describe("utils", () => {
 				expect(cp.exec).toHaveBeenCalledTimes(1);
 				expect(cp.exec).toHaveBeenCalledWith(
 					`say "test"`,
+					{ maxBuffer: 5120000 },
 					expect.any(Function)
 				);
+			});
+		});
+
+		describe("when maxBuffer provided", () => {
+			it("should execute the given command with child_process.exec", () => {
+				const maxBuffer = 300;
+				return util.exec(`say "test"`, maxBuffer).then(() => {
+					expect(cp.exec).toHaveBeenCalledTimes(1);
+					expect(cp.exec).toHaveBeenCalledWith(
+						`say "test"`,
+						{ maxBuffer: 307200 },
+						expect.any(Function)
+					);
+				});
 			});
 		});
 
@@ -322,7 +337,7 @@ describe("utils", () => {
 		});
 
 		it("should reject if the call to child_process.exec fails", () => {
-			cp.exec = jest.fn((command, cb) => {
+			cp.exec = jest.fn((command, args, cb) => {
 				cb("nope", null);
 			});
 

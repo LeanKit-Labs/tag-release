@@ -28,8 +28,17 @@ describe("git", () => {
 			return git.runCommand({ args }).then(() => {
 				expect(util.exec).toHaveBeenCalledTimes(1);
 				expect(util.exec).toHaveBeenCalledWith(
-					"git fetch upstream master --tags"
+					"git fetch upstream master --tags",
+					undefined
 				);
+			});
+		});
+
+		it("should pass maxBuffer when provided", () => {
+			const args = "--version";
+			return git.runCommand({ args, maxBuffer: 123 }).then(() => {
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith("git --version", 123);
 			});
 		});
 
@@ -61,13 +70,35 @@ describe("git", () => {
 			});
 		});
 
-		it("should not log output when the `showOutput` option is false", () => {
-			return git
-				.runCommand({ args: "--version", showOutput: false })
-				.then(() => {
-					expect(util.log.begin).not.toHaveBeenCalled();
-					expect(util.log.end).not.toHaveBeenCalled();
+		describe("showOutput is false", () => {
+			it("should not log output", () => {
+				return git
+					.runCommand({ args: "--version", showOutput: false })
+					.then(() => {
+						expect(util.log.begin).not.toHaveBeenCalled();
+						expect(util.log.end).not.toHaveBeenCalled();
+					});
+			});
+
+			describe("maxBuffer is passed", () => {
+				it("should not log output when and pass buffer", () => {
+					return git
+						.runCommand({
+							args: "--version",
+							showOutput: false,
+							maxBuffer: 500
+						})
+						.then(() => {
+							expect(util.log.begin).not.toHaveBeenCalled();
+							expect(util.log.end).not.toHaveBeenCalled();
+							expect(util.exec).toHaveBeenCalled();
+							expect(util.exec).toHaveBeenCalledWith(
+								"git --version",
+								500
+							);
+						});
 				});
+			});
 		});
 
 		it("should use full command and not append `git` when the `fullCommand` option is true", () => {
@@ -75,7 +106,10 @@ describe("git", () => {
 				.runCommand({ args: "some command", fullCommand: true })
 				.then(() => {
 					expect(util.exec).toHaveBeenCalledTimes(1);
-					expect(util.exec).toHaveBeenCalledWith("some command");
+					expect(util.exec).toHaveBeenCalledWith(
+						"some command",
+						undefined
+					);
 				});
 		});
 
@@ -195,7 +229,7 @@ describe("git", () => {
 				}
 			},
 			diff: {
-				args: ["CHANGELOG.md", "package.json"],
+				args: { files: ["CHANGELOG.md", "package.json"] },
 				expectedRunCommandArgs: {
 					args: "diff --color CHANGELOG.md package.json"
 				}
