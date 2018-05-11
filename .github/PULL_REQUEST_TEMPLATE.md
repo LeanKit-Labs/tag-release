@@ -12,7 +12,7 @@
 - [ ] Tests Passed
 - [ ] Coverage Reviewed
 - [ ] Feature worked as expected
-- [ ] Added or updated flags to `--help` and `README.md`
+- [ ] Updated `src/help.js` and `README.md`
 - [ ] Is the version upgrade path clear for this change? (breaking vs minor vs
   patch)
 - [ ] Follow up work tracked in a card if needed

@@ -51,6 +51,7 @@ describe("help", () => {
     $ tag-release --pr myorg                # create host repo pr w/scope
     $ tag-release --dev                     # create origin branch into upstream branch pr
     $ tag-release --help --verbose          # display workflow diagram
+    $ tag-release --maxbuffer 3000          # override stdout maxBuffer
 
   Link to README: https://github.com/LeanKit-Labs/tag-release/blob/master/README.md
   LeanKit tag-release workflow: https://leankit-wiki.atlassian.net/wiki/spaces/PD/pages/96347952/tag-release+workflow
