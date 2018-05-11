@@ -1,5 +1,10 @@
 ## 5.x
 
+### 5.16.0
+
+* Updated version latest/updgrade tag-release message
+* Added override for stdout maxbuffer diff
+
 ### 5.15.3
 
 * Fixed quotes breaking changeReason during --qa
