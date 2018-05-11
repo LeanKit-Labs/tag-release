@@ -1,5 +1,13 @@
 ## 5.x
 
+### 5.18.0
+
+* Updated help.js
+
+### 5.17.0
+
+* Updated help.js
+
 ### 5.16.1
 
 * Updated CHANGELOG.md to include v5.16.0 changes
