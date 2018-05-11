@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.16.1
+
+* Updated CHANGELOG.md to include v5.16.0 changes
+
 ### 5.16.0
 
 * Updated version latest/updgrade tag-release message
