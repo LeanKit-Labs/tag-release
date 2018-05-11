@@ -13,12 +13,13 @@ const git = {
 		exitOnFail = false,
 		showError = true,
 		fullCommand = false,
+		maxBuffer,
 		onError
 	}) {
 		const command = fullCommand ? `${args}` : `git ${args}`;
 
 		if (!showOutput) {
-			return util.exec(command);
+			return util.exec(command, maxBuffer ? maxBuffer : undefined);
 		}
 
 		if (onError === undefined) {
@@ -33,7 +34,7 @@ const git = {
 
 		util.log.begin(logMessage || command);
 		return util
-			.exec(command)
+			.exec(command, maxBuffer ? maxBuffer : undefined)
 			.then(result => {
 				util.log.end();
 				return Promise.resolve(result);
@@ -181,9 +182,9 @@ const git = {
 		return git.runCommand({ args, logMessage: "Parsing git log" });
 	},
 
-	diff(files) {
+	diff({ files, maxBuffer, onError }) {
 		const args = `diff --color ${files.join(" ")}`;
-		return git.runCommand({ args });
+		return git.runCommand({ args, maxBuffer, onError });
 	},
 
 	add(files) {

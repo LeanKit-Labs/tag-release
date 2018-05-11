@@ -40,6 +40,11 @@ commander
 		"Path to JSON Configuration file (defaults to './package.json')",
 		/^.*\.json$/
 	)
+	.option(
+		"--maxbuffer <n>",
+		"Overrides the max stdout buffer of the child process. Size is 1024 * <n>.",
+		parseInt
+	)
 	.option("--verbose", "Console additional information")
 	.option("-p, --prerelease", "Create a pre-release")
 	.option("-i, --identifier <identifier>", "Identifier used for pre-release")

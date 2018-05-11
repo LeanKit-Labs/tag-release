@@ -99,7 +99,12 @@ You really shouldn't be seeing this message, so, if you are, ping someone in eng
 	npmInstall: `Sorry, we were unable to install and update your package-lock.json`,
 	remoteBranchOutOfDate: `It appears that your remote branch couldn't be updated.
 
-It's most likely because your base has changed so you may need to run 'git push -f remote branch-name'`
+It's most likely because your base has changed so you may need to run 'git push -f remote branch-name'`,
+	maxBufferExceeded: `It appears you have overflowed stdout. Congratulations!
+
+In order to override the maxBuffer limit run 'tag-relase --maxbuffer <n>' and provide it an appropriate buffer size.
+
+The default size is 1024 * 5000. Where 5000 is <n>.`
 };
 
 const MAXIMUM_WIDTH = 50;

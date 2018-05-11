@@ -931,11 +931,15 @@ describe("shared workflow steps", () => {
 			it("should call `git.diff` with the appropriate arguments", () => {
 				return run.gitDiff(state).then(() => {
 					expect(git.diff).toHaveBeenCalledTimes(1);
-					expect(git.diff).toHaveBeenCalledWith([
-						"./CHANGELOG.md",
-						"./package.json",
-						"./package-lock.json"
-					]);
+					expect(git.diff).toHaveBeenCalledWith({
+						files: [
+							"./CHANGELOG.md",
+							"./package.json",
+							"./package-lock.json"
+						],
+						maxBuffer: undefined,
+						onError: expect.any(Function)
+					});
 				});
 			});
 		});
@@ -945,10 +949,11 @@ describe("shared workflow steps", () => {
 				util.fileExists = jest.fn(() => false);
 				return run.gitDiff(state).then(() => {
 					expect(git.diff).toHaveBeenCalledTimes(1);
-					expect(git.diff).toHaveBeenCalledWith([
-						"./CHANGELOG.md",
-						"./package.json"
-					]);
+					expect(git.diff).toHaveBeenCalledWith({
+						files: ["./CHANGELOG.md", "./package.json"],
+						maxBuffer: undefined,
+						onError: expect.any(Function)
+					});
 				});
 			});
 		});
@@ -973,6 +978,41 @@ describe("shared workflow steps", () => {
 			return run.gitDiff(state).then(() => {
 				expect(process.exit).toHaveBeenCalledTimes(1);
 				expect(process.exit).toHaveBeenCalledWith(0);
+			});
+		});
+
+		describe("when handling error", () => {
+			beforeEach(() => {
+				git.diff = jest.fn((...args) => {
+					return args[0].onError({
+						message: `maxBuffer exceeded`
+					})();
+				});
+
+				util.advise = jest.fn(() => Promise.resolve());
+			});
+
+			it("should handle if maxBuffer exceeded", () => {
+				return run.gitDiff(state).catch(() => {
+					expect(git.diff).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledWith(
+						"maxBufferExceeded"
+					);
+				});
+			});
+
+			it("should handle generic error", () => {
+				git.diff = jest.fn((...args) => {
+					return args[0].onError({ message: "some generic error" })();
+				});
+				return run.gitDiff(state).catch(() => {
+					expect(git.diff).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledTimes(1);
+					expect(util.advise).toHaveBeenCalledWith(
+						"gitCommandFailed"
+					);
+				});
 			});
 		});
 	});

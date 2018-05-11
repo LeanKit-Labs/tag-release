@@ -38,10 +38,11 @@ Options:
   -p, --prerelease               Create a pre-release
   -i, --identifier <identifier>  Identifier used for pre-release
   --reset                        Reset repo to upstream master/develop branches
-	--promote [tag]                Promotes specified pre-release tag to an offical release
-	--continue                     Continues the rebase process of a tag promotion
+  --promote [tag]                Promotes specified pre-release tag to an offical release
+  --continue                     Continues the rebase process of a tag promotion
   --qa [scope]                   Create initial upstream branch for upstream repo
   --pr [scope]                   Update package.json to bump upstream repos and create a PR to develop
+  --maxbuffer <n>                Overrides the max stdout buffer of the child process. Size is 1024 * <n>.
 
 Examples:
 
@@ -64,6 +65,7 @@ Examples:
    $ tag-release --qa myorg
    $ tag-release --pr
    $ tag-release --pr myorg
+   $ tag-release --maxbuffer 5000
 ```
 
 ### Pre-releases
