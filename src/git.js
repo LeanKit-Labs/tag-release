@@ -45,14 +45,31 @@ const git = {
 			});
 	},
 
+	branch({ option, branch, tracking, tag, showOutput, logMessage, onError }) {
+		const args = `branch${option ? ` ${option}` : ""}${
+			branch ? ` ${branch}` : ""
+		}${tag ? ` tags/${tag}` : ""}${
+			tracking ? ` upstream/${tracking}` : ""
+		}`;
+
+		return git.runCommand(
+			logMessage && logMessage.length
+				? { args, showOutput, logMessage, onError }
+				: { args, showOutput, onError }
+		);
+	},
+
 	getRemoteBranches() {
-		const args = "branch -r";
-		return git.runCommand({ args });
+		return git.branch({
+			option: "-r"
+		});
 	},
 
 	getAllBranchesWithTag(tag) {
-		const args = `branch -a --contains tags/${tag}`;
-		return git.runCommand({ args });
+		return git.branch({
+			option: "-a --contains",
+			tag
+		});
 	},
 
 	fetch(failHelpKey) {
@@ -66,23 +83,34 @@ const git = {
 		return git.fetch("gitFetchUpstream");
 	},
 
-	checkout(branch, failHelpKey) {
-		const args = `checkout ${branch}`;
+	checkout({ branch, option, tag, failHelpKey, onError }) {
+		const args = `checkout ${option ? `${option} ` : ""}${branch}${
+			tag ? ` ${tag}` : ""
+		}`;
 		return git.runCommand(
-			failHelpKey && failHelpKey.length ? { args, failHelpKey } : { args }
+			failHelpKey && failHelpKey.length
+				? { args, failHelpKey, onError }
+				: { args, onError }
 		);
 	},
 
 	checkoutMaster() {
-		return git.checkout("master");
+		return git.checkout({
+			branch: "master"
+		});
 	},
 
 	checkoutDevelop() {
-		return git.checkout("develop", "gitCheckoutDevelop");
+		return git.checkout({
+			branch: "develop",
+			failHelpKey: "gitCheckoutDevelop"
+		});
 	},
 
 	checkoutBranch(branch) {
-		return git.checkout(branch);
+		return git.checkout({
+			branch
+		});
 	},
 
 	merge({ branch, remote, fastForwardOnly = true, failHelpKey }) {
@@ -94,8 +122,14 @@ const git = {
 		);
 	},
 
-	rebase({ branch, failHelpKey, onError, exitOnFail = true }) {
-		const args = `rebase ${branch} --preserve-merges`;
+	rebase({
+		branch,
+		remote = "upstream",
+		failHelpKey,
+		onError,
+		exitOnFail = true
+	}) {
+		const args = `rebase ${remote}/${branch} --preserve-merges`;
 		return git.runCommand(
 			failHelpKey && failHelpKey.length
 				? { args, failHelpKey, exitOnFail, onError }
@@ -182,13 +216,28 @@ const git = {
 		return git.runCommand({ args, logMessage: "Parsing git log" });
 	},
 
-	diff({ files, maxBuffer, onError }) {
-		const args = `diff --color ${files.join(" ")}`;
-		return git.runCommand({ args, maxBuffer, onError });
+	diff({
+		option = "--color",
+		files,
+		maxBuffer,
+		logMessage,
+		failHelpKey,
+		showError,
+		onError
+	}) {
+		const args = `diff ${option}${files ? ` ${files.join(" ")}` : ""}`;
+		return git.runCommand({
+			args,
+			maxBuffer,
+			logMessage,
+			failHelpKey,
+			showError,
+			onError
+		});
 	},
 
-	add(files) {
-		const args = `add ${files.join(" ")}`;
+	add({ option, files = [] }) {
+		const args = `add ${option ? `${option}` : ""}${files.join(" ")}`;
 		return git.runCommand({ args });
 	},
 
@@ -202,17 +251,28 @@ const git = {
 		return git.runCommand({ args });
 	},
 
-	tag(tag, annotation) {
+	tag({ tag, annotation }) {
 		const args = `tag -a ${tag} -m ${annotation || tag}`;
 		return git.runCommand({ args });
 	},
 
-	push({ branch, remote, includeTags = true, failHelpKey }) {
-		const args = `push -u ${remote} ${branch}${
-			includeTags ? " --tags" : ""
-		}`;
+	push({
+		branch,
+		remote,
+		base,
+		option,
+		includeTags,
+		logMessage,
+		failHelpKey,
+		onError
+	}) {
+		const args = `push ${option ? `${option} ` : ""}${remote} ${
+			base ? `${base}:${branch}` : `${branch}`
+		}${includeTags ? " --tags" : ""}`;
 		return git.runCommand(
-			failHelpKey && failHelpKey.length ? { args, failHelpKey } : { args }
+			failHelpKey && failHelpKey.length
+				? { args, failHelpKey, logMessage, onError }
+				: { args, logMessage, onError }
 		);
 	},
 
@@ -220,7 +280,6 @@ const git = {
 		return git.push({
 			branch: "master",
 			remote: "upstream",
-			includeTags: false,
 			failHelpKey: "gitPushUpstreamFeatureBranch"
 		});
 	},
@@ -236,8 +295,7 @@ const git = {
 	pushOriginMaster() {
 		return git.push({
 			branch: "master",
-			remote: "origin",
-			includeTags: false
+			remote: "origin"
 		});
 	},
 
@@ -252,8 +310,7 @@ const git = {
 	pushUpstreamDevelop() {
 		return git.push({
 			branch: "develop",
-			remote: "upstream",
-			includeTags: false
+			remote: "upstream"
 		});
 	},
 
@@ -274,10 +331,10 @@ const git = {
 	},
 
 	branchExists(branch) {
-		const args = `branch --list ${branch}`;
 		return git
-			.runCommand({
-				args,
+			.branch({
+				option: "--list",
+				branch,
 				logMessage: `Verifying branch: "${branch}" exists`
 			})
 			.then(result => {
@@ -300,9 +357,9 @@ const git = {
 	},
 
 	createLocalBranch(branch, tracking = branch) {
-		const args = `branch ${branch} upstream/${tracking}`;
-		return git.runCommand({
-			args,
+		return git.branch({
+			branch,
+			tracking,
 			logMessage: `Creating local branch "${branch}"`
 		});
 	},
@@ -315,9 +372,12 @@ const git = {
 		});
 	},
 
-	checkoutTag(tag) {
-		const args = `checkout -b promote-release-${tag} ${tag}`;
-		return git.runCommand({ args });
+	checkoutTag({ tag }) {
+		return git.checkout({
+			branch: `promote-release-${tag}`,
+			option: "-b",
+			tag
+		});
 	},
 
 	generateRebaseCommitLog() {
@@ -361,13 +421,18 @@ const git = {
 	},
 
 	rebaseUpstreamMaster({ onError } = {}) {
-		return git.rebase({ branch: "upstream/master", onError });
+		return git.rebase({
+			branch: "master",
+			remote: "upstream",
+			onError
+		});
 	},
 
 	getBranchList() {
-		const args = "branch";
 		return git
-			.runCommand({ args, logMessage: "Getting branch list" })
+			.branch({
+				logMessage: "Getting branch list"
+			})
 			.then(branches => {
 				branches = branches.trim();
 				branches = branches.split("\n");
@@ -382,29 +447,36 @@ const git = {
 				branch.includes("promote-release")
 			);
 			return Promise.all(
-				branches.map(branch => git.deleteBranch(branch, false))
+				branches.map(branch =>
+					git.deleteBranch({ branch, showOutput: false })
+				)
 			);
 		});
 	},
 
-	deleteBranch(branch, showOutput = true, logMessage = "", onError = {}) {
-		const args = `branch -D ${branch}`;
-		return git.runCommand({ args, showOutput, logMessage, onError });
+	deleteBranch({ branch, showOutput, logMessage = "", onError = {} }) {
+		return git.branch({
+			option: "-D",
+			branch,
+			showOutput,
+			logMessage,
+			onError
+		});
 	},
 
-	deleteBranchUpstream(
-		branch,
-		showOutput = true,
-		logMessage = "",
-		onError = {}
-	) {
-		const args = `push upstream :${branch}`;
-		return git.runCommand({ args, showOutput, logMessage, onError });
+	deleteBranchUpstream({ branch, logMessage = "", onError = {} }) {
+		return git.push({
+			branch: `:${branch}`,
+			remote: "upstream",
+			logMessage,
+			onError
+		});
 	},
 
 	stageFiles() {
-		const args = `add -u`;
-		return git.runCommand({ args });
+		return git.add({
+			option: "-u"
+		});
 	},
 
 	rebaseContinue() {
@@ -419,9 +491,8 @@ const git = {
 	},
 
 	checkConflictMarkers() {
-		const args = `diff --check`;
-		return git.runCommand({
-			args,
+		return git.diff({
+			option: "--check",
 			logMessage: "Verifying conflict resolution",
 			failHelpKey: "gitCheckConflictMarkers",
 			showError: false
@@ -429,17 +500,25 @@ const git = {
 	},
 
 	checkoutAndCreateBranch({ branch, onError = {} }) {
-		const args = `checkout -b ${branch}`;
-		return git.runCommand({ args, onError });
+		return git.checkout({
+			branch,
+			option: "-b",
+			onError
+		});
 	},
 
 	rebaseUpstreamBranch({ branch, onError }) {
-		return git.rebase({ branch: `upstream/${branch}`, onError });
+		return git.rebase({
+			branch,
+			remote: "upstream",
+			onError
+		});
 	},
 
 	rebaseUpstreamDevelop({ onError } = {}) {
 		return git.rebase({
-			branch: "upstream/develop",
+			branch: "develop",
+			remote: "upstream",
 			failHelpKey: "gitRebaseUpstreamDevelop",
 			exitOnFail: true,
 			onError
@@ -457,24 +536,37 @@ const git = {
 		return Promise.resolve();
 	},
 
-	status(showOutput = true) {
+	status(showOutput) {
 		const args = "status";
 		return git.runCommand({ args, showOutput });
 	},
 
 	createRemoteBranch({ branch, remote = "upstream", base = "master" }) {
-		const args = `push ${remote} ${base}:${branch}`;
-		return git.runCommand({ args });
+		return git.push({
+			branch,
+			option: "-u",
+			base,
+			remote
+		});
 	},
 
-	pushRemoteBranch({ branch, remote = "origin", onError = {} }) {
-		const args = `push -u ${remote} ${branch}`;
-		return git.runCommand({ args, onError });
+	pushRemoteBranch({ branch, remote = "origin", onError }) {
+		return git.push({
+			branch,
+			option: "-u",
+			remote,
+			onError
+		});
 	},
 
 	getLastCommitText(showOutput = false) {
 		const args = "log -1 --pretty=%B";
 		return git.runCommand({ args, showOutput });
+	},
+
+	remote() {
+		const args = "remote";
+		return git.runCommand({ args });
 	}
 };
 

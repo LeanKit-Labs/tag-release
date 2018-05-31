@@ -366,14 +366,13 @@ export function gitAdd(state) {
 	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
 		files.push(PACKAGELOCKJSON_PATH);
 	}
-
-	return git.add(files);
+	return git.add({ files });
 }
 
 export function gitStageConfigFile(state) {
 	const { configPath } = state;
 
-	return git.add([configPath]);
+	return git.add({ files: [configPath] });
 }
 
 export function gitCommit(state) {
@@ -386,7 +385,10 @@ export function gitTag(state) {
 	const { versions: { newVersion } } = state;
 	const tag = `v${newVersion}`;
 
-	return git.tag(tag, tag);
+	return git.tag({
+		tag,
+		annotation: tag
+	});
 }
 
 export function gitPushUpstreamMaster() {
@@ -460,7 +462,12 @@ export function gitPushUpstreamFeatureBranch(state) {
 	const { branch } = state;
 
 	if (branch && branch.length) {
-		return git.push({ branch, remote: "upstream" });
+		return git.push({
+			branch,
+			remote: "upstream",
+			option: "-u",
+			includeTags: true
+		});
 	}
 }
 
@@ -602,7 +609,7 @@ export function gitCheckoutTag(state) {
 		state.promote = `v${state.promote}`;
 	}
 
-	return git.checkoutTag(state.promote);
+	return git.checkoutTag({ tag: state.promote });
 }
 
 export function gitGenerateRebaseCommitLog() {
@@ -1081,8 +1088,7 @@ export function getTagsFromRepo(state, repositoryName) {
 }
 
 export function verifyRemotes(state) {
-	const command = `git remote`;
-	return util.exec(command).then(response => {
+	return git.remote().then(response => {
 		state.remotes = {
 			origin: {
 				exists: response.includes("origin")
@@ -1299,12 +1305,12 @@ export function deleteLocalFeatureBranch(state) {
 		return () => Promise.resolve();
 	};
 
-	return git.deleteBranch(
+	return git.deleteBranch({
 		branch,
-		true,
-		"Cleaning local feature branch",
+		showOutput: true,
+		logMessage: "Cleaning local feature branch",
 		onError
-	);
+	});
 }
 
 export function deleteUpstreamFeatureBranch(state) {
@@ -1314,12 +1320,11 @@ export function deleteUpstreamFeatureBranch(state) {
 		return () => Promise.resolve();
 	};
 
-	return git.deleteBranchUpstream(
+	return git.deleteBranchUpstream({
 		branch,
-		true,
-		"Cleaning upstream feature branch",
+		logMessage: "Cleaning upstream feature branch",
 		onError
-	);
+	});
 }
 
 export function saveDependencies(state) {
