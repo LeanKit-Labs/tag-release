@@ -44,20 +44,24 @@ jest.mock("../src/workflows/pr", () => {
 	};
 });
 
-import sequence from "when/sequence";
-import defaultWorkflow from "../src/workflows/default";
-import prereleaseWorkflow from "../src/workflows/pre-release";
-import resetWorkflow from "../src/workflows/reset";
-import promoteWorkflow, { promoteContinue } from "../src/workflows/promote";
-import continueWorkflow from "../src/workflows/continue";
-import qaWorkflow, { qaDefault, qaUpdate } from "../src/workflows/qa";
-import prWorkflow, {
+const sequence = require("when/sequence");
+const defaultWorkflow = require("../src/workflows/default");
+const prereleaseWorkflow = require("../src/workflows/pre-release");
+const resetWorkflow = require("../src/workflows/reset");
+const {
+	promoteWorkflow,
+	promoteContinue
+} = require("../src/workflows/promote");
+const continueWorkflow = require("../src/workflows/continue");
+const { qaWorkflow, qaDefault, qaUpdate } = require("../src/workflows/qa");
+const {
+	prWorkflow,
 	prRebaseSuccess,
 	prRebaseConflict,
 	prContinue
-} from "../src/workflows/pr";
-import devWorkflow from "../src/workflows/dev";
-import tagRelease from "../src/tag-release";
+} = require("../src/workflows/pr");
+const devWorkflow = require("../src/workflows/dev");
+const tagRelease = require("../src/tag-release");
 
 describe("tag-release", () => {
 	beforeEach(() => {

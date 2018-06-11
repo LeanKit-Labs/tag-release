@@ -1,11 +1,11 @@
-import {
+const {
 	gitStageFiles,
 	gitRebaseContinue,
 	getFeatureBranch
-} from "./steps/index";
-import { verifyConflictResolution } from "./steps/conflictResolution";
+} = require("./steps/index");
+const { verifyConflictResolution } = require("./steps/conflictResolution");
 
-export default [
+module.exports = [
 	verifyConflictResolution,
 	gitStageFiles,
 	gitRebaseContinue,

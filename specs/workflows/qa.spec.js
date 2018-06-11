@@ -1,9 +1,5 @@
-import {
-	default as qaWorkflow,
-	qaDefault,
-	qaUpdate
-} from "../../src/workflows/qa";
-import * as run from "../../src/workflows/steps";
+const { qaWorkflow, qaDefault, qaUpdate } = require("../../src/workflows/qa");
+const run = require("../../src/workflows/steps");
 
 describe("qa workflows", () => {
 	describe("qaWorkflow", () => {

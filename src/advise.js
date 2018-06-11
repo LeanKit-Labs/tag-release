@@ -1,4 +1,4 @@
-import wrap from "word-wrap";
+const wrap = require("word-wrap");
 
 const MESSAGES = {
 	gitCommandFailed: `Ooops. Hhmmm...that didn't work very well.
@@ -109,6 +109,6 @@ The default size is 1024 * 5000. Where 5000 is <n>.`
 
 const MAXIMUM_WIDTH = 50;
 
-export default function(key, width = MAXIMUM_WIDTH) {
+module.exports = function(key, width = MAXIMUM_WIDTH) {
 	return wrap(MESSAGES[key], { width, indent: "" });
-}
+};

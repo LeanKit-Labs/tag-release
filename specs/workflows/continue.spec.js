@@ -1,10 +1,12 @@
-import continueWorkflow from "../../src/workflows/continue";
-import {
+const continueWorkflow = require("../../src/workflows/continue");
+const {
 	gitStageFiles,
 	gitRebaseContinue,
 	getFeatureBranch
-} from "../../src/workflows/steps/index";
-import { verifyConflictResolution } from "../../src/workflows/steps/conflictResolution";
+} = require("../../src/workflows/steps/index");
+const {
+	verifyConflictResolution
+} = require("../../src/workflows/steps/conflictResolution");
 
 describe("continue workflow", () => {
 	it("should have all of the required steps", () => {

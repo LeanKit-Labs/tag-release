@@ -4,7 +4,8 @@
   "description": "Automatically Tag and Release Repositories",
   "main": "index.js",
   "bin": {
-    "tag-release": "./index.js"
+    "tag-release-next": "./bin/tag-release-next.js",
+    "tag-release": "./bin/tag-release.js"
   },
   "scripts": {
     "lint": "eslint --fix --ignore-path .gitignore ./",

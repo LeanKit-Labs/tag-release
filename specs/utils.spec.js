@@ -116,22 +116,22 @@ jest.mock("../package.json", () => ({
 	version: "1.1.1"
 }));
 
-import cp from "child_process";
-import fs from "fs";
-import { get } from "lodash";
-import detectIndent from "detect-indent";
-import inquirer from "inquirer";
-import editor from "editor";
-import logUpdate from "log-update";
-import logger from "better-console";
-import chalk from "chalk";
-import request from "request";
-import npm from "npm";
-import cowsay from "cowsay";
-import advise from "../src/advise.js"; // eslint-disable-line no-unused-vars
-import currentPackage from "../package.json";
-import util from "../src/utils";
-import { isPromise } from "./helpers";
+const cp = require("child_process");
+const fs = require("fs");
+const { get } = require("lodash");
+const detectIndent = require("detect-indent");
+const inquirer = require("inquirer");
+const editor = require("editor");
+const logUpdate = require("log-update");
+const logger = require("better-console");
+const chalk = require("chalk");
+const request = require("request");
+const npm = require("npm");
+const cowsay = require("cowsay");
+const advise = require("../src/advise.js"); // eslint-disable-line no-unused-vars
+const currentPackage = require("../package.json");
+const util = require("../src/utils");
+const { isPromise } = require("./helpers");
 
 const originalGithubUnauthorizedFunction = util.githubUnauthorized;
 

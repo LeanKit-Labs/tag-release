@@ -1,1495 +1,1450 @@
 /* eslint-disable max-lines */
-import git from "../../git";
-import util from "../../utils";
-import semver from "semver";
-import chalk from "chalk";
-import logger from "better-console";
-import GitHub from "github-api";
-import sequence from "when/sequence";
-import path from "path";
-import removeWords from "remove-words";
-import { set } from "lodash";
+const git = require("../../git");
+const util = require("../../utils");
+const semver = require("semver");
+const chalk = require("chalk");
+const logger = require("better-console");
+const GitHub = require("github-api");
+const sequence = require("when/sequence");
+const path = require("path");
+const removeWords = require("remove-words");
+const { set } = require("lodash");
 
 const CHANGELOG_PATH = "./CHANGELOG.md";
 const PACKAGELOCKJSON_PATH = "./package-lock.json";
 const PULL_REQUEST_TEMPLATE_PATH = "./.github/PULL_REQUEST_TEMPLATE.md";
 
-export function getFeatureBranch(state) {
-	return git.getCurrentBranch().then(branch => {
-		state.branch = branch.trim();
-	});
-}
-
-export function gitFetchUpstream() {
-	return git.fetchUpstream();
-}
-
-export function gitMergeUpstreamBranch(state) {
-	const { branch } = state;
-	return git.merge({
-		branch,
-		remote: "upstream",
-		failHelpKey: "gitMergeUpstreamBranch"
-	});
-}
-
-export function gitMergeUpstreamMaster() {
-	return git.mergeUpstreamMaster();
-}
-
-export function gitMergeUpstreamDevelop(state) {
-	const { hasDevelopBranch } = state;
-
-	return hasDevelopBranch ? git.mergeUpstreamDevelop() : Promise.resolve();
-}
-
-export function gitMergePromotionBranch(state) {
-	return git.mergePromotionBranch(state.promote);
-}
-
-export function checkHasDevelopBranch(state) {
-	return git
-		.getRemoteBranches()
-		.then(data => {
-			const branches = data.split("\n");
-			state.hasDevelopBranch = branches.some(branch =>
-				branch.trim().includes("upstream/develop")
-			);
-		})
-		.catch(() => {
-			state.hasDevelopBranch = false;
+const api = {
+	getFeatureBranch(state) {
+		return git.getCurrentBranch().then(branch => {
+			state.branch = branch.trim();
 		});
-}
-
-export function checkExistingPrereleaseIdentifier(state) {
-	const { identifier, currentVersion } = state;
-
-	if (identifier && identifier.length) {
-		return Promise.resolve();
-	}
-
-	const preReleaseRegEx = /^v?\d+\.\d+\.\d+-(.+)\.\d+$/;
-	const [, id] = preReleaseRegEx.exec(currentVersion) || [];
-
-	if (id) {
-		state.identifier = id;
-		state.release = "prerelease";
-	}
-
-	return Promise.resolve();
-}
-
-export function setPrereleaseIdentifier(state) {
-	const { identifier } = state;
-
-	const cleanIdentifier = targetIdentifier => {
-		return targetIdentifier.replace(/^(defect|feature|rework)-/, "");
-	};
-
-	if (identifier && identifier.length) {
-		state.identifier = cleanIdentifier(state.identifier);
-		return Promise.resolve();
-	}
-
-	return util
-		.prompt([
-			{
-				type: "input",
-				name: "prereleaseIdentifier",
-				message: "What is your pre-release Identifier?"
-			}
-		])
-		.then(response => {
-			state.identifier = cleanIdentifier(response.prereleaseIdentifier);
-			return Promise.resolve();
+	},
+	gitFetchUpstream() {
+		return git.fetchUpstream();
+	},
+	gitMergeUpstreamBranch(state) {
+		const { branch } = state;
+		return git.merge({
+			branch,
+			remote: "upstream",
+			failHelpKey: "gitMergeUpstreamBranch"
 		});
-}
+	},
+	gitMergeUpstreamMaster() {
+		return git.mergeUpstreamMaster();
+	},
+	gitMergeUpstreamDevelop(state) {
+		const { hasDevelopBranch } = state;
 
-export function selectPrereleaseToPromote(state) {
-	if (state.promote && typeof state.promote === "boolean") {
-		return git.getPrereleaseTagList().then(prereleases => {
-			return util
-				.prompt([
-					{
-						type: "list",
-						name: "prereleaseToPromote",
-						message: "Which pre-release do you wish to promote?",
-						choices: prereleases
-					}
-				])
-				.then(({ prereleaseToPromote: selectedPrerelease }) => {
-					state.promote = selectedPrerelease;
-					return Promise.resolve();
-				});
-		});
-	}
-
-	return Promise.resolve();
-}
-
-export function gitCheckoutMaster(state) {
-	state.branch = "master";
-	return git.checkoutMaster();
-}
-
-export function getCurrentBranchVersion(state) {
-	const { configPath } = state;
-
-	let pkg = {};
-	try {
-		pkg = util.readJSONFile(configPath);
-	} catch (err) {
-		util.advise("updateVersion");
-	}
-
-	state.currentVersion = pkg.version;
-	return Promise.resolve();
-}
-
-export function gitShortLog(state) {
-	const { currentVersion, prerelease } = state;
-
-	let contents = util.readFile(CHANGELOG_PATH);
-
-	if (contents.includes("### Next")) {
-		contents = contents.replace(/### Next([^#]+)/, (match, submatch) => {
-			state.log = submatch.trim();
-			return "";
-		});
-
-		util.writeFile(CHANGELOG_PATH, contents);
-	} else {
+		return hasDevelopBranch
+			? git.mergeUpstreamDevelop()
+			: Promise.resolve();
+	},
+	gitMergePromotionBranch(state) {
+		return git.mergePromotionBranch(state.promote);
+	},
+	checkHasDevelopBranch(state) {
 		return git
-			.getTagList()
-			.then(tags => {
-				let latestRelease = `v${currentVersion}`;
-				if (tags.length) {
-					if (!prerelease) {
-						tags = tags.filter(tag => !tag.includes("-"));
-						latestRelease = tags[tags.length - 1];
+			.getRemoteBranches()
+			.then(data => {
+				const branches = data.split("\n");
+				state.hasDevelopBranch = branches.some(branch =>
+					branch.trim().includes("upstream/develop")
+				);
+			})
+			.catch(() => {
+				state.hasDevelopBranch = false;
+			});
+	},
+	checkExistingPrereleaseIdentifier(state) {
+		const { identifier, currentVersion } = state;
+
+		if (identifier && identifier.length) {
+			return Promise.resolve();
+		}
+
+		const preReleaseRegEx = /^v?\d+\.\d+\.\d+-(.+)\.\d+$/;
+		const [, id] = preReleaseRegEx.exec(currentVersion) || [];
+
+		if (id) {
+			state.identifier = id;
+			state.release = "prerelease";
+		}
+
+		return Promise.resolve();
+	},
+	setPrereleaseIdentifier(state) {
+		const { identifier } = state;
+
+		const cleanIdentifier = targetIdentifier => {
+			return targetIdentifier.replace(/^(defect|feature|rework)-/, "");
+		};
+
+		if (identifier && identifier.length) {
+			state.identifier = cleanIdentifier(state.identifier);
+			return Promise.resolve();
+		}
+
+		return util
+			.prompt([
+				{
+					type: "input",
+					name: "prereleaseIdentifier",
+					message: "What is your pre-release Identifier?"
+				}
+			])
+			.then(response => {
+				state.identifier = cleanIdentifier(
+					response.prereleaseIdentifier
+				);
+				return Promise.resolve();
+			});
+	},
+	selectPrereleaseToPromote(state) {
+		if (state.promote && typeof state.promote === "boolean") {
+			return git.getPrereleaseTagList().then(prereleases => {
+				return util
+					.prompt([
+						{
+							type: "list",
+							name: "prereleaseToPromote",
+							message:
+								"Which pre-release do you wish to promote?",
+							choices: prereleases
+						}
+					])
+					.then(({ prereleaseToPromote: selectedPrerelease }) => {
+						state.promote = selectedPrerelease;
+						return Promise.resolve();
+					});
+			});
+		}
+
+		return Promise.resolve();
+	},
+	gitCheckoutMaster(state) {
+		state.branch = "master";
+		return git.checkoutMaster();
+	},
+	getCurrentBranchVersion(state) {
+		const { configPath } = state;
+
+		let pkg = {};
+		try {
+			pkg = util.readJSONFile(configPath);
+		} catch (err) {
+			util.advise("updateVersion");
+		}
+
+		state.currentVersion = pkg.version;
+		return Promise.resolve();
+	},
+	gitShortLog(state) {
+		const { currentVersion, prerelease } = state;
+
+		let contents = util.readFile(CHANGELOG_PATH);
+
+		if (contents.includes("### Next")) {
+			contents = contents.replace(
+				/### Next([^#]+)/,
+				(match, submatch) => {
+					state.log = submatch.trim();
+					return "";
+				}
+			);
+
+			util.writeFile(CHANGELOG_PATH, contents);
+		} else {
+			return git
+				.getTagList()
+				.then(tags => {
+					let latestRelease = `v${currentVersion}`;
+					if (tags.length) {
+						if (!prerelease) {
+							tags = tags.filter(tag => !tag.includes("-"));
+							latestRelease = tags[tags.length - 1];
+						}
 					}
+
+					return git.shortLog(latestRelease).then(data => {
+						data = data.trim().replace(/^(.+)$/gm, "* $1");
+						if (!data.length) {
+							util.advise("gitLog.log", { exit: false });
+						}
+
+						state.log = data;
+					});
+				})
+				.catch(() => util.advise("gitLog.log"));
+		}
+	},
+	previewLog({ log }) {
+		logger.log(`${chalk.bold("Here is a preview of your log:")}
+${chalk.green(log)}`);
+	},
+	askSemverJump(state) {
+		const { currentVersion, identifier, prerelease, release } = state;
+
+		// don't bother prompting if this information was already provided in the CLI options
+		if (release && release.length) {
+			return Promise.resolve();
+		}
+
+		const releaseChoices = [
+			{ name: "Major (Breaking Change)", value: "major", short: "l" },
+			{ name: "Minor (New Feature)", value: "minor", short: "m" },
+			{ name: "Patch (Bug Fix)", value: "patch", short: "s" }
+		];
+
+		const prereleaseChoices = [
+			{
+				name: "Pre-major (Breaking Change)",
+				value: "premajor",
+				short: "p-l"
+			},
+			{
+				name: "Pre-minor (New Feature)",
+				value: "preminor",
+				short: "p-m"
+			},
+			{ name: "Pre-patch (Bug Fix)", value: "prepatch", short: "p-s" },
+			{
+				name: "Pre-release (Bump existing Pre-release)",
+				value: "prerelease",
+				short: "p-r"
+			}
+		];
+
+		const choicesSource = prerelease ? prereleaseChoices : releaseChoices;
+
+		const choices = choicesSource.map(item => {
+			const version = `v${semver.inc(
+				currentVersion,
+				item.value,
+				identifier
+			)}`;
+			return Object.assign({}, item, {
+				name: `${item.name} ${chalk.gray(version)}`
+			});
+		});
+
+		return util
+			.prompt([
+				{
+					type: "list",
+					name: "release",
+					message: "What type of release is this?",
+					choices
+				}
+			])
+			.then(answers => {
+				state.release = answers.release;
+				return Promise.resolve();
+			});
+	},
+	updateLog(state) {
+		return util
+			.prompt([
+				{
+					type: "confirm",
+					name: "log",
+					message: "Would you like to edit your log?",
+					default: true
+				}
+			])
+			.then(answers => {
+				util.log.begin("log preview");
+				if (answers.log) {
+					return util.editFile(state.log).then(data => {
+						state.log = data.trim();
+						util.log.end();
+					});
 				}
 
-				return git.shortLog(latestRelease).then(data => {
-					data = data.trim().replace(/^(.+)$/gm, "* $1");
-					if (!data.length) {
-						util.advise("gitLog.log", { exit: false });
-					}
+				return Promise.resolve();
+			});
+	},
+	updateVersion(state) {
+		const { configPath, currentVersion, identifier, release } = state;
 
-					state.log = data;
-				});
-			})
-			.catch(() => util.advise("gitLog.log"));
-	}
-}
-
-export function previewLog({ log }) {
-	logger.log(`${chalk.bold("Here is a preview of your log:")}
-${chalk.green(log)}`);
-}
-
-export function askSemverJump(state) {
-	const { currentVersion, identifier, prerelease, release } = state;
-
-	// don't bother prompting if this information was already provided in the CLI options
-	if (release && release.length) {
-		return Promise.resolve();
-	}
-
-	const releaseChoices = [
-		{ name: "Major (Breaking Change)", value: "major", short: "l" },
-		{ name: "Minor (New Feature)", value: "minor", short: "m" },
-		{ name: "Patch (Bug Fix)", value: "patch", short: "s" }
-	];
-
-	const prereleaseChoices = [
-		{
-			name: "Pre-major (Breaking Change)",
-			value: "premajor",
-			short: "p-l"
-		},
-		{ name: "Pre-minor (New Feature)", value: "preminor", short: "p-m" },
-		{ name: "Pre-patch (Bug Fix)", value: "prepatch", short: "p-s" },
-		{
-			name: "Pre-release (Bump existing Pre-release)",
-			value: "prerelease",
-			short: "p-r"
+		let pkg = {};
+		try {
+			pkg = util.readJSONFile(configPath);
+		} catch (err) {
+			util.advise("updateVersion");
 		}
-	];
 
-	const choicesSource = prerelease ? prereleaseChoices : releaseChoices;
-
-	const choices = choicesSource.map(item => {
-		const version = `v${semver.inc(
-			currentVersion,
-			item.value,
+		const oldVersion = currentVersion;
+		const newVersion = (pkg.version = semver.inc(
+			oldVersion,
+			release,
 			identifier
-		)}`;
-		return Object.assign({}, item, {
-			name: `${item.name} ${chalk.gray(version)}`
-		});
-	});
+		));
 
-	return util
-		.prompt([
-			{
-				type: "list",
-				name: "release",
-				message: "What type of release is this?",
-				choices
-			}
-		])
-		.then(answers => {
-			state.release = answers.release;
-			return Promise.resolve();
-		});
-}
+		util.writeJSONFile(configPath, pkg);
+		state.versions = { oldVersion, newVersion };
+		state.currentVersion = newVersion;
+		logger.log(
+			chalk.green(
+				`Updated ${configPath} from ${oldVersion} to ${newVersion}`
+			)
+		);
+	},
+	updateChangelog(state) {
+		const { log, release, versions: { newVersion } } = state;
+		const version = `### ${newVersion}`;
+		const update = `${version}\n\n${log}`;
+		const wildcardVersion = newVersion.replace(/\.\d+\.\d+/, ".x");
+		const command = "update changelog";
 
-export function updateLog(state) {
-	return util
-		.prompt([
-			{
-				type: "confirm",
-				name: "log",
-				message: "Would you like to edit your log?",
-				default: true
-			}
-		])
-		.then(answers => {
-			util.log.begin("log preview");
-			if (answers.log) {
-				return util.editFile(state.log).then(data => {
-					state.log = data.trim();
-					util.log.end();
-				});
-			}
+		util.log.begin(command);
+		let contents = util.readFile(CHANGELOG_PATH);
 
-			return Promise.resolve();
-		});
-}
+		if (release === "major") {
+			contents = `## ${wildcardVersion}\n\n${update}\n\n${contents}`;
+		} else {
+			contents = contents
+				? contents.replace(/(## .*\n)/, `$1\n${update}\n`)
+				: `## ${wildcardVersion}\n\n${update}\n`;
+		}
 
-export function updateVersion(state) {
-	const { configPath, currentVersion, identifier, release } = state;
+		util.writeFile(CHANGELOG_PATH, contents);
+		util.log.end();
+	},
+	gitDiff(state) {
+		const { configPath } = state;
+		const files = [CHANGELOG_PATH, configPath];
 
-	let pkg = {};
-	try {
-		pkg = util.readJSONFile(configPath);
-	} catch (err) {
-		util.advise("updateVersion");
-	}
+		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+			files.push(PACKAGELOCKJSON_PATH);
+		}
 
-	const oldVersion = currentVersion;
-	const newVersion = (pkg.version = semver.inc(
-		oldVersion,
-		release,
-		identifier
-	));
+		const onError = err => {
+			return () => {
+				let failHelpKey = "gitCommandFailed";
+				if (err.message.includes("maxBuffer exceeded")) {
+					failHelpKey = "maxBufferExceeded";
+				}
 
-	util.writeJSONFile(configPath, pkg);
-	state.versions = { oldVersion, newVersion };
-	state.currentVersion = newVersion;
-	logger.log(
-		chalk.green(`Updated ${configPath} from ${oldVersion} to ${newVersion}`)
-	);
-}
-
-export function updateChangelog(state) {
-	const { log, release, versions: { newVersion } } = state;
-	const version = `### ${newVersion}`;
-	const update = `${version}\n\n${log}`;
-	const wildcardVersion = newVersion.replace(/\.\d+\.\d+/, ".x");
-	const command = "update changelog";
-
-	util.log.begin(command);
-	let contents = util.readFile(CHANGELOG_PATH);
-
-	if (release === "major") {
-		contents = `## ${wildcardVersion}\n\n${update}\n\n${contents}`;
-	} else {
-		contents = contents
-			? contents.replace(/(## .*\n)/, `$1\n${update}\n`)
-			: `## ${wildcardVersion}\n\n${update}\n`;
-	}
-
-	util.writeFile(CHANGELOG_PATH, contents);
-	util.log.end();
-}
-
-export function gitDiff(state) {
-	const { configPath } = state;
-	const files = [CHANGELOG_PATH, configPath];
-
-	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
-		files.push(PACKAGELOCKJSON_PATH);
-	}
-
-	const onError = err => {
-		return () => {
-			let failHelpKey = "gitCommandFailed";
-			if (err.message.includes("maxBuffer exceeded")) {
-				failHelpKey = "maxBufferExceeded";
-			}
-
-			util.advise(failHelpKey);
-			return Promise.reject();
+				util.advise(failHelpKey);
+				return Promise.reject();
+			};
 		};
-	};
 
-	return git
-		.diff({ files, maxBuffer: state.maxbuffer, onError })
-		.then(diff => {
-			logger.log(diff);
-			return util
-				.prompt([
-					{
-						type: "confirm",
-						name: "proceed",
-						message: "Are you OK with this diff?",
-						default: true
-					}
-				])
-				.then(answers => {
-					util.log.begin("confirming changes to commit");
-					util.log.end();
-
-					if (!answers.proceed) {
-						process.exit(0); // eslint-disable-line no-process-exit
-					}
-				});
-		});
-}
-
-export function gitAdd(state) {
-	const { configPath } = state;
-	const files = [CHANGELOG_PATH, configPath];
-
-	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
-		files.push(PACKAGELOCKJSON_PATH);
-	}
-
-	return git.add(files);
-}
-
-export function gitStageConfigFile(state) {
-	const { configPath } = state;
-
-	return git.add([configPath]);
-}
-
-export function gitCommit(state) {
-	const { versions: { newVersion } } = state;
-
-	return git.commit(newVersion);
-}
-
-export function gitTag(state) {
-	const { versions: { newVersion } } = state;
-	const tag = `v${newVersion}`;
-
-	return git.tag(tag, tag);
-}
-
-export function gitPushUpstreamMaster() {
-	return git.pushUpstreamMasterWithTags();
-}
-
-export function npmPublish(state) {
-	const { configPath, identifier, prerelease } = state;
-	if (configPath !== "./package.json") {
-		return null;
-	}
-
-	let command = "npm publish";
-	command =
-		prerelease && identifier ? `${command} --tag ${identifier}` : command;
-
-	if (!util.isPackagePrivate(configPath)) {
-		return util
-			.getPackageRegistry(configPath)
-			.then(registry => {
+		return git
+			.diff({ files, maxBuffer: state.maxbuffer, onError })
+			.then(diff => {
+				logger.log(diff);
 				return util
 					.prompt([
 						{
 							type: "confirm",
-							name: "publish",
-							message: `Do you want to publish this package to ${registry}?`,
+							name: "proceed",
+							message: "Are you OK with this diff?",
 							default: true
 						}
 					])
 					.then(answers => {
-						if (answers.publish) {
-							util.log.begin(command);
-							return util
-								.exec(command)
-								.then(() => util.log.end())
-								.catch(() =>
-									util.advise("npmPublish", { exit: false })
-								);
+						util.log.begin("confirming changes to commit");
+						util.log.end();
+
+						if (!answers.proceed) {
+							process.exit(0); // eslint-disable-line no-process-exit
 						}
 					});
-			})
-			.catch(err => logger.log(chalk.red(err)));
-	}
-}
-
-export function gitCheckoutDevelop(state) {
-	const { hasDevelopBranch } = state;
-
-	if (hasDevelopBranch) {
-		return git.checkoutDevelop();
-	}
-}
-
-export function gitMergeMaster(state) {
-	const { hasDevelopBranch } = state;
-
-	if (hasDevelopBranch) {
-		return git.mergeMaster();
-	}
-}
-
-export function gitPushUpstreamDevelop(state) {
-	const { hasDevelopBranch } = state;
-
-	if (hasDevelopBranch) {
-		return git.pushUpstreamDevelop();
-	}
-}
-
-export function gitPushUpstreamFeatureBranch(state) {
-	const { branch } = state;
-
-	if (branch && branch.length) {
-		return git.push({ branch, remote: "upstream" });
-	}
-}
-
-export function gitForcePushUpstreamFeatureBranch(state) {
-	const { branch } = state;
-
-	if (branch && branch.length) {
-		return git.push({ branch: `-f ${branch}`, remote: "upstream" });
-	}
-}
-
-export function gitPushOriginMaster() {
-	return git.pushOriginMaster();
-}
-
-export function githubUpstream(state) {
-	const command = `git config remote.upstream.url`;
-	return util
-		.exec(command)
-		.then(data => {
-			const [, owner, name] =
-				data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) || [];
-			state.github = Object.assign({}, state.github, {
-				upstream: { owner, name }
 			});
-		})
-		.catch(error => logger.log("error", error));
-}
+	},
+	gitAdd(state) {
+		const { configPath } = state;
+		const files = [CHANGELOG_PATH, configPath];
 
-export function githubOrigin(state) {
-	const command = `git config remote.origin.url`;
-	return util
-		.exec(command)
-		.then(data => {
-			set(state, "remotes.origin.url", data.trim());
-
-			const [, owner, name] =
-				data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) || [];
-			state.github = Object.assign({}, state.github, {
-				origin: { owner, name }
-			});
-		})
-		.catch(error => logger.log("error", error));
-}
-
-export function githubRelease(state) {
-	const {
-		github: { upstream: { owner: repositoryOwner, name: repositoryName } },
-		log,
-		prerelease,
-		token,
-		versions: { newVersion }
-	} = state;
-	const tagName = `v${newVersion}`;
-	const github = new GitHub({ token });
-	const defaultName = log
-		.split("\n")
-		.pop()
-		.replace("* ", "");
-	const questions = [
-		{
-			type: "input",
-			name: "name",
-			message: "What do you want to name the release?",
-			default: defaultName
-		}
-	];
-
-	return util.prompt(questions).then(answers => {
-		util.log.begin("release to github");
-		const repository = github.getRepo(repositoryOwner, repositoryName);
-		const args = {
-			tag_name: tagName, // eslint-disable-line
-			name: answers.name,
-			body: log,
-			prerelease
-		};
-
-		return repository
-			.createRelease(args)
-			.then(response => {
-				util.log.end();
-				logger.log(chalk.yellow.underline.bold(response.data.html_url));
-			})
-			.catch(err => logger.log(chalk.red(err)));
-	});
-}
-
-export function checkForUncommittedChanges(state) {
-	return git.uncommittedChangesExist().then(results => {
-		state.uncommittedChangesExist = results.length;
-		return Promise.resolve(state.uncommittedChangesExist);
-	});
-}
-
-export function gitStash() {
-	return git.stash().then(() => {
-		util.advise("gitStash", { exit: false });
-		return Promise.resolve();
-	});
-}
-
-export function stashIfUncommittedChangesExist(state) {
-	const { uncommittedChangesExist } = state;
-	if (uncommittedChangesExist) {
-		return gitStash();
-	}
-}
-
-export function verifyMasterBranch() {
-	return git.branchExists("master").then(exists => {
-		if (!exists) {
-			return git.createLocalBranch("master");
-		}
-	});
-}
-
-export function verifyDevelopBranch(state) {
-	return git.branchExists("develop").then(exists => {
-		if (!exists && state.hasDevelopBranch) {
-			return git.createLocalBranch("develop");
-		}
-	});
-}
-
-export function gitResetMaster() {
-	return git.resetBranch("master");
-}
-
-export function gitResetDevelop(state) {
-	if (state.hasDevelopBranch) {
-		return git.resetBranch("develop");
-	}
-	return Promise.resolve();
-}
-
-export function gitCheckoutTag(state) {
-	if (state.promote.charAt(0) !== "v") {
-		state.promote = `v${state.promote}`;
-	}
-
-	return git.checkoutTag(state.promote);
-}
-
-export function gitGenerateRebaseCommitLog() {
-	return git.generateRebaseCommitLog();
-}
-
-export function gitRemovePreReleaseCommits() {
-	return git.removePreReleaseCommits();
-}
-
-export function gitRebaseUpstreamMaster() {
-	return git.rebaseUpstreamMaster();
-}
-
-export function gitRemovePromotionBranches() {
-	return git.removePromotionBranches();
-}
-
-export function gitStageFiles() {
-	return git.stageFiles();
-}
-
-export function gitRebaseContinue() {
-	return git.rebaseContinue();
-}
-
-export function setPromote(state) {
-	state.promote = state.branch.slice(
-		state.branch.indexOf("v"),
-		state.branch.length
-	); // retrieve from promote-release branch, e.g. v1.1.1-feature.0
-	return Promise.resolve();
-}
-
-export function getPackageScope(state) {
-	const defaultOrProvidedScope = flag => {
-		return flag.charAt(0) === "@" ? `${flag}` : `@${flag}`;
-	};
-	const content = util.readJSONFile(path.join(__dirname, ".state.json"));
-	state.scope = content.scope ? content.scope : "@lk";
-
-	if (state.qa && typeof state.qa !== "boolean") {
-		state.scope = defaultOrProvidedScope(state.qa);
-	} else if (state.pr && typeof state.pr !== "boolean") {
-		state.scope = defaultOrProvidedScope(state.pr);
-	}
-
-	return Promise.resolve();
-}
-
-export function getScopedRepos(state) {
-	const { configPath, scope } = state;
-	try {
-		let content = {};
-		content = util.readJSONFile(configPath);
-
-		const getScopedDependencies = (dependencies = {}, packageScope) =>
-			Object.keys(dependencies).filter(key => key.includes(packageScope));
-
-		let repos = getScopedDependencies(content.devDependencies, scope);
-		repos = [
-			...repos,
-			...getScopedDependencies(content.dependencies, scope)
-		];
-		repos = repos.map(key => key.replace(`${scope}/`, ""));
-
-		if (repos.length === 0) {
-			util.advise("noPackagesInScope");
-			process.exit(0); // eslint-disable-line no-process-exit
+		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+			files.push(PACKAGELOCKJSON_PATH);
 		}
 
-		return Promise.resolve(repos);
-	} catch (err) {
-		util.advise("updateVersion");
-	}
+		return git.add(files);
+	},
+	gitStageConfigFile(state) {
+		const { configPath } = state;
 
-	return Promise.resolve();
-}
+		return git.add([configPath]);
+	},
+	gitCommit(state) {
+		const { versions: { newVersion } } = state;
 
-export function askReposToUpdate(state) {
-	return getScopedRepos(state).then(packages => {
+		return git.commit(newVersion);
+	},
+	gitTag(state) {
+		const { versions: { newVersion } } = state;
+		const tag = `v${newVersion}`;
+
+		return git.tag(tag, tag);
+	},
+	gitPushUpstreamMaster() {
+		return git.pushUpstreamMasterWithTags();
+	},
+	npmPublish(state) {
+		const { configPath, identifier, prerelease } = state;
+		if (configPath !== "./package.json") {
+			return null;
+		}
+
+		let command = "npm publish";
+		command =
+			prerelease && identifier
+				? `${command} --tag ${identifier}`
+				: command;
+
+		if (!util.isPackagePrivate(configPath)) {
+			return util
+				.getPackageRegistry(configPath)
+				.then(registry => {
+					return util
+						.prompt([
+							{
+								type: "confirm",
+								name: "publish",
+								message: `Do you want to publish this package to ${registry}?`,
+								default: true
+							}
+						])
+						.then(answers => {
+							if (answers.publish) {
+								util.log.begin(command);
+								return util
+									.exec(command)
+									.then(() => util.log.end())
+									.catch(() =>
+										util.advise("npmPublish", {
+											exit: false
+										})
+									);
+							}
+						});
+				})
+				.catch(err => logger.log(chalk.red(err)));
+		}
+	},
+	gitCheckoutDevelop(state) {
+		const { hasDevelopBranch } = state;
+
+		if (hasDevelopBranch) {
+			return git.checkoutDevelop();
+		}
+	},
+	gitMergeMaster(state) {
+		const { hasDevelopBranch } = state;
+
+		if (hasDevelopBranch) {
+			return git.mergeMaster();
+		}
+	},
+	gitPushUpstreamDevelop(state) {
+		const { hasDevelopBranch } = state;
+
+		if (hasDevelopBranch) {
+			return git.pushUpstreamDevelop();
+		}
+	},
+	gitPushUpstreamFeatureBranch(state) {
+		const { branch } = state;
+
+		if (branch && branch.length) {
+			return git.push({ branch, remote: "upstream" });
+		}
+	},
+	gitForcePushUpstreamFeatureBranch(state) {
+		const { branch } = state;
+
+		if (branch && branch.length) {
+			return git.push({ branch: `-f ${branch}`, remote: "upstream" });
+		}
+	},
+	gitPushOriginMaster() {
+		return git.pushOriginMaster();
+	},
+	githubUpstream(state) {
+		const command = `git config remote.upstream.url`;
 		return util
-			.prompt([
-				{
-					type: "checkbox",
-					name: "packagesToPromote",
-					message: "Which package(s) do you wish to update?",
-					choices: packages
-				}
-			])
-			.then(({ packagesToPromote }) => {
-				state.packages = packagesToPromote;
-				return Promise.resolve();
-			});
-	});
-}
+			.exec(command)
+			.then(data => {
+				const [, owner, name] =
+					data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) ||
+					[];
+				state.github = Object.assign({}, state.github, {
+					upstream: { owner, name }
+				});
+			})
+			.catch(error => logger.log("error", error));
+	},
+	githubOrigin(state) {
+		const command = `git config remote.origin.url`;
+		return util
+			.exec(command)
+			.then(data => {
+				set(state, "remotes.origin.url", data.trim());
 
-export function askVersion(state, dependency) {
-	const { pkg, version } = dependency;
-	return () => {
-		return getTagsFromRepo(state, pkg).then(tags => {
+				const [, owner, name] =
+					data.match(/github\.com[:/](.*)\/(.*(?=\.git)|(?:.*))/) ||
+					[];
+				state.github = Object.assign({}, state.github, {
+					origin: { owner, name }
+				});
+			})
+			.catch(error => logger.log("error", error));
+	},
+	githubRelease(state) {
+		const {
+			github: {
+				upstream: { owner: repositoryOwner, name: repositoryName }
+			},
+			log,
+			prerelease,
+			token,
+			versions: { newVersion }
+		} = state;
+		const tagName = `v${newVersion}`;
+		const github = new GitHub({ token });
+		const defaultName = log
+			.split("\n")
+			.pop()
+			.replace("* ", "");
+		const questions = [
+			{
+				type: "input",
+				name: "name",
+				message: "What do you want to name the release?",
+				default: defaultName
+			}
+		];
+
+		return util.prompt(questions).then(answers => {
+			util.log.begin("release to github");
+			const repository = github.getRepo(repositoryOwner, repositoryName);
+			const args = {
+				tag_name: tagName, // eslint-disable-line
+				name: answers.name,
+				body: log,
+				prerelease
+			};
+
+			return repository
+				.createRelease(args)
+				.then(response => {
+					util.log.end();
+					logger.log(
+						chalk.yellow.underline.bold(response.data.html_url)
+					);
+				})
+				.catch(err => logger.log(chalk.red(err)));
+		});
+	},
+	checkForUncommittedChanges(state) {
+		return git.uncommittedChangesExist().then(results => {
+			state.uncommittedChangesExist = results.length;
+			return Promise.resolve(state.uncommittedChangesExist);
+		});
+	},
+	gitStash() {
+		return git.stash().then(() => {
+			util.advise("gitStash", { exit: false });
+			return Promise.resolve();
+		});
+	},
+	stashIfUncommittedChangesExist(state) {
+		const { uncommittedChangesExist } = state;
+		if (uncommittedChangesExist) {
+			return api.gitStash();
+		}
+	},
+	verifyMasterBranch() {
+		return git.branchExists("master").then(exists => {
+			if (!exists) {
+				return git.createLocalBranch("master");
+			}
+		});
+	},
+	verifyDevelopBranch(state) {
+		return git.branchExists("develop").then(exists => {
+			if (!exists && state.hasDevelopBranch) {
+				return git.createLocalBranch("develop");
+			}
+		});
+	},
+	gitResetMaster() {
+		return git.resetBranch("master");
+	},
+	gitResetDevelop(state) {
+		if (state.hasDevelopBranch) {
+			return git.resetBranch("develop");
+		}
+		return Promise.resolve();
+	},
+	gitCheckoutTag(state) {
+		if (state.promote.charAt(0) !== "v") {
+			state.promote = `v${state.promote}`;
+		}
+
+		return git.checkoutTag(state.promote);
+	},
+	gitGenerateRebaseCommitLog() {
+		return git.generateRebaseCommitLog();
+	},
+	gitRemovePreReleaseCommits() {
+		return git.removePreReleaseCommits();
+	},
+	gitRebaseUpstreamMaster() {
+		return git.rebaseUpstreamMaster();
+	},
+	gitRemovePromotionBranches() {
+		return git.removePromotionBranches();
+	},
+	gitStageFiles() {
+		return git.stageFiles();
+	},
+	gitRebaseContinue() {
+		return git.rebaseContinue();
+	},
+	setPromote(state) {
+		state.promote = state.branch.slice(
+			state.branch.indexOf("v"),
+			state.branch.length
+		); // retrieve from promote-release branch, e.g. v1.1.1-feature.0
+		return Promise.resolve();
+	},
+	getPackageScope(state) {
+		const defaultOrProvidedScope = flag => {
+			return flag.charAt(0) === "@" ? `${flag}` : `@${flag}`;
+		};
+		const content = util.readJSONFile(path.join(__dirname, ".state.json"));
+		state.scope = content.scope ? content.scope : "@lk";
+
+		if (state.qa && typeof state.qa !== "boolean") {
+			state.scope = defaultOrProvidedScope(state.qa);
+		} else if (state.pr && typeof state.pr !== "boolean") {
+			state.scope = defaultOrProvidedScope(state.pr);
+		}
+
+		return Promise.resolve();
+	},
+	getScopedRepos(state) {
+		const { configPath, scope } = state;
+		try {
+			let content = {};
+			content = util.readJSONFile(configPath);
+
+			const getScopedDependencies = (dependencies = {}, packageScope) =>
+				Object.keys(dependencies).filter(key =>
+					key.includes(packageScope)
+				);
+
+			let repos = getScopedDependencies(content.devDependencies, scope);
+			repos = [
+				...repos,
+				...getScopedDependencies(content.dependencies, scope)
+			];
+			repos = repos.map(key => key.replace(`${scope}/`, ""));
+
+			if (repos.length === 0) {
+				util.advise("noPackagesInScope");
+				process.exit(0); // eslint-disable-line no-process-exit
+			}
+
+			return Promise.resolve(repos);
+		} catch (err) {
+			util.advise("updateVersion");
+		}
+
+		return Promise.resolve();
+	},
+	askReposToUpdate(state) {
+		return api.getScopedRepos(state).then(packages => {
 			return util
 				.prompt([
 					{
-						type: "list",
-						name: "tag",
-						message: `Update ${chalk.yellow(
-							pkg
-						)} from ${chalk.yellow(version)} to:`,
-						choices: tags
+						type: "checkbox",
+						name: "packagesToPromote",
+						message: "Which package(s) do you wish to update?",
+						choices: packages
 					}
 				])
-				.then(({ tag }) => {
-					return Promise.resolve({ pkg, version: tag });
+				.then(({ packagesToPromote }) => {
+					state.packages = packagesToPromote;
+					return Promise.resolve();
 				});
 		});
-	};
-}
+	},
+	askVersion(state, dependency) {
+		const { pkg, version } = dependency;
+		return () => {
+			return api.getTagsFromRepo(state, pkg).then(tags => {
+				return util
+					.prompt([
+						{
+							type: "list",
+							name: "tag",
+							message: `Update ${chalk.yellow(
+								pkg
+							)} from ${chalk.yellow(version)} to:`,
+							choices: tags
+						}
+					])
+					.then(({ tag }) => {
+						return Promise.resolve({ pkg, version: tag });
+					});
+			});
+		};
+	},
+	askVersions(state) {
+		const { dependencies } = state;
+		const prompts = dependencies.map(dependency =>
+			api.askVersion(state, dependency)
+		);
 
-export function askVersions(state) {
-	const { dependencies } = state;
-	const prompts = dependencies.map(dependency =>
-		askVersion(state, dependency)
-	);
+		return sequence(prompts).then(deps => {
+			state.dependencies = deps;
 
-	return sequence(prompts).then(deps => {
-		state.dependencies = deps;
+			const tagIdentifier = /^\d+\.\d+\.\d+-(.+)\.\d+$/;
+			state.identifier =
+				deps.reduce((memo, dep) => {
+					const { version } = dep;
+					const [tag, identifier] = tagIdentifier.exec(version) || [];
+					if (tag && identifier && !memo.includes(identifier)) {
+						memo.push(identifier);
+					}
+					return memo;
+				}, [])[0] || "";
 
-		const tagIdentifier = /^\d+\.\d+\.\d+-(.+)\.\d+$/;
-		state.identifier =
-			deps.reduce((memo, dep) => {
-				const { version } = dep;
-				const [tag, identifier] = tagIdentifier.exec(version) || [];
-				if (tag && identifier && !memo.includes(identifier)) {
-					memo.push(identifier);
+			if (!state.identifier) {
+				state.identifier = removeWords(state.changeReason).join("-");
+			}
+
+			return Promise.resolve();
+		});
+	},
+	askChangeType(state) {
+		const { keepBranch } = state;
+
+		if (keepBranch) {
+			return Promise.resolve();
+		}
+
+		return util
+			.prompt([
+				{
+					type: "list",
+					name: "changeType",
+					message: "What type of change is this work?",
+					choices: ["feature", "defect", "rework"]
 				}
-				return memo;
-			}, [])[0] || "";
+			])
+			.then(({ changeType }) => {
+				state.changeType = changeType;
+				return Promise.resolve();
+			});
+	},
+	changeReasonValidator(changeReason) {
+		return changeReason.trim().length > 0;
+	},
+	askChangeReason(state) {
+		return util
+			.prompt([
+				{
+					type: "input",
+					name: "changeReason",
+					message: `What is the reason for this change? ${chalk.red(
+						"(required)"
+					)}`,
+					validate: api.changeReasonValidator
+				}
+			])
+			.then(({ changeReason }) => {
+				state.changeReason = changeReason.replace(/["]+/g, "");
+				return Promise.resolve();
+			});
+	},
+	gitCheckoutAndCreateBranch(state) {
+		const { branch, keepBranch } = state;
 
-		if (!state.identifier) {
-			state.identifier = removeWords(state.changeReason).join("-");
+		const onError = err => {
+			return () => {
+				let failHelpKey = "gitCommandFailed";
+				const msg = `A branch named '${branch}' already exists`;
+				if (err.message.includes(msg)) {
+					failHelpKey = "gitBranchAlreadyExists";
+				}
+
+				util.advise(failHelpKey);
+				return Promise.reject();
+			};
+		};
+
+		const result = keepBranch
+			? () => Promise.resolve()
+			: () => git.checkoutAndCreateBranch({ branch, onError });
+
+		return result();
+	},
+	updateDependencies(state) {
+		const { dependencies, configPath, scope } = state;
+		try {
+			let content = {};
+			content = util.readJSONFile(configPath);
+
+			dependencies.forEach(item => {
+				const key = `${scope}/${item.pkg}`;
+				if (content.devDependencies && key in content.devDependencies) {
+					content.devDependencies[key] = item.version;
+				}
+				if (content.dependencies && key in content.dependencies) {
+					content.dependencies[key] = item.version;
+				}
+			});
+
+			util.writeJSONFile(configPath, content);
+		} catch (err) {
+			util.advise("updateVersion");
 		}
 
 		return Promise.resolve();
-	});
-}
-
-export function askChangeType(state) {
-	const { keepBranch } = state;
-
-	if (keepBranch) {
-		return Promise.resolve();
-	}
-
-	return util
-		.prompt([
-			{
-				type: "list",
-				name: "changeType",
-				message: "What type of change is this work?",
-				choices: ["feature", "defect", "rework"]
-			}
-		])
-		.then(({ changeType }) => {
-			state.changeType = changeType;
-			return Promise.resolve();
-		});
-}
-
-export function changeReasonValidator(changeReason) {
-	return changeReason.trim().length > 0;
-}
-
-export function askChangeReason(state) {
-	return util
-		.prompt([
-			{
-				type: "input",
-				name: "changeReason",
-				message: `What is the reason for this change? ${chalk.red(
-					"(required)"
-				)}`,
-				validate: changeReasonValidator
-			}
-		])
-		.then(({ changeReason }) => {
-			state.changeReason = changeReason.replace(/["]+/g, "");
-			return Promise.resolve();
-		});
-}
-
-export function gitCheckoutAndCreateBranch(state) {
-	const { branch, keepBranch } = state;
-
-	const onError = err => {
-		return () => {
-			let failHelpKey = "gitCommandFailed";
-			const msg = `A branch named '${branch}' already exists`;
-			if (err.message.includes(msg)) {
-				failHelpKey = "gitBranchAlreadyExists";
-			}
-
-			util.advise(failHelpKey);
-			return Promise.reject();
-		};
-	};
-
-	const result = keepBranch
-		? () => Promise.resolve()
-		: () => git.checkoutAndCreateBranch({ branch, onError });
-
-	return result();
-}
-
-export function updateDependencies(state) {
-	const { dependencies, configPath, scope } = state;
-	try {
-		let content = {};
-		content = util.readJSONFile(configPath);
-
+	},
+	gitCommitBumpMessage(state) {
+		const { dependencies, changeReason } = state;
+		const arr = [];
 		dependencies.forEach(item => {
-			const key = `${scope}/${item.pkg}`;
-			if (content.devDependencies && key in content.devDependencies) {
-				content.devDependencies[key] = item.version;
-			}
-			if (content.dependencies && key in content.dependencies) {
-				content.dependencies[key] = item.version;
-			}
+			arr.push(`${item.pkg} to ${item.version}`);
 		});
 
-		util.writeJSONFile(configPath, content);
-	} catch (err) {
-		util.advise("updateVersion");
-	}
+		state.bumpComment = `Bumped ${arr.join(", ")}: ${changeReason}`;
 
-	return Promise.resolve();
-}
-
-export function gitCommitBumpMessage(state) {
-	const { dependencies, changeReason } = state;
-	const arr = [];
-	dependencies.forEach(item => {
-		arr.push(`${item.pkg} to ${item.version}`);
-	});
-
-	state.bumpComment = `Bumped ${arr.join(", ")}: ${changeReason}`;
-
-	return git.commit(state.bumpComment);
-}
-
-export function verifyPackagesToPromote(state) {
-	const { packages } = state;
-	if (packages && packages.length === 0) {
-		util.advise("noPackages");
-		process.exit(0); // eslint-disable-line no-process-exit
-	}
-
-	return Promise.resolve();
-}
-
-export function gitRebaseUpstreamBranch(state) {
-	const { branch } = state;
-	return git.rebaseUpstreamBranch({ branch });
-}
-
-export function gitRebaseUpstreamDevelop() {
-	return git.rebaseUpstreamDevelop();
-}
-
-export function getReposFromBumpCommit(state) {
-	return git.getLatestCommitMessage().then(msg => {
-		const [, versions = "", reason = ""] =
-			msg.match(/Bumped (.*): (.*)/) || [];
-		const repoVersion = /([\w-]+) to ([\d.]+)/;
-		const results = versions.split(",").reduce((memo, bump) => {
-			const [, repo, version] = repoVersion.exec(bump) || [];
-			if (repo && version) {
-				memo.push(repo);
-			}
-			return memo;
-		}, []);
-
-		state.packages = results;
-		state.changeReason = reason;
+		return git.commit(state.bumpComment);
+	},
+	verifyPackagesToPromote(state) {
+		const { packages } = state;
+		if (packages && packages.length === 0) {
+			util.advise("noPackages");
+			process.exit(0); // eslint-disable-line no-process-exit
+		}
 
 		return Promise.resolve();
-	});
-}
+	},
+	gitRebaseUpstreamBranch(state) {
+		const { branch } = state;
+		return git.rebaseUpstreamBranch({ branch });
+	},
+	gitRebaseUpstreamDevelop() {
+		return git.rebaseUpstreamDevelop();
+	},
+	getReposFromBumpCommit(state) {
+		return git.getLatestCommitMessage().then(msg => {
+			const [, versions = "", reason = ""] =
+				msg.match(/Bumped (.*): (.*)/) || [];
+			const repoVersion = /([\w-]+) to ([\d.]+)/;
+			const results = versions.split(",").reduce((memo, bump) => {
+				const [, repo, version] = repoVersion.exec(bump) || [];
+				if (repo && version) {
+					memo.push(repo);
+				}
+				return memo;
+			}, []);
 
-export function gitAmendCommitBumpMessage(state) {
-	const { dependencies, changeReason } = state;
-	const arr = [];
-	dependencies.forEach(item => {
-		arr.push(`${item.pkg} to ${item.version}`);
-	});
+			state.packages = results;
+			state.changeReason = reason;
 
-	state.bumpComment = `Bumped ${arr.join(", ")}: ${changeReason}`;
-
-	return git.amend(state.bumpComment);
-}
-
-export function getCurrentDependencyVersions(state) {
-	const { packages, configPath, scope } = state;
-	state.dependencies = [];
-
-	try {
-		let content = {};
-		content = util.readJSONFile(configPath);
-
-		packages.forEach(pkg => {
-			const key = `${scope}/${pkg}`;
-			if (content.devDependencies && key in content.devDependencies) {
-				state.dependencies.push({
-					pkg,
-					version: content.devDependencies[key]
-				});
-			}
-			if (content.dependencies && key in content.dependencies) {
-				state.dependencies.push({
-					pkg,
-					version: content.dependencies[key]
-				});
-			}
-		});
-	} catch (err) {
-		util.advise("updateVersion");
-	}
-
-	return Promise.resolve();
-}
-
-export function createGithubPullRequestAganistDevelop(state) {
-	const {
-		github: { upstream: { owner: repositoryOwner, name: repositoryName } },
-		token,
-		branch
-	} = state;
-	const github = new GitHub({ token });
-	util.log.begin("creating pull request to github");
-
-	const repository = github.getRepo(repositoryOwner, repositoryName);
-
-	const [, , reason = ""] =
-		state.bumpComment.match(/Bumped (.*): (.*)/) || [];
-	const options = {
-		title: reason,
-		head: `${repositoryOwner}:${branch}`,
-		base: "develop"
-	};
-
-	return repository
-		.createPullRequest(options)
-		.then(response => {
-			const { number, html_url: url } = response.data; // eslint-disable-line camelcase
-			const issues = github.getIssues(repositoryOwner, repositoryName);
-			return issues
-				.editIssue(number, { labels: ["Ready to Merge Into Develop"] })
-				.then(() => {
-					util.log.end();
-					logger.log(chalk.yellow.underline.bold(url));
-				})
-				.catch(err => logger.log(chalk.red(err)));
-		})
-		.catch(err => logger.log(chalk.red(err)));
-}
-
-export function createGithubPullRequestAganistBranch(state) {
-	const {
-		github: {
-			upstream: {
-				owner: repositoryUpstreamOwner,
-				name: repositoryUpstreamName
-			},
-			origin: { owner: repositoryOriginOwner }
-		},
-		token,
-		branch,
-		pullRequest: { title, body }
-	} = state;
-	const github = new GitHub({ token });
-	util.log.begin("creating pull request to github");
-
-	const repository = github.getRepo(
-		repositoryUpstreamOwner,
-		repositoryUpstreamName
-	);
-
-	const options = {
-		title,
-		body,
-		head: `${repositoryOriginOwner}:${branch}`,
-		base: `${branch}`
-	};
-
-	return repository
-		.createPullRequest(options)
-		.then(response => {
-			const { number, html_url: url } = response.data; // eslint-disable-line camelcase
-			const issues = github.getIssues(
-				repositoryUpstreamOwner,
-				repositoryUpstreamName
-			);
-			return issues
-				.editIssue(number, { labels: ["Needs Developer Review"] })
-				.then(() => {
-					util.log.end();
-					logger.log(chalk.yellow.underline.bold(url));
-				})
-				.catch(err => logger.log(chalk.red(err)));
-		})
-		.catch(err => logger.log(chalk.red(err)));
-}
-
-export function saveState(state) {
-	const { scope } = state;
-	try {
-		const content = {
-			scope
-		};
-
-		util.writeJSONFile(path.join(__dirname, ".state.json"), content);
-	} catch (err) {
-		util.advise("saveState");
-	}
-
-	return Promise.resolve();
-}
-
-export function cleanUpTmpFiles() {
-	util.deleteFile(path.join(__dirname, ".state.json"));
-	util.deleteFile(path.join(__dirname, ".dependencies.json"));
-
-	return git.cleanUp();
-}
-
-export function promptBranchName(state) {
-	const { keepBranch } = state;
-
-	if (keepBranch) {
-		return Promise.resolve();
-	}
-	return util
-		.prompt([
-			{
-				type: "input",
-				name: "branchName",
-				message: "What do you want your branch name to be?",
-				default: `${state.changeType}-${state.identifier}`
-			}
-		])
-		.then(({ branchName }) => {
-			state.branch = branchName;
 			return Promise.resolve();
 		});
-}
+	},
+	gitAmendCommitBumpMessage(state) {
+		const { dependencies, changeReason } = state;
+		const arr = [];
+		dependencies.forEach(item => {
+			arr.push(`${item.pkg} to ${item.version}`);
+		});
 
-export function gitCheckoutBranch(state) {
-	return git.checkoutBranch(state.branch);
-}
+		state.bumpComment = `Bumped ${arr.join(", ")}: ${changeReason}`;
 
-export function getTagsFromRepo(state, repositoryName) {
-	const { github: { upstream: { owner: repositoryOwner } }, token } = state;
-	const github = new GitHub({ token });
+		return git.amend(state.bumpComment);
+	},
+	getCurrentDependencyVersions(state) {
+		const { packages, configPath, scope } = state;
+		state.dependencies = [];
 
-	const repository = github.getRepo(repositoryOwner, repositoryName);
+		try {
+			let content = {};
+			content = util.readJSONFile(configPath);
 
-	return repository
-		.listTags()
-		.then(response => {
-			const tags = response.data.map(item => {
-				return item.name.slice(1, item.name.length); // slice off the 'v' that is returned in the tag
+			packages.forEach(pkg => {
+				const key = `${scope}/${pkg}`;
+				if (content.devDependencies && key in content.devDependencies) {
+					state.dependencies.push({
+						pkg,
+						version: content.devDependencies[key]
+					});
+				}
+				if (content.dependencies && key in content.dependencies) {
+					state.dependencies.push({
+						pkg,
+						version: content.dependencies[key]
+					});
+				}
 			});
-			return tags;
-		})
-		.catch(err => logger.log(chalk.red(err)));
-}
+		} catch (err) {
+			util.advise("updateVersion");
+		}
 
-export function verifyRemotes(state) {
-	const command = `git remote`;
-	return util.exec(command).then(response => {
-		state.remotes = {
-			origin: {
-				exists: response.includes("origin")
+		return Promise.resolve();
+	},
+	createGithubPullRequestAganistDevelop(state) {
+		const {
+			github: {
+				upstream: { owner: repositoryOwner, name: repositoryName }
 			},
-			upstream: {
-				exists: response.includes("upstream")
-			}
+			token,
+			branch
+		} = state;
+		const github = new GitHub({ token });
+		util.log.begin("creating pull request to github");
+
+		const repository = github.getRepo(repositoryOwner, repositoryName);
+
+		const [, , reason = ""] =
+			state.bumpComment.match(/Bumped (.*): (.*)/) || [];
+		const options = {
+			title: reason,
+			head: `${repositoryOwner}:${branch}`,
+			base: "develop"
 		};
-	});
-}
 
-export function verifyOrigin(state) {
-	const { remotes: { origin } } = state;
-	util.log.begin("Verifying origin remote");
+		return repository
+			.createPullRequest(options)
+			.then(response => {
+				const { number, html_url: url } = response.data; // eslint-disable-line camelcase
+				const issues = github.getIssues(
+					repositoryOwner,
+					repositoryName
+				);
+				return issues
+					.editIssue(number, {
+						labels: ["Ready to Merge Into Develop"]
+					})
+					.then(() => {
+						util.log.end();
+						logger.log(chalk.yellow.underline.bold(url));
+					})
+					.catch(err => logger.log(chalk.red(err)));
+			})
+			.catch(err => logger.log(chalk.red(err)));
+	},
+	createGithubPullRequestAganistBranch(state) {
+		const {
+			github: {
+				upstream: {
+					owner: repositoryUpstreamOwner,
+					name: repositoryUpstreamName
+				},
+				origin: { owner: repositoryOriginOwner }
+			},
+			token,
+			branch,
+			pullRequest: { title, body }
+		} = state;
+		const github = new GitHub({ token });
+		util.log.begin("creating pull request to github");
 
-	if (!origin.exists) {
-		util.advise("gitOrigin");
-	}
+		const repository = github.getRepo(
+			repositoryUpstreamOwner,
+			repositoryUpstreamName
+		);
 
-	util.log.end();
-	return Promise.resolve();
-}
+		const options = {
+			title,
+			body,
+			head: `${repositoryOriginOwner}:${branch}`,
+			base: `${branch}`
+		};
 
-export function verifyUpstream(state) {
-	const {
-		github: { origin: { owner: repositoryOwner, name: repositoryName } },
-		token,
-		remotes: { origin, upstream }
-	} = state;
-	util.log.begin("Verifying upstream remote");
+		return repository
+			.createPullRequest(options)
+			.then(response => {
+				const { number, html_url: url } = response.data; // eslint-disable-line camelcase
+				const issues = github.getIssues(
+					repositoryUpstreamOwner,
+					repositoryUpstreamName
+				);
+				return issues
+					.editIssue(number, { labels: ["Needs Developer Review"] })
+					.then(() => {
+						util.log.end();
+						logger.log(chalk.yellow.underline.bold(url));
+					})
+					.catch(err => logger.log(chalk.red(err)));
+			})
+			.catch(err => logger.log(chalk.red(err)));
+	},
+	saveState(state) {
+		const { scope } = state;
+		try {
+			const content = {
+				scope
+			};
 
-	if (!upstream.exists) {
-		util.log.end();
-		util.log.begin("Creating upstream remote");
+			util.writeJSONFile(path.join(__dirname, ".state.json"), content);
+		} catch (err) {
+			util.advise("saveState");
+		}
+
+		return Promise.resolve();
+	},
+	cleanUpTmpFiles() {
+		util.deleteFile(path.join(__dirname, ".state.json"));
+		util.deleteFile(path.join(__dirname, ".dependencies.json"));
+
+		return git.cleanUp();
+	},
+	promptBranchName(state) {
+		const { keepBranch } = state;
+
+		if (keepBranch) {
+			return Promise.resolve();
+		}
+		return util
+			.prompt([
+				{
+					type: "input",
+					name: "branchName",
+					message: "What do you want your branch name to be?",
+					default: `${state.changeType}-${state.identifier}`
+				}
+			])
+			.then(({ branchName }) => {
+				state.branch = branchName;
+				return Promise.resolve();
+			});
+	},
+	gitCheckoutBranch(state) {
+		return git.checkoutBranch(state.branch);
+	},
+	getTagsFromRepo(state, repositoryName) {
+		const {
+			github: { upstream: { owner: repositoryOwner } },
+			token
+		} = state;
 		const github = new GitHub({ token });
 
 		const repository = github.getRepo(repositoryOwner, repositoryName);
 
 		return repository
-			.getDetails()
+			.listTags()
 			.then(response => {
-				let parentSshUrl;
-				if (response.data.hasOwnProperty("parent")) {
-					parentSshUrl = origin.url.includes("https")
-						? response.data.parent.svn_url
-						: response.data.parent.ssh_url;
-				} else {
-					parentSshUrl = origin.url.includes("https")
-						? response.data.svn_url
-						: response.data.ssh_url;
-				}
-				const command = `git remote add upstream ${parentSshUrl}`;
-				return util
-					.exec(command)
-					.then(util.log.end())
-					.catch(err => logger.log(chalk.red(err)));
+				const tags = response.data.map(item => {
+					return item.name.slice(1, item.name.length); // slice off the 'v' that is returned in the tag
+				});
+				return tags;
 			})
 			.catch(err => logger.log(chalk.red(err)));
-	}
+	},
+	verifyRemotes(state) {
+		const command = `git remote`;
+		return util.exec(command).then(response => {
+			state.remotes = {
+				origin: {
+					exists: response.includes("origin")
+				},
+				upstream: {
+					exists: response.includes("upstream")
+				}
+			};
+		});
+	},
+	verifyOrigin(state) {
+		const { remotes: { origin } } = state;
+		util.log.begin("Verifying origin remote");
 
-	util.log.end();
-	return Promise.resolve();
-}
+		if (!origin.exists) {
+			util.advise("gitOrigin");
+		}
 
-export function verifyChangelog() {
-	util.log.begin("Verifying CHANGELOG.md");
-	if (util.fileExists(CHANGELOG_PATH)) {
 		util.log.end();
 		return Promise.resolve();
-	}
-	util.log.end();
+	},
+	verifyUpstream(state) {
+		const {
+			github: {
+				origin: { owner: repositoryOwner, name: repositoryName }
+			},
+			token,
+			remotes: { origin, upstream }
+		} = state;
+		util.log.begin("Verifying upstream remote");
 
-	return util
-		.prompt([
-			{
-				type: "confirm",
-				name: "changelog",
-				message: "Would you like us to create a CHANGELOG.md?",
-				default: true
-			}
-		])
-		.then(answers => {
-			if (answers.changelog) {
-				util.log.begin("Creating CHANGELOG.md");
-				util.log.end();
-				return util.writeFile(CHANGELOG_PATH, "");
-			}
+		if (!upstream.exists) {
+			util.log.end();
+			util.log.begin("Creating upstream remote");
+			const github = new GitHub({ token });
 
-			return Promise.resolve();
-		});
-}
+			const repository = github.getRepo(repositoryOwner, repositoryName);
 
-export function verifyPackageJson(state) {
-	const { configPath } = state;
-	util.log.begin("Verifying package.json");
-	util.log.end();
-
-	if (!util.fileExists(configPath)) {
-		util.advise("missingPackageJson");
-	}
-
-	return Promise.resolve();
-}
-
-export function isPackagePrivate(state) {
-	const { configPath } = state;
-	if (util.isPackagePrivate(configPath)) {
-		util.advise("privatePackage");
-	}
-
-	return Promise.resolve();
-}
-
-export function checkNewCommits(state) {
-	const { currentVersion } = state;
-	const latestRelease = `v${currentVersion}`;
-
-	return git.shortLog(latestRelease).then(data => {
-		state.log = data;
-	});
-}
-
-export function useCurrentBranchOrCheckoutDevelop(state) {
-	const { log, hasDevelopBranch } = state;
-
-	let result;
-	if (log.length) {
-		result = () => Promise.resolve();
-	} else if (hasDevelopBranch) {
-		result = () => git.checkoutDevelop();
-	} else {
-		result = () => util.advise("qaNoChangeNoDevelop");
-	}
-
-	return result();
-}
-
-export function promptKeepBranchOrCreateNew(state) {
-	const { log, branch } = state;
-
-	if (!log.length) {
-		return Promise.resolve();
-	}
-
-	return util
-		.prompt([
-			{
-				type: "confirm",
-				name: "keep",
-				message: "Would you like to use your current branch?",
-				default: true
-			}
-		])
-		.then(answers => {
-			state.keepBranch = answers.keep;
-			return git
-				.branchExistsRemote({ branch, remote: "upstream" })
-				.then(exists => {
-					if (exists) {
-						return git.merge({
-							branch,
-							remote: "upstream",
-							failHelpKey: "gitMergeUpstreamBranch"
-						});
+			return repository
+				.getDetails()
+				.then(response => {
+					let parentSshUrl;
+					if (response.data.hasOwnProperty("parent")) {
+						parentSshUrl = origin.url.includes("https")
+							? response.data.parent.svn_url
+							: response.data.parent.ssh_url;
+					} else {
+						parentSshUrl = origin.url.includes("https")
+							? response.data.svn_url
+							: response.data.ssh_url;
 					}
-				});
-		});
-}
-
-export function findBranchByTag(state) {
-	const { promote: tag } = state;
-	return git.getAllBranchesWithTag(tag).then(response => {
-		const regexp = /[^*/ ]+$/;
-
-		let branches = response.split("\n").filter(b => b);
-
-		branches = branches.reduce((memo, branch) => {
-			branch = branch.trim();
-			const [myBranch] = regexp.exec(branch) || [];
-
-			if (!memo.includes(myBranch)) {
-				memo.push(myBranch);
-			}
-
-			return memo;
-		}, []);
-
-		if (branches.length > 1) {
-			return util
-				.prompt([
-					{
-						type: "list",
-						name: "branch",
-						message:
-							"Which branch contains the tag you are promoting?",
-						choices: branches
-					}
-				])
-				.then(({ branch }) => {
-					state.branchToRemove = branch;
-					return Promise.resolve();
-				});
+					const command = `git remote add upstream ${parentSshUrl}`;
+					return util
+						.exec(command)
+						.then(util.log.end())
+						.catch(err => logger.log(chalk.red(err)));
+				})
+				.catch(err => logger.log(chalk.red(err)));
 		}
 
-		state.branchToRemove = branches[0];
+		util.log.end();
 		return Promise.resolve();
-	});
-}
+	},
+	verifyChangelog() {
+		util.log.begin("Verifying CHANGELOG.md");
+		if (util.fileExists(CHANGELOG_PATH)) {
+			util.log.end();
+			return Promise.resolve();
+		}
+		util.log.end();
 
-export function deleteLocalFeatureBranch(state) {
-	const { branchToRemove: branch } = state;
+		return util
+			.prompt([
+				{
+					type: "confirm",
+					name: "changelog",
+					message: "Would you like us to create a CHANGELOG.md?",
+					default: true
+				}
+			])
+			.then(answers => {
+				if (answers.changelog) {
+					util.log.begin("Creating CHANGELOG.md");
+					util.log.end();
+					return util.writeFile(CHANGELOG_PATH, "");
+				}
 
-	const onError = () => {
-		return () => Promise.resolve();
-	};
+				return Promise.resolve();
+			});
+	},
+	verifyPackageJson(state) {
+		const { configPath } = state;
+		util.log.begin("Verifying package.json");
+		util.log.end();
 
-	return git.deleteBranch(
-		branch,
-		true,
-		"Cleaning local feature branch",
-		onError
-	);
-}
+		if (!util.fileExists(configPath)) {
+			util.advise("missingPackageJson");
+		}
 
-export function deleteUpstreamFeatureBranch(state) {
-	const { branchToRemove: branch } = state;
+		return Promise.resolve();
+	},
+	isPackagePrivate(state) {
+		const { configPath } = state;
+		if (util.isPackagePrivate(configPath)) {
+			util.advise("privatePackage");
+		}
 
-	const onError = () => {
-		return () => Promise.resolve();
-	};
+		return Promise.resolve();
+	},
+	checkNewCommits(state) {
+		const { currentVersion } = state;
+		const latestRelease = `v${currentVersion}`;
 
-	return git.deleteBranchUpstream(
-		branch,
-		true,
-		"Cleaning upstream feature branch",
-		onError
-	);
-}
+		return git.shortLog(latestRelease).then(data => {
+			state.log = data;
+		});
+	},
+	useCurrentBranchOrCheckoutDevelop(state) {
+		const { log, hasDevelopBranch } = state;
 
-export function saveDependencies(state) {
-	const { dependencies, changeReason } = state;
+		let result;
+		if (log.length) {
+			result = () => Promise.resolve();
+		} else if (hasDevelopBranch) {
+			result = () => git.checkoutDevelop();
+		} else {
+			result = () => util.advise("qaNoChangeNoDevelop");
+		}
 
-	try {
-		const content = {
-			dependencies,
-			changeReason
+		return result();
+	},
+	promptKeepBranchOrCreateNew(state) {
+		const { log, branch } = state;
+
+		if (!log.length) {
+			return Promise.resolve();
+		}
+
+		return util
+			.prompt([
+				{
+					type: "confirm",
+					name: "keep",
+					message: "Would you like to use your current branch?",
+					default: true
+				}
+			])
+			.then(answers => {
+				state.keepBranch = answers.keep;
+				return git
+					.branchExistsRemote({ branch, remote: "upstream" })
+					.then(exists => {
+						if (exists) {
+							return git.merge({
+								branch,
+								remote: "upstream",
+								failHelpKey: "gitMergeUpstreamBranch"
+							});
+						}
+					});
+			});
+	},
+	findBranchByTag(state) {
+		const { promote: tag } = state;
+		return git.getAllBranchesWithTag(tag).then(response => {
+			const regexp = /[^*/ ]+$/;
+
+			let branches = response.split("\n").filter(b => b);
+
+			branches = branches.reduce((memo, branch) => {
+				branch = branch.trim();
+				const [myBranch] = regexp.exec(branch) || [];
+
+				if (!memo.includes(myBranch)) {
+					memo.push(myBranch);
+				}
+
+				return memo;
+			}, []);
+
+			if (branches.length > 1) {
+				return util
+					.prompt([
+						{
+							type: "list",
+							name: "branch",
+							message:
+								"Which branch contains the tag you are promoting?",
+							choices: branches
+						}
+					])
+					.then(({ branch }) => {
+						state.branchToRemove = branch;
+						return Promise.resolve();
+					});
+			}
+
+			state.branchToRemove = branches[0];
+			return Promise.resolve();
+		});
+	},
+	deleteLocalFeatureBranch(state) {
+		const { branchToRemove: branch } = state;
+
+		const onError = () => {
+			return () => Promise.resolve();
 		};
 
-		util.writeJSONFile(path.join(__dirname, ".dependencies.json"), content);
-	} catch (err) {
-		util.advise("saveDependencies");
-	}
+		return git.deleteBranch(
+			branch,
+			true,
+			"Cleaning local feature branch",
+			onError
+		);
+	},
+	deleteUpstreamFeatureBranch(state) {
+		const { branchToRemove: branch } = state;
 
-	return Promise.resolve();
-}
+		const onError = () => {
+			return () => Promise.resolve();
+		};
 
-export function getDependenciesFromFile(state) {
-	const content = util.readJSONFile(
-		path.join(__dirname, ".dependencies.json")
-	);
+		return git.deleteBranchUpstream(
+			branch,
+			true,
+			"Cleaning upstream feature branch",
+			onError
+		);
+	},
+	saveDependencies(state) {
+		const { dependencies, changeReason } = state;
 
-	if (content) {
-		Object.assign(state, content);
-	}
+		try {
+			const content = {
+				dependencies,
+				changeReason
+			};
 
-	return Promise.resolve();
-}
-
-export function updatePackageLockJson(state) {
-	const { dependencies, currentVersion, scope } = state;
-
-	if (util.fileExists(PACKAGELOCKJSON_PATH)) {
-		if (currentVersion) {
-			let pkg = {};
-			pkg = util.readJSONFile(PACKAGELOCKJSON_PATH);
-			pkg.version = currentVersion;
-			util.writeJSONFile(PACKAGELOCKJSON_PATH, pkg);
-		}
-
-		if (dependencies) {
-			const installs = dependencies.map(dep =>
-				npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
+			util.writeJSONFile(
+				path.join(__dirname, ".dependencies.json"),
+				content
 			);
-			return sequence(installs).then(() => Promise.resolve());
+		} catch (err) {
+			util.advise("saveDependencies");
 		}
-	}
-	return Promise.resolve();
-}
 
-export function npmInstallPackage(dependency) {
-	const command = `npm install ${dependency} -E`;
+		return Promise.resolve();
+	},
+	getDependenciesFromFile(state) {
+		const content = util.readJSONFile(
+			path.join(__dirname, ".dependencies.json")
+		);
 
-	return () => {
-		util.log.begin(command);
-		return util
-			.exec(command)
-			.then(() => {
-				util.log.end();
-				return Promise.resolve();
-			})
-			.catch(() => {
-				util.log.end();
-				util.advise("npmInstall", { exit: false });
-			});
-	};
-}
-
-export function gitCreateBranchUpstream(state) {
-	const { hasDevelopBranch, branch } = state;
-	const remote = "upstream";
-
-	return git.branchExistsRemote({ branch, remote }).then(exists => {
-		if (!exists) {
-			const base = hasDevelopBranch ? "develop" : "master";
-			return git.createRemoteBranch({ branch, remote, base });
+		if (content) {
+			Object.assign(state, content);
 		}
-	});
-}
 
-export function gitCreateBranchOrigin(state) {
-	const { branch } = state;
-	const remote = "origin";
+		return Promise.resolve();
+	},
+	updatePackageLockJson(state) {
+		const { dependencies, currentVersion, scope } = state;
 
-	const onError = () => {
-		util.advise("remoteBranchOutOfDate", { exit: false });
-		return () => Promise.resolve();
-	};
-
-	return git.branchExistsRemote({ branch, remote }).then(exists => {
-		if (!exists) {
-			return git.createRemoteBranch({
-				branch,
-				remote: "origin",
-				base: branch
-			});
-		}
-		return git.pushRemoteBranch({ branch, remote, onError });
-	});
-}
-
-export function updatePullRequestTitle(state) {
-	return git.getLastCommitText().then(commitText => {
-		const questions = [
-			{
-				type: "input",
-				name: "title",
-				message: "What is the title of your pull request?",
-				default: commitText.trim()
+		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+			if (currentVersion) {
+				let pkg = {};
+				pkg = util.readJSONFile(PACKAGELOCKJSON_PATH);
+				pkg.version = currentVersion;
+				util.writeJSONFile(PACKAGELOCKJSON_PATH, pkg);
 			}
-		];
 
-		return util.prompt(questions).then(response => {
-			state.pullRequest = Object.assign({}, state.pullRequest, {
-				title: response.title.trim()
-			});
-		});
-	});
-}
-
-export function updatePullRequestBody(state) {
-	return util
-		.prompt([
-			{
-				type: "confirm",
-				name: "body",
-				message:
-					"Would you like to edit the body of your pull request?",
-				default: true
+			if (dependencies) {
+				const installs = dependencies.map(dep =>
+					api.npmInstallPackage(`${scope}/${dep.pkg}@${dep.version}`)
+				);
+				return sequence(installs).then(() => Promise.resolve());
 			}
-		])
-		.then(answers => {
-			util.log.begin("pull request body preview");
-			const contents = util.fileExists(PULL_REQUEST_TEMPLATE_PATH)
-				? util.readFile(PULL_REQUEST_TEMPLATE_PATH)
-				: "";
-			if (answers.body) {
-				return util.editFile(contents).then(data => {
-					state.pullRequest = Object.assign({}, state.pullRequest, {
-						body: data.trim()
-					});
+		}
+		return Promise.resolve();
+	},
+	npmInstallPackage(dependency) {
+		const command = `npm install ${dependency} -E`;
+
+		return () => {
+			util.log.begin(command);
+			return util
+				.exec(command)
+				.then(() => {
 					util.log.end();
+					return Promise.resolve();
+				})
+				.catch(() => {
+					util.log.end();
+					util.advise("npmInstall", { exit: false });
+				});
+		};
+	},
+	gitCreateBranchUpstream(state) {
+		const { hasDevelopBranch, branch } = state;
+		const remote = "upstream";
+
+		return git.branchExistsRemote({ branch, remote }).then(exists => {
+			if (!exists) {
+				const base = hasDevelopBranch ? "develop" : "master";
+				return git.createRemoteBranch({ branch, remote, base });
+			}
+		});
+	},
+	gitCreateBranchOrigin(state) {
+		const { branch } = state;
+		const remote = "origin";
+
+		const onError = () => {
+			util.advise("remoteBranchOutOfDate", { exit: false });
+			return () => Promise.resolve();
+		};
+
+		return git.branchExistsRemote({ branch, remote }).then(exists => {
+			if (!exists) {
+				return git.createRemoteBranch({
+					branch,
+					remote: "origin",
+					base: branch
 				});
 			}
-
-			state.pullRequest = Object.assign({}, state.pullRequest, {
-				body: contents.trim()
-			});
-			return Promise.resolve();
+			return git.pushRemoteBranch({ branch, remote, onError });
 		});
-}
+	},
+	updatePullRequestTitle(state) {
+		return git.getLastCommitText().then(commitText => {
+			const questions = [
+				{
+					type: "input",
+					name: "title",
+					message: "What is the title of your pull request?",
+					default: commitText.trim()
+				}
+			];
 
-export function gitCheckoutDevelopOrMaster(state) {
-	const { hasDevelopBranch } = state;
+			return util.prompt(questions).then(response => {
+				state.pullRequest = Object.assign({}, state.pullRequest, {
+					title: response.title.trim()
+				});
+			});
+		});
+	},
+	updatePullRequestBody(state) {
+		return util
+			.prompt([
+				{
+					type: "confirm",
+					name: "body",
+					message:
+						"Would you like to edit the body of your pull request?",
+					default: true
+				}
+			])
+			.then(answers => {
+				util.log.begin("pull request body preview");
+				const contents = util.fileExists(PULL_REQUEST_TEMPLATE_PATH)
+					? util.readFile(PULL_REQUEST_TEMPLATE_PATH)
+					: "";
+				if (answers.body) {
+					return util.editFile(contents).then(data => {
+						state.pullRequest = Object.assign(
+							{},
+							state.pullRequest,
+							{
+								body: data.trim()
+							}
+						);
+						util.log.end();
+					});
+				}
 
-	if (hasDevelopBranch) {
-		return git.checkoutDevelop();
+				state.pullRequest = Object.assign({}, state.pullRequest, {
+					body: contents.trim()
+				});
+				return Promise.resolve();
+			});
+	},
+	gitCheckoutDevelopOrMaster(state) {
+		const { hasDevelopBranch } = state;
+
+		if (hasDevelopBranch) {
+			return git.checkoutDevelop();
+		}
+
+		return git.checkoutMaster();
+	},
+	gitRebaseUpstreamDevelopOrMaster(state) {
+		const { hasDevelopBranch } = state;
+
+		if (hasDevelopBranch) {
+			return git.rebaseUpstreamDevelop();
+		}
+
+		return git.rebaseUpstreamMaster();
 	}
+};
 
-	return git.checkoutMaster();
-}
-
-export function gitRebaseUpstreamDevelopOrMaster(state) {
-	const { hasDevelopBranch } = state;
-
-	if (hasDevelopBranch) {
-		return git.rebaseUpstreamDevelop();
-	}
-
-	return git.rebaseUpstreamMaster();
-}
+module.exports = api;

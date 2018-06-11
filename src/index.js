@@ -1,17 +1,12 @@
-#!/usr/bin/env node --harmony
+#!/usr/bin/env node
 /* eslint no-console: 0 */
 
-import commander from "commander";
-import _ from "lodash";
-import utils from "./utils.js";
-import chalk from "chalk";
-import tagRelease from "./tag-release";
-import help from "./help";
-import logger from "better-console";
-import fmt from "fmt";
-import pkg from "../package.json";
-import sequence from "when/sequence";
-import path from "path";
+const _ = require("lodash");
+const utils = require("./utils.js");
+const chalk = require("chalk");
+const tagRelease = require("./tag-release");
+const logger = require("better-console");
+const fmt = require("fmt");
 
 const questions = {
 	github: [
@@ -28,97 +23,53 @@ const questions = {
 	]
 };
 
-commander
-	.version(pkg.version)
-	.option(
-		"-r, --release [type]",
-		"Release type (major, minor, patch, premajor, preminor, prepatch, prerelease)",
-		/^(major|minor|patch|premajor|preminor|prepatch|prerelease)/i
-	)
-	.option(
-		"-c, --config [filePath]",
-		"Path to JSON Configuration file (defaults to './package.json')",
-		/^.*\.json$/
-	)
-	.option(
-		"--maxbuffer <n>",
-		"Overrides the max stdout buffer of the child process. Size is 1024 * <n>.",
-		parseInt
-	)
-	.option("--verbose", "Console additional information")
-	.option("-p, --prerelease", "Create a pre-release")
-	.option("-i, --identifier <identifier>", "Identifier used for pre-release")
-	.option("--reset", "Reset repo to upstream master/develop branches.")
-	.option(
-		"--promote [tag]",
-		"Promotes specified pre-release tag to an offical release."
-	)
-	.option("--continue", "Continues the rebase process of a tag promotion.")
-	.option("--qa [scope]", "Create initial upstream branch for lightning.")
-	.option(
-		"--pr [scope]",
-		"Update lightning branch and create a PR to develop."
-	)
-	.option(
-		"--dev",
-		"Creates a PR from origin feature branch to upstream feature branch"
-	);
-
-commander.on("--help", () => {
-	help(commander);
-
-	if (commander.verbose) {
-		const diagramPath = path.resolve(__dirname, "workflow.txt");
-		console.log(utils.readFile(diagramPath));
-	} else {
-		console.log(
-			"  To get a flowchart included with --help add --verbose to the command"
-		);
-	}
-});
-
-commander.parse(process.argv);
-
-if (commander.release) {
-	_.remove(questions.general, { name: "release" });
-}
-
-sequence([::utils.detectVersion, bootstrap]);
-
-export function startTagRelease(options) {
-	try {
-		if (commander.verbose) {
-			fmt.title("GitHub Configuration");
-			fmt.field("username", options.username);
-			fmt.field("token", options.token);
-			fmt.line();
-		}
-
-		options = _.extend({}, commander, options);
-		options.configPath = options.config || "./package.json";
-
-		return tagRelease(options).catch(error => {
-			console.log(`Tag-release encountered a problem: ${error}`);
-		});
-	} catch (error) {
-		console.log(`Tag-release encountered a problem: ${error}`);
-	}
-}
-
-export function bootstrap() {
-	utils
-		.getGitConfigs()
-		.then(([username, token]) => startTagRelease({ username, token }))
-		.catch(() => {
-			utils.prompt(questions.github).then(answers => {
-				const { username, password } = answers;
-				utils
-					.createGitHubAuthToken(username, password)
-					.then(token => {
-						utils.setGitConfigs(username, token);
-						startTagRelease({ username, token });
-					})
-					.catch(e => logger.log(chalk.red("error", e)));
+const api = {
+	async run(options) {
+		await utils.detectVersion();
+		await api.bootstrap(options);
+	},
+	bootstrap(options) {
+		utils
+			.getGitConfigs()
+			.then(([username, token]) => {
+				options = _.extend({}, options, { username, token });
+				api.startTagRelease(options);
+			})
+			.catch(() => {
+				utils.prompt(questions.github).then(answers => {
+					const { username, password } = answers;
+					utils
+						.createGitHubAuthToken(username, password)
+						.then(token => {
+							utils.setGitConfigs(username, token);
+							options = _.extend({}, options, {
+								username,
+								token
+							});
+							api.startTagRelease(options);
+						})
+						.catch(e => logger.log(chalk.red("error", e)));
+				});
 			});
-		});
-}
+	},
+	startTagRelease(options) {
+		try {
+			if (options.verbose) {
+				fmt.title("GitHub Configuration");
+				fmt.field("username", options.username);
+				fmt.field("token", options.token);
+				fmt.line();
+			}
+
+			options.configPath = options.config || "./package.json";
+
+			return tagRelease(options).catch(error => {
+				console.log(`Tag-release encountered a problem: ${error}`);
+			});
+		} catch (error) {
+			console.log(`Tag-release encountered a problem: ${error}`);
+		}
+	}
+};
+
+module.exports = api;

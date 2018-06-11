@@ -1,4 +1,4 @@
-import { isObject } from "lodash";
+const { isObject } = require("lodash");
 
 export function isPromise(promise) {
 	return (

@@ -1,7 +1,7 @@
-import * as run from "./steps/index";
-import { rebaseUpdateLogCommitTagRelease } from "./shared";
+const run = require("./steps/index");
+const { rebaseUpdateLogCommitTagRelease } = require("./shared");
 
-export default [
+module.exports = [
 	run.gitFetchUpstream,
 	run.gitCheckoutMaster,
 	run.gitMergeUpstreamMaster,

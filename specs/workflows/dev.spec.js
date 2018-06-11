@@ -1,5 +1,5 @@
-import resetWorkflow from "../../src/workflows/dev";
-import * as run from "../../src/workflows/steps";
+const resetWorkflow = require("../../src/workflows/dev");
+const run = require("../../src/workflows/steps");
 
 describe("dev workflow", () => {
 	it("should have all of the required steps", () => {

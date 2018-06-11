@@ -1,6 +1,6 @@
-import * as run from "./steps/index";
+const run = require("./steps/index");
 
-export default [
+module.exports = [
 	run.isPackagePrivate,
 	run.gitFetchUpstream,
 	run.getCurrentBranchVersion,
