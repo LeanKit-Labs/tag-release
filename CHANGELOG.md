@@ -1,5 +1,9 @@
 ## 5.x
 
+### 5.19.0
+
+* Added git style command-line arguments
+
 ### 5.18.0
 
 * Updated help.js
