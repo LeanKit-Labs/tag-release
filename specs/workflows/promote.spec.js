@@ -1,8 +1,8 @@
-import {
-	default as promoteWorkflow,
+const {
+	promoteWorkflow,
 	promoteContinue
-} from "../../src/workflows/promote";
-import * as run from "../../src/workflows/steps";
+} = require("../../src/workflows/promote");
+const run = require("../../src/workflows/steps");
 
 describe("promote workflows", () => {
 	describe("default", () => {

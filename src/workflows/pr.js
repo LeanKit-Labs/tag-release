@@ -1,33 +1,32 @@
-import * as run from "./steps/index";
-import {
+const run = require("./steps/index");
+const {
 	gitRebaseUpstreamDevelopWithConflictFlag,
 	resolvePackageJSONConflicts,
 	verifyConflictResolution
-} from "./steps/conflictResolution";
-import { createPullRequest } from "./shared";
+} = require("./steps/conflictResolution");
+const { createPullRequest } = require("./shared");
 
-export default [
-	run.gitFetchUpstream,
-	run.getPackageScope,
-	run.getFeatureBranch,
-	run.gitRebaseUpstreamBranch,
-	run.saveState,
-	run.getReposFromBumpCommit,
-	run.verifyPackagesToPromote,
-	run.getCurrentDependencyVersions,
-	run.saveDependencies,
-	gitRebaseUpstreamDevelopWithConflictFlag
-];
-
-export const prRebaseConflict = [
-	resolvePackageJSONConflicts,
-	verifyConflictResolution,
-	run.gitStageFiles,
-	run.gitRebaseContinue,
-	run.getFeatureBranch,
-	...createPullRequest
-];
-
-export const prRebaseSuccess = [...createPullRequest];
-
-export const prContinue = [run.getPackageScope, ...createPullRequest];
+module.exports = {
+	prWorkflow: [
+		run.gitFetchUpstream,
+		run.getPackageScope,
+		run.getFeatureBranch,
+		run.gitRebaseUpstreamBranch,
+		run.saveState,
+		run.getReposFromBumpCommit,
+		run.verifyPackagesToPromote,
+		run.getCurrentDependencyVersions,
+		run.saveDependencies,
+		gitRebaseUpstreamDevelopWithConflictFlag
+	],
+	prRebaseConflict: [
+		resolvePackageJSONConflicts,
+		verifyConflictResolution,
+		run.gitStageFiles,
+		run.gitRebaseContinue,
+		run.getFeatureBranch,
+		...createPullRequest
+	],
+	prRebaseSuccess: [...createPullRequest],
+	prContinue: [run.getPackageScope, ...createPullRequest]
+};

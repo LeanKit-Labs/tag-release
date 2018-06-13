@@ -1,20 +1,21 @@
 /* eslint-disable complexity */
 
-import sequence from "when/sequence";
-import defaultWorkflow from "./workflows/default";
-import prereleaseWorkflow from "./workflows/pre-release";
-import resetWorkflow from "./workflows/reset";
-import promoteWorkflow, { promoteContinue } from "./workflows/promote";
-import continueWorkflow from "./workflows/continue";
-import qaWorkflow, { qaDefault, qaUpdate } from "./workflows/qa";
-import prWorkflow, {
+const sequence = require("when/sequence");
+const defaultWorkflow = require("./workflows/default");
+const prereleaseWorkflow = require("./workflows/pre-release");
+const resetWorkflow = require("./workflows/reset");
+const { promoteWorkflow, promoteContinue } = require("./workflows/promote");
+const continueWorkflow = require("./workflows/continue");
+const { qaWorkflow, qaDefault, qaUpdate } = require("./workflows/qa");
+const {
+	prWorkflow,
 	prRebaseSuccess,
 	prRebaseConflict,
 	prContinue
-} from "./workflows/pr";
-import devWorkflow from "./workflows/dev";
+} = require("./workflows/pr");
+const devWorkflow = require("./workflows/dev");
 
-export default state => {
+module.exports = state => {
 	if (state.continue) {
 		return sequence(continueWorkflow, state).then(() => {
 			if (state.branch.includes("promote-release")) {

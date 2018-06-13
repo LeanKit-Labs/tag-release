@@ -1,7 +1,5 @@
-import chalk from "chalk";
-import util from "./utils";
-
-const { hasLkScope, renderHelpContent } = util;
+const chalk = require("chalk");
+const { hasLkScope, renderHelpContent } = require("./utils");
 
 let helpContent = `
   Examples:
@@ -38,4 +36,4 @@ if (hasLkScope()) {
 
 const help = () => renderHelpContent(helpContent);
 
-export default help;
+module.exports = help;

@@ -1,19 +1,19 @@
-import fs from "fs";
-import childProcess from "child_process";
-import inquirer from "inquirer";
-import editor from "editor";
-import logUpdate from "log-update";
-import detectIndent from "detect-indent";
-import { get, uniqueId } from "lodash";
-import chalk from "chalk";
-import logger from "better-console";
-import request from "request";
-import sequence from "when/sequence";
-import currentPackage from "../package.json";
-import npm from "npm";
-import semver from "semver";
-import cowsay from "cowsay";
-import advise from "./advise.js";
+const fs = require("fs");
+const childProcess = require("child_process");
+const inquirer = require("inquirer");
+const editor = require("editor");
+const logUpdate = require("log-update");
+const detectIndent = require("detect-indent");
+const { get, uniqueId } = require("lodash");
+const chalk = require("chalk");
+const logger = require("better-console");
+const request = require("request");
+const sequence = require("when/sequence");
+const currentPackage = require("../package.json");
+const npm = require("npm");
+const semver = require("semver");
+const cowsay = require("cowsay");
+const advise = require("./advise.js");
 
 const GIT_CONFIG_COMMAND = "git config --global";
 const MAX_BUFFER_SIZE = 5000; // eslint-disable-line no-magic-numbers
@@ -22,7 +22,7 @@ const getMaxBuffer = size => {
 	return 1024 * size; // eslint-disable-line no-magic-numbers
 };
 
-export default {
+const api = {
 	readFile(path) {
 		if (path) {
 			try {
@@ -35,7 +35,7 @@ export default {
 		return null;
 	},
 	readJSONFile(path) {
-		const content = this.readFile(path) || "{}";
+		const content = api.readFile(path) || "{}";
 		return JSON.parse(content);
 	},
 	writeFile(path, content) {
@@ -48,7 +48,7 @@ export default {
 			indent = detectIndent(file).indent || "  ";
 		}
 		content = `${JSON.stringify(content, null, indent)}\n`;
-		return this.writeFile(path, content);
+		return api.writeFile(path, content);
 	},
 	deleteFile(path) {
 		return fs.existsSync(path) ? fs.unlinkSync(path) : Promise.resolve();
@@ -78,10 +78,10 @@ export default {
 	editFile(data) {
 		const filePath = uniqueId("./.editFile_");
 		return new Promise((resolve, reject) => {
-			this.writeFile(filePath, data);
+			api.writeFile(filePath, data);
 			editor(filePath, code => {
 				if (code === 0) {
-					const contents = this.readFile(filePath);
+					const contents = api.readFile(filePath);
 					resolve(contents);
 				} else {
 					reject(`Unable to edit ${filePath}`);
@@ -91,11 +91,11 @@ export default {
 		});
 	},
 	isPackagePrivate(configPath) {
-		const pkg = this.readJSONFile(configPath);
+		const pkg = api.readJSONFile(configPath);
 		return !!pkg.private;
 	},
 	getPackageRegistry(configPath) {
-		const pkg = this.readJSONFile(configPath);
+		const pkg = api.readJSONFile(configPath);
 		const registry = get(pkg, "publishConfig.registry");
 
 		if (registry) {
@@ -106,37 +106,37 @@ export default {
 		const command = scope
 			? `npm get ${scope}:registry`
 			: `npm get registry`;
-		return this.exec(command);
+		return api.exec(command);
 	},
 	log: {
 		lastLog: "",
 		begin(text) {
 			logUpdate(`${text} ☐`);
-			this.lastLog = text;
+			api.lastLog = text;
 		},
 		end() {
-			logUpdate(`${this.lastLog} ☑`);
+			logUpdate(`${api.lastLog} ☑`);
 			logUpdate.done();
 		}
 	},
 	getGitConfig(name) {
-		return this.exec(`${GIT_CONFIG_COMMAND} ${name}`).then(value =>
-			value.trim()
-		);
+		return api
+			.exec(`${GIT_CONFIG_COMMAND} ${name}`)
+			.then(value => value.trim());
 	},
 	setGitConfig(name, value) {
-		return this.exec(`${GIT_CONFIG_COMMAND} ${name} ${value.trim()}`);
+		return api.exec(`${GIT_CONFIG_COMMAND} ${name} ${value.trim()}`);
 	},
 	getGitConfigs() {
 		return Promise.all([
-			this.getGitConfig("tag-release.username"),
-			this.getGitConfig("tag-release.token")
+			api.getGitConfig("tag-release.username"),
+			api.getGitConfig("tag-release.token")
 		]);
 	},
 	setGitConfigs(username, token) {
 		return sequence([
-			this.setGitConfig.bind(this, "tag-release.username", username),
-			this.setGitConfig.bind(this, "tag-release.token", token)
+			api.setGitConfig.bind(this, "tag-release.username", username),
+			api.setGitConfig.bind(this, "tag-release.token", token)
 		]).catch(e => logger.log(chalk.red(e)));
 	},
 	escapeCurlPassword(source) {
@@ -169,11 +169,7 @@ export default {
 						resolve(body.token);
 					} else if (statusCode === UNAUTHORIZED) {
 						resolve(
-							this.githubUnauthorized(
-								username,
-								password,
-								response
-							)
+							api.githubUnauthorized(username, password, response)
 						);
 					} else {
 						// for any other HTTP status code...
@@ -194,18 +190,20 @@ export default {
 		twoFactorAuth = twoFactorAuth.includes("required;");
 
 		if (twoFactorAuth) {
-			return this.prompt([
-				{
-					type: "input",
-					name: "authCode",
-					message:
-						"What is the GitHub authentication code on your device"
-				}
-			]).then(answers => {
-				return this.createGitHubAuthToken(username, password, {
-					"X-GitHub-OTP": answers.authCode
+			return api
+				.prompt([
+					{
+						type: "input",
+						name: "authCode",
+						message:
+							"What is the GitHub authentication code on your device"
+					}
+				])
+				.then(answers => {
+					return api.createGitHubAuthToken(username, password, {
+						"X-GitHub-OTP": answers.authCode
+					});
 				});
-			});
 		}
 		logger.log(response.body.message);
 	},
@@ -263,7 +261,7 @@ export default {
 		});
 	},
 	detectVersion() {
-		const currentVersion = this.getCurrentVersion();
+		const currentVersion = api.getCurrentVersion();
 
 		const logVersionMessage = ({
 			availableVersionInfo,
@@ -333,7 +331,7 @@ export default {
 			return checkAgainstFullVersion(false);
 		};
 
-		return this.getAvailableVersionInfo().then(availableVersionInfo => {
+		return api.getAvailableVersionInfo().then(availableVersionInfo => {
 			return logVersionMessage({
 				availableVersionInfo,
 				isRunningPrerelease: currentVersion.includes("-")
@@ -375,3 +373,5 @@ export default {
 		console.log(content); // eslint-disable-line no-console
 	}
 };
+
+module.exports = api;

@@ -11,7 +11,7 @@ jest.mock("chalk", () => ({
 	}
 }));
 
-import chalk from "chalk"; // eslint-disable-line no-unused-vars
+const chalk = require("chalk"); // eslint-disable-line no-unused-vars
 
 /* eslint-disable global-require */
 describe("help", () => {
@@ -24,7 +24,7 @@ describe("help", () => {
 		}));
 
 		util = require("../src/utils");
-		help = require("../src/help").default;
+		help = require("../src/help");
 	});
 
 	it("should return custom help output", () => {
@@ -79,7 +79,7 @@ describe("help", () => {
 			}));
 
 			util = require("../src/utils");
-			help = require("../src/help").default;
+			help = require("../src/help");
 		});
 
 		it("the help output should NOT include a link to the LeanKit tag-release workflow doc", () => {

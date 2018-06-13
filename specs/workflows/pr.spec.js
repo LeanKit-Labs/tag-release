@@ -1,15 +1,15 @@
-import {
-	default as prWorkflow,
+const {
+	prWorkflow,
 	prRebaseConflict,
 	prRebaseSuccess,
 	prContinue
-} from "../../src/workflows/pr";
-import * as run from "../../src/workflows/steps/index";
-import {
+} = require("../../src/workflows/pr");
+const run = require("../../src/workflows/steps/index");
+const {
 	gitRebaseUpstreamDevelopWithConflictFlag,
 	resolvePackageJSONConflicts,
 	verifyConflictResolution
-} from "../../src/workflows/steps/conflictResolution";
+} = require("../../src/workflows/steps/conflictResolution");
 
 describe("pr workflows", () => {
 	describe("default", () => {

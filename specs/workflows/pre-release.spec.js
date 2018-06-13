@@ -1,5 +1,5 @@
-import preReleaseWorkflow from "../../src/workflows/pre-release";
-import * as run from "../../src/workflows/steps";
+const preReleaseWorkflow = require("../../src/workflows/pre-release");
+const run = require("../../src/workflows/steps");
 
 describe("pre-release workflow", () => {
 	it("should have all of the required steps", () => {

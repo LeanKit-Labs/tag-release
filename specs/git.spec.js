@@ -6,9 +6,9 @@ jest.mock("../src/utils", () => ({
 	}
 }));
 
-import util from "../src/utils";
-import git from "../src/git";
-import path from "path";
+const util = require("../src/utils");
+const git = require("../src/git");
+const path = require("path");
 
 describe("git", () => {
 	describe("runCommand", () => {

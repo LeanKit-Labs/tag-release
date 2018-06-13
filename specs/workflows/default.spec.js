@@ -1,5 +1,5 @@
-import defaultWorkflow from "../../src/workflows/default";
-import * as run from "../../src/workflows/steps";
+const defaultWorkflow = require("../../src/workflows/default");
+const run = require("../../src/workflows/steps");
 
 describe("default workflow", () => {
 	it("should have all of the required steps", () => {

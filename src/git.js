@@ -1,6 +1,6 @@
-import util from "./utils";
-import path from "path";
-import semver from "semver";
+const util = require("./utils");
+const path = require("path");
+const semver = require("semver");
 
 const DEFAULT_PRERELEASE_TAG_LIST_LIMIT = 10;
 
@@ -478,4 +478,4 @@ const git = {
 	}
 };
 
-export default git;
+module.exports = git;

@@ -2,8 +2,8 @@ jest.mock("word-wrap", () => {
 	return jest.fn(arg => arg);
 });
 
-import wrap from "word-wrap";
-import advise from "../src/advise";
+const wrap = require("word-wrap");
+const advise = require("../src/advise");
 
 describe("advise", () => {
 	it("should call `wrap` to apply word wrap to the returned text", () => {
