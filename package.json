@@ -4,7 +4,6 @@
   "description": "Automatically Tag and Release Repositories",
   "main": "index.js",
   "bin": {
-    "tag-release-next": "./bin/tag-release-next.js",
     "tag-release": "./bin/tag-release.js"
   },
   "scripts": {

@@ -2,6 +2,7 @@
 const commander = require("commander");
 const { extend } = require("lodash");
 const api = require("../src/index.js");
+const { promoteWorkflow: workflow } = require("../src/workflows/promote");
 
 commander
 	.option("--verbose", "Console additional information")
@@ -13,8 +14,8 @@ commander
 	.parse(process.argv);
 
 let options = {};
-const args = commander.args;
-options.promote = args.length ? args[0] : true;
-options = extend({}, commander, options);
+const { verbose, maxbuffer, args } = commander;
+const promote = args.length ? args[0] : true;
+options = extend({}, { promote, verbose, maxbuffer, workflow });
 
 api.run(options);

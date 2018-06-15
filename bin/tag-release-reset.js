@@ -2,6 +2,7 @@
 const commander = require("commander");
 const { extend } = require("lodash");
 const api = require("../src/index.js");
+const workflow = require("../src/workflows/reset");
 
 commander
 	.option("--verbose", "Console additional information")
@@ -12,6 +13,7 @@ commander
 	)
 	.parse(process.argv);
 
-const options = extend({}, commander, { dev: true });
+const { verbose, maxbuffer } = commander;
+const options = extend({}, { reset: true, verbose, maxbuffer, workflow });
 
 api.run(options);

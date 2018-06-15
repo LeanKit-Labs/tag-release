@@ -4,9 +4,9 @@
 const _ = require("lodash");
 const utils = require("./utils.js");
 const chalk = require("chalk");
-const tagRelease = require("./tag-release");
 const logger = require("better-console");
 const fmt = require("fmt");
+const sequence = require("when/sequence");
 
 const questions = {
 	github: [
@@ -63,9 +63,12 @@ const api = {
 
 			options.configPath = options.config || "./package.json";
 
-			return tagRelease(options).catch(error => {
-				console.log(`Tag-release encountered a problem: ${error}`);
-			});
+			console.log(options);
+			if (!options.callback) {
+				options.callback = () => console.log("Finished");
+			}
+
+			return sequence(options.workflow, options).then(options.callback); // eslint-disable-line no-console
 		} catch (error) {
 			console.log(`Tag-release encountered a problem: ${error}`);
 		}

@@ -2,6 +2,7 @@
 const commander = require("commander");
 const { extend } = require("lodash");
 const api = require("../src/index.js");
+const workflow = require("../src/workflows/pre-release");
 
 commander
 	.option("-i, --identifier <identifier>", "Identifier used for pre-release")
@@ -13,6 +14,10 @@ commander
 	)
 	.parse(process.argv);
 
-const options = extend({}, commander, { prerelease: true });
+const { identifier, verbose, maxbuffer } = commander;
+const options = extend(
+	{},
+	{ prerelease: true, identifier, verbose, maxbuffer, workflow }
+);
 
 api.run(options);
