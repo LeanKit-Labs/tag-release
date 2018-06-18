@@ -116,6 +116,10 @@ jest.mock("../package.json", () => ({
 	version: "1.1.1"
 }));
 
+jest.mock("rcfile", () => {
+	return jest.fn(() => ({ username: "rc@file.com", token: "token12345" }));
+});
+
 const cp = require("child_process");
 const fs = require("fs");
 const { get } = require("lodash");
@@ -132,6 +136,7 @@ const advise = require("../src/advise.js"); // eslint-disable-line no-unused-var
 const currentPackage = require("../package.json");
 const util = require("../src/utils");
 const { isPromise } = require("./helpers");
+const rcfile = require("rcfile"); // eslint-disable-line no-unused-vars
 
 const originalGithubUnauthorizedFunction = util.githubUnauthorized;
 
@@ -521,6 +526,27 @@ describe("utils", () => {
 			util.log.end();
 			expect(logUpdate.done).toHaveBeenCalledTimes(1);
 		});
+
+		describe("when process.env.NO_OUTPUT is true", () => {
+			beforeEach(() => {
+				logUpdate.mockReset();
+				process.env.NO_OUTPUT = true;
+				util.log.begin("monkey");
+			});
+
+			it("log begin should not write to logUpdate", () => {
+				expect(logUpdate).toHaveBeenCalledTimes(0);
+			});
+
+			it("log end should not update logUpdate", () => {
+				util.log.end();
+				expect(logUpdate).toHaveBeenCalledTimes(0);
+			});
+
+			afterEach(() => {
+				delete process.env.NO_OUTPUT;
+			});
+		});
 	});
 
 	describe("getGitConfig", () => {
@@ -565,14 +591,71 @@ describe("utils", () => {
 		});
 	});
 
+	describe("getOverrides", () => {
+		it("should read overrides from rc file", () => {
+			const overrides = util.getOverrides();
+			expect(overrides).toEqual({
+				username: "rc@file.com",
+				token: "token12345"
+			});
+		});
+
+		describe("environment variables", () => {
+			beforeEach(() => {
+				process.env.LKR_GITHUB_USER = "env@variable.com";
+				process.env.LKR_GITHUB_TOKEN = "envToken12345";
+			});
+
+			it("should use env variables over rc file", () => {
+				const overrides = util.getOverrides();
+				expect(overrides).toEqual({
+					username: "env@variable.com",
+					token: "envToken12345"
+				});
+			});
+
+			afterEach(() => {
+				delete process.env.LKR_GITHUB_USER;
+				delete process.env.LKR_GITHUB_TOKEN;
+			});
+		});
+	});
+
 	describe("getGitConfigs", () => {
 		beforeEach(() => {
 			util.getGitConfig = jest.fn(() => Promise.resolve());
+			util.getOverrides = jest.fn(() => Promise.resolve());
 		});
 
 		it("should return a promise", () => {
 			const result = util.getGitConfigs();
 			expect(isPromise(result)).toBeTruthy();
+		});
+
+		it("calls getOverrides for username and token", () => {
+			return util.getGitConfigs().then(() => {
+				expect(util.getOverrides).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		describe("when there are overrides", () => {
+			let overrides;
+			beforeEach(() => {
+				overrides = {
+					username: "over@ride.com",
+					token: "token12345"
+				};
+				util.getOverrides = jest.fn(() => overrides);
+			});
+
+			it("should use overrides for username and token", () => {
+				return util.getGitConfigs().then(result => {
+					expect(result).toEqual([
+						overrides.username,
+						overrides.token
+					]);
+				});
+			});
 		});
 
 		it("calls getGitConfig for username and token", () => {

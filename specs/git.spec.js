@@ -101,6 +101,23 @@ describe("git", () => {
 			});
 		});
 
+		describe("process.env.NO_OUTPUT is true", () => {
+			beforeEach(() => {
+				process.env.NO_OUTPUT = true;
+			});
+
+			it("should not log output", () => {
+				return git.runCommand({ args: "--version" }).then(() => {
+					expect(util.log.begin).not.toHaveBeenCalled();
+					expect(util.log.end).not.toHaveBeenCalled();
+				});
+			});
+
+			afterEach(() => {
+				delete process.env.NO_OUTPUT;
+			});
+		});
+
 		it("should use full command and not append `git` when the `fullCommand` option is true", () => {
 			return git
 				.runCommand({ args: "some command", fullCommand: true })

@@ -35,4 +35,4 @@ options = extend(
 	{ continue: true, verbose, maxbuffer, callback, workflow }
 );
 
-api.run(options);
+api.cli(options);

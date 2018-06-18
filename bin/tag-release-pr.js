@@ -35,4 +35,4 @@ const { verbose, maxbuffer, args } = commander;
 const pr = args.length ? args[0] : true;
 options = extend({}, { pr, verbose, maxbuffer, callback, workflow });
 
-api.run(options);
+api.cli(options);

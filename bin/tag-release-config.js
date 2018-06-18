@@ -17,4 +17,4 @@ const args = commander.args;
 options.config = args.length ? args[0] : true;
 options = extend({}, commander, options);
 
-api.run(options);
+api.cli(options);

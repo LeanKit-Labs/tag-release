@@ -18,4 +18,4 @@ const { verbose, maxbuffer, args } = commander;
 const promote = args.length ? args[0] : true;
 options = extend({}, { promote, verbose, maxbuffer, workflow });
 
-api.run(options);
+api.cli(options);

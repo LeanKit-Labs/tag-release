@@ -20,4 +20,4 @@ const options = extend(
 	{ prerelease: true, identifier, verbose, maxbuffer, workflow }
 );
 
-api.run(options);
+api.cli(options);

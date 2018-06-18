@@ -3,7 +3,6 @@ const git = require("../../git");
 const util = require("../../utils");
 const semver = require("semver");
 const chalk = require("chalk");
-const logger = require("better-console");
 const GitHub = require("github-api");
 const sequence = require("when/sequence");
 const path = require("path");
@@ -180,7 +179,7 @@ const api = {
 		}
 	},
 	previewLog({ log }) {
-		logger.log(`${chalk.bold("Here is a preview of your log:")}
+		util.logger.log(`${chalk.bold("Here is a preview of your log:")}
 ${chalk.green(log)}`);
 	},
 	askSemverJump(state) {
@@ -285,7 +284,7 @@ ${chalk.green(log)}`);
 		util.writeJSONFile(configPath, pkg);
 		state.versions = { oldVersion, newVersion };
 		state.currentVersion = newVersion;
-		logger.log(
+		util.logger.log(
 			chalk.green(
 				`Updated ${configPath} from ${oldVersion} to ${newVersion}`
 			)
@@ -335,7 +334,7 @@ ${chalk.green(log)}`);
 		return git
 			.diff({ files, maxBuffer: state.maxbuffer, onError })
 			.then(diff => {
-				logger.log(diff);
+				util.logger.log(diff);
 				return util
 					.prompt([
 						{
@@ -423,7 +422,7 @@ ${chalk.green(log)}`);
 							}
 						});
 				})
-				.catch(err => logger.log(chalk.red(err)));
+				.catch(err => util.logger.log(chalk.red(err)));
 		}
 	},
 	gitCheckoutDevelop(state) {
@@ -476,7 +475,7 @@ ${chalk.green(log)}`);
 					upstream: { owner, name }
 				});
 			})
-			.catch(error => logger.log("error", error));
+			.catch(error => util.logger.log("error", error));
 	},
 	githubOrigin(state) {
 		const command = `git config remote.origin.url`;
@@ -492,7 +491,7 @@ ${chalk.green(log)}`);
 					origin: { owner, name }
 				});
 			})
-			.catch(error => logger.log("error", error));
+			.catch(error => util.logger.log("error", error));
 	},
 	githubRelease(state) {
 		const {
@@ -519,7 +518,11 @@ ${chalk.green(log)}`);
 			}
 		];
 
-		return util.prompt(questions).then(answers => {
+		const method = process.env.NO_OUTPUT
+			? () => Promise.resolve({ name: defaultName })
+			: args => util.prompt(args);
+
+		return method(questions).then(answers => {
 			util.log.begin("release to github");
 			const repository = github.getRepo(repositoryOwner, repositoryName);
 			const args = {
@@ -533,11 +536,14 @@ ${chalk.green(log)}`);
 				.createRelease(args)
 				.then(response => {
 					util.log.end();
-					logger.log(
-						chalk.yellow.underline.bold(response.data.html_url)
+					util.logger.log(
+						chalk.yellow(
+							chalk.underline(chalk.bold(response.data.html_url))
+						)
 					);
+					return Promise.resolve(state);
 				})
-				.catch(err => logger.log(chalk.red(err)));
+				.catch(err => util.logger.log(chalk.red(err)));
 		});
 	},
 	checkForUncommittedChanges(state) {
@@ -930,11 +936,11 @@ ${chalk.green(log)}`);
 					})
 					.then(() => {
 						util.log.end();
-						logger.log(chalk.yellow.underline.bold(url));
+						util.logger.log(chalk.yellow.underline.bold(url));
 					})
-					.catch(err => logger.log(chalk.red(err)));
+					.catch(err => util.logger.log(chalk.red(err)));
 			})
-			.catch(err => logger.log(chalk.red(err)));
+			.catch(err => util.logger.log(chalk.red(err)));
 	},
 	createGithubPullRequestAganistBranch(state) {
 		const {
@@ -976,11 +982,11 @@ ${chalk.green(log)}`);
 					.editIssue(number, { labels: ["Needs Developer Review"] })
 					.then(() => {
 						util.log.end();
-						logger.log(chalk.yellow.underline.bold(url));
+						util.logger.log(chalk.yellow.underline.bold(url));
 					})
-					.catch(err => logger.log(chalk.red(err)));
+					.catch(err => util.logger.log(chalk.red(err)));
 			})
-			.catch(err => logger.log(chalk.red(err)));
+			.catch(err => util.logger.log(chalk.red(err)));
 	},
 	saveState(state) {
 		const { scope } = state;
@@ -1042,7 +1048,7 @@ ${chalk.green(log)}`);
 				});
 				return tags;
 			})
-			.catch(err => logger.log(chalk.red(err)));
+			.catch(err => util.logger.log(chalk.red(err)));
 	},
 	verifyRemotes(state) {
 		const command = `git remote`;
@@ -1102,9 +1108,9 @@ ${chalk.green(log)}`);
 					return util
 						.exec(command)
 						.then(util.log.end())
-						.catch(err => logger.log(chalk.red(err)));
+						.catch(err => util.logger.log(chalk.red(err)));
 				})
-				.catch(err => logger.log(chalk.red(err)));
+				.catch(err => util.logger.log(chalk.red(err)));
 		}
 
 		util.log.end();
@@ -1444,6 +1450,15 @@ ${chalk.green(log)}`);
 		}
 
 		return git.rebaseUpstreamMaster();
+	},
+	changeDirectory(state) {
+		try {
+			process.chdir(state.cwd);
+		} catch (err) {
+			return Promise.reject(`Unable to cwd to provided: ${state.cwd}`);
+		}
+
+		return Promise.resolve();
 	}
 };
 

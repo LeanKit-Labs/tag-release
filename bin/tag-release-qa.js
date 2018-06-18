@@ -33,4 +33,4 @@ const { verbose, maxbuffer, args } = commander;
 const qa = args.length ? args[0] : true;
 options = extend({}, { qa, verbose, maxbuffer, callback, workflow });
 
-api.run(options);
+api.cli(options);

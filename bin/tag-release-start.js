@@ -21,4 +21,4 @@ commander
 const { verbose, maxbuffer, release } = commander;
 const options = extend({}, { verbose, maxbuffer, release, workflow });
 
-api.run(options);
+api.cli(options);

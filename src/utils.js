@@ -14,6 +14,7 @@ const npm = require("npm");
 const semver = require("semver");
 const cowsay = require("cowsay");
 const advise = require("./advise.js");
+const rcfile = require("rcfile");
 
 const GIT_CONFIG_COMMAND = "git config --global";
 const MAX_BUFFER_SIZE = 5000; // eslint-disable-line no-magic-numbers
@@ -111,12 +112,23 @@ const api = {
 	log: {
 		lastLog: "",
 		begin(text) {
-			logUpdate(`${text} ☐`);
-			api.lastLog = text;
+			if (!process.env.NO_OUTPUT) {
+				logUpdate(`${text} ☐`);
+				api.lastLog = text;
+			}
 		},
 		end() {
-			logUpdate(`${api.lastLog} ☑`);
-			logUpdate.done();
+			if (!process.env.NO_OUTPUT) {
+				logUpdate(`${api.lastLog} ☑`);
+				logUpdate.done();
+			}
+		}
+	},
+	logger: {
+		log(text, error) {
+			if (!process.env.NO_OUTPUT) {
+				return error ? logger.log(text, error) : logger.log(text);
+			}
 		}
 	},
 	getGitConfig(name) {
@@ -127,7 +139,28 @@ const api = {
 	setGitConfig(name, value) {
 		return api.exec(`${GIT_CONFIG_COMMAND} ${name} ${value.trim()}`);
 	},
+	getOverrides() {
+		// reads root and assigns/overlays as it traverses to current directory
+		let overrides = rcfile("tag-release", { cwd: __dirname });
+
+		// check if there are ENV variables for username/token
+		if (process.env.LKR_GITHUB_USER && process.env.LKR_GITHUB_TOKEN) {
+			overrides = Object.assign({}, overrides, {
+				username: process.env.LKR_GITHUB_USER,
+				token: process.env.LKR_GITHUB_TOKEN
+			});
+		}
+
+		return overrides;
+	},
 	getGitConfigs() {
+		const { username, token } = api.getOverrides();
+		if (username && token) {
+			return Promise.resolve([username, token]);
+		}
+
+		// Remove git config global stuff and ONLY use rc file for
+		// git username and token
 		return Promise.all([
 			api.getGitConfig("tag-release.username"),
 			api.getGitConfig("tag-release.token")
@@ -137,7 +170,7 @@ const api = {
 		return sequence([
 			api.setGitConfig.bind(this, "tag-release.username", username),
 			api.setGitConfig.bind(this, "tag-release.token", token)
-		]).catch(e => logger.log(chalk.red(e)));
+		]).catch(e => api.logger.log(chalk.red(e)));
 	},
 	escapeCurlPassword(source) {
 		return source.replace(/([[\]$"\\])/g, "\\$1");
@@ -159,7 +192,7 @@ const api = {
 				{ url, headers, auth, json },
 				(err, response, body) => {
 					if (err) {
-						logger.log("error", err);
+						api.logger.log("error", err);
 						reject(err);
 					}
 
@@ -173,11 +206,11 @@ const api = {
 						);
 					} else {
 						// for any other HTTP status code...
-						logger.log(body.message);
+						api.logger.log(body.message);
 					}
 
 					if (errors && errors.length) {
-						errors.forEach(error => logger.log(error.message));
+						errors.forEach(error => api.logger.log(error.message));
 					}
 
 					resolve();
@@ -205,7 +238,7 @@ const api = {
 					});
 				});
 		}
-		logger.log(response.body.message);
+		api.logger.log(response.body.message);
 	},
 	getCurrentVersion() {
 		return currentPackage.version;
@@ -276,14 +309,14 @@ const api = {
 				const isPrerelease = upgradeTo.includes("-");
 				const upgradeVersion = isPrerelease ? `@${upgradeTo}` : "";
 				const upgradeCommand = `'npm install -g tag-release${upgradeVersion}'`;
-				logger.log(
+				api.logger.log(
 					chalk.red(`To upgrade, run ${chalk.yellow(upgradeCommand)}`)
 				);
 			};
 
 			const checkAgainstFullVersion = prerelease => {
 				if (semver.gt(latestFullVersion, currentVersion)) {
-					logger.log(
+					api.logger.log(
 						chalk.red(
 							`tag-release@${chalk.yellow(
 								currentVersion
@@ -298,7 +331,7 @@ const api = {
 					return Promise.resolve();
 				}
 
-				logger.log(
+				api.logger.log(
 					chalk.green(
 						`tag-release@${chalk.yellow(
 							currentVersion
@@ -312,7 +345,7 @@ const api = {
 
 			if (isRunningPrerelease) {
 				if (semver.gt(latestPrereleaseVersion, currentVersion)) {
-					logger.log(
+					api.logger.log(
 						chalk.red(
 							`tag-release@${chalk.yellow(
 								currentVersion
@@ -340,7 +373,7 @@ const api = {
 	},
 	advise(text, { exit = true } = {}) {
 		try {
-			logger.log(
+			api.logger.log(
 				cowsay.say({
 					text: advise(text),
 					f: require("path").resolve(__dirname, "clippy.cow") // eslint-disable-line

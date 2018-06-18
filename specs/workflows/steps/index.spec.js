@@ -1718,6 +1718,36 @@ describe("shared workflow steps", () => {
 				expect(logger.log).toHaveBeenCalledWith("nope");
 			});
 		});
+
+		it("should resolve with state", () => {
+			return run.githubRelease(state).then(result => {
+				expect(result).toEqual(state);
+			});
+		});
+
+		describe("when process.env.NO_OUTPUT is true", () => {
+			beforeEach(() => {
+				process.env.NO_OUTPUT = true;
+			});
+
+			it("should not prompt user and use default name for name", () => {
+				return run.githubRelease(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledTimes(0);
+					expect(createRelease).toHaveBeenCalledTimes(1);
+					expect(createRelease).toHaveBeenCalledWith({
+						tag_name: "v1.2.3", // eslint-disable-line camelcase
+						name: "Added first feature",
+						body:
+							"* Added last feature\n* Added second feature\n* Added first feature",
+						prerelease: false
+					});
+				});
+			});
+
+			afterEach(() => {
+				delete process.env.NO_OUTPUT;
+			});
+		});
 	});
 
 	describe("checkForUncommittedChanges", () => {
@@ -3448,7 +3478,7 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should log an error to the console when the call to the API to get detailss fails", () => {
-			logger.log = jest.fn();
+			logger.log = jest.fn(arg => arg);
 			GitHub.mockImplementation(mockGitHub(false));
 
 			return run.verifyUpstream(state).then(() => {
@@ -4441,6 +4471,46 @@ feature-last-branch`)
 					expect(git.rebaseUpstreamMaster).toHaveBeenCalledTimes(1);
 				});
 			});
+		});
+	});
+
+	describe("changeDirectory", () => {
+		let processSpy;
+		beforeEach(() => {
+			processSpy = jest
+				.spyOn(process, "chdir")
+				.mockImplementation(() => {});
+		});
+
+		it("should change directory", () => {
+			state.cwd = "/my/new/dir";
+			run.changeDirectory(state).then(() => {
+				expect(processSpy).toHaveBeenCalledTimes(1);
+				expect(processSpy).toHaveBeenCalledWith("/my/new/dir");
+			});
+		});
+
+		describe("when handling error", () => {
+			beforeEach(() => {
+				processSpy = jest
+					.spyOn(process, "chdir")
+					.mockImplementation(() => {
+						throw new Error();
+					});
+			});
+
+			it("should handle error", () => {
+				state.cwd = "/crazy/unknown/dir";
+				return run.changeDirectory(state).catch(error => {
+					expect(error).toEqual(
+						"Unable to cwd to provided: /crazy/unknown/dir"
+					);
+				});
+			});
+		});
+
+		afterEach(() => {
+			processSpy.mockRestore();
 		});
 	});
 });
