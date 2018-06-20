@@ -19,7 +19,7 @@ commander
 		"pr [scope]",
 		"Update lightning branch and create a PR to develop."
 	)
-	.command("prerelease", "Create a pre-release")
+	.command("prerelease [identifier]", "Create a pre-release")
 	.alias("pre")
 	.command(
 		"promote [tag]",

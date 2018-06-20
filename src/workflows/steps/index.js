@@ -57,9 +57,9 @@ const api = {
 			});
 	},
 	checkExistingPrereleaseIdentifier(state) {
-		const { identifier, currentVersion } = state;
+		const { prerelease, currentVersion } = state;
 
-		if (identifier && identifier.length) {
+		if (prerelease && prerelease.length) {
 			return Promise.resolve();
 		}
 
@@ -67,21 +67,21 @@ const api = {
 		const [, id] = preReleaseRegEx.exec(currentVersion) || [];
 
 		if (id) {
-			state.identifier = id;
+			state.prerelease = id;
 			state.release = "prerelease";
 		}
 
 		return Promise.resolve();
 	},
 	setPrereleaseIdentifier(state) {
-		const { identifier } = state;
+		const { prerelease } = state;
 
 		const cleanIdentifier = targetIdentifier => {
 			return targetIdentifier.replace(/^(defect|feature|rework)-/, "");
 		};
 
-		if (identifier && identifier.length) {
-			state.identifier = cleanIdentifier(state.identifier);
+		if (prerelease && prerelease.length) {
+			state.prerelease = cleanIdentifier(state.prerelease);
 			return Promise.resolve();
 		}
 
@@ -94,7 +94,7 @@ const api = {
 				}
 			])
 			.then(response => {
-				state.identifier = cleanIdentifier(
+				state.prerelease = cleanIdentifier(
 					response.prereleaseIdentifier
 				);
 				return Promise.resolve();
@@ -183,7 +183,7 @@ const api = {
 ${chalk.green(log)}`);
 	},
 	askSemverJump(state) {
-		const { currentVersion, identifier, prerelease, release } = state;
+		const { currentVersion, prerelease, release } = state;
 
 		// don't bother prompting if this information was already provided in the CLI options
 		if (release && release.length) {
@@ -221,7 +221,7 @@ ${chalk.green(log)}`);
 			const version = `v${semver.inc(
 				currentVersion,
 				item.value,
-				identifier
+				prerelease
 			)}`;
 			return Object.assign({}, item, {
 				name: `${item.name} ${chalk.gray(version)}`
@@ -265,7 +265,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	updateVersion(state) {
-		const { configPath, currentVersion, identifier, release } = state;
+		const { configPath, currentVersion, prerelease, release } = state;
 
 		let pkg = {};
 		try {
@@ -278,7 +278,7 @@ ${chalk.green(log)}`);
 		const newVersion = (pkg.version = semver.inc(
 			oldVersion,
 			release,
-			identifier
+			prerelease
 		));
 
 		util.writeJSONFile(configPath, pkg);
@@ -384,16 +384,13 @@ ${chalk.green(log)}`);
 		return git.pushUpstreamMasterWithTags();
 	},
 	npmPublish(state) {
-		const { configPath, identifier, prerelease } = state;
+		const { configPath, prerelease } = state;
 		if (configPath !== "./package.json") {
 			return null;
 		}
 
 		let command = "npm publish";
-		command =
-			prerelease && identifier
-				? `${command} --tag ${identifier}`
-				: command;
+		command = prerelease ? `${command} --tag ${prerelease}` : command;
 
 		if (!util.isPackagePrivate(configPath)) {
 			return util
@@ -529,7 +526,7 @@ ${chalk.green(log)}`);
 				tag_name: tagName, // eslint-disable-line
 				name: answers.name,
 				body: log,
-				prerelease
+				prerelease: !!prerelease
 			};
 
 			return repository
@@ -712,7 +709,7 @@ ${chalk.green(log)}`);
 			state.dependencies = deps;
 
 			const tagIdentifier = /^\d+\.\d+\.\d+-(.+)\.\d+$/;
-			state.identifier =
+			state.prerelease =
 				deps.reduce((memo, dep) => {
 					const { version } = dep;
 					const [tag, identifier] = tagIdentifier.exec(version) || [];
@@ -722,8 +719,8 @@ ${chalk.green(log)}`);
 					return memo;
 				}, [])[0] || "";
 
-			if (!state.identifier) {
-				state.identifier = removeWords(state.changeReason).join("-");
+			if (!state.prerelease) {
+				state.prerelease = removeWords(state.changeReason).join("-");
 			}
 
 			return Promise.resolve();
@@ -1009,7 +1006,7 @@ ${chalk.green(log)}`);
 		return git.cleanUp();
 	},
 	promptBranchName(state) {
-		const { keepBranch } = state;
+		const { keepBranch, changeType, prerelease } = state;
 
 		if (keepBranch) {
 			return Promise.resolve();
@@ -1020,7 +1017,7 @@ ${chalk.green(log)}`);
 					type: "input",
 					name: "branchName",
 					message: "What do you want your branch name to be?",
-					default: `${state.changeType}-${state.identifier}`
+					default: `${changeType}-${prerelease}`
 				}
 			])
 			.then(({ branchName }) => {
