@@ -6,16 +6,12 @@ const path = require("path");
 const help = require("../src/help");
 const utils = require("../src/utils.js");
 
+utils.applyCommanderOptions(commander);
+
 commander
 	.version(pkg.version)
-	.option("--verbose", "Console additional information", { noHelp: true })
 	.command("start", "default", { isDefault: true, noHelp: true })
 	.command("continue", "continue from a previously conflicted state")
-	.command(
-		"config <filePath>",
-		"override .json configuration file path, defaults to './package.json'",
-		/^.*\.json$/
-	)
 	.command(
 		"dev",
 		"create a PR from origin feature branch to upstream feature branch"

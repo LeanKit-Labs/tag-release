@@ -8,15 +8,11 @@ const {
 	prRebaseConflict
 } = require("../src/workflows/pr");
 const sequence = require("when/sequence");
+const utils = require("../src/utils.js");
 
-commander
-	.option("--verbose", "Console additional information")
-	.option(
-		"--maxbuffer <n>",
-		"Overrides the max stdout buffer of the child process. Size is 1024 * <n>.",
-		parseInt
-	)
-	.parse(process.argv);
+utils.applyCommanderOptions(commander);
+
+commander.parse(process.argv);
 
 const callback = options => {
 	if (options.conflict) {

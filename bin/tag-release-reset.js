@@ -4,16 +4,8 @@ const { extend } = require("lodash");
 const api = require("../src/index.js");
 const workflow = require("../src/workflows/reset");
 
-commander
-	.option("--verbose", "Console additional information")
-	.option(
-		"--maxbuffer <n>",
-		"Overrides the max stdout buffer of the child process. Size is 1024 * <n>.",
-		parseInt
-	)
-	.parse(process.argv);
+commander.parse(process.argv);
 
-const { verbose, maxbuffer } = commander;
-const options = extend({}, { reset: true, verbose, maxbuffer, workflow });
+const options = extend({}, { reset: true, workflow });
 
 api.cli(options);

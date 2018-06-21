@@ -17,6 +17,7 @@ const api = {
 	getFeatureBranch(state) {
 		return git.getCurrentBranch().then(branch => {
 			state.branch = branch.trim();
+			return Promise.resolve(state);
 		});
 	},
 	gitFetchUpstream() {
@@ -855,7 +856,7 @@ ${chalk.green(log)}`);
 			state.packages = results;
 			state.changeReason = reason;
 
-			return Promise.resolve();
+			return Promise.resolve(state);
 		});
 	},
 	gitAmendCommitBumpMessage(state) {

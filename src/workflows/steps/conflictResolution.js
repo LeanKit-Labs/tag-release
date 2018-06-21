@@ -161,7 +161,7 @@ const api = {
 		return git.rebaseUpstreamDevelop({ onError }).then(response => {
 			const { conflict } = response;
 			state.conflict = conflict;
-			return Promise.resolve(state.conflict);
+			return Promise.resolve(state);
 		});
 	},
 	resolvePackageJSONConflicts(state) {

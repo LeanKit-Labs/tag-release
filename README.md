@@ -17,11 +17,7 @@ making (major, minor, patch). Along the way, you'll have the opportunity to
 verify, modify, or cancel the `tag-release` process.
 
 ### Commands
-```
-$ tag-release --help
-```
-
-Will display a list of avaliable commands and options.
+`tag-release` supports many different commands and options. You can view a summary of these by providing the `--help` option from the terminal.
 
 ```
   Usage: tag-release [options] [command]
@@ -29,8 +25,11 @@ Will display a list of avaliable commands and options.
 
   Options:
 
-    -V, --version  output the version number
-    -h, --help     output usage information
+    --verbose                console additional information
+    --maxbuffer <n>          overrides the max stdout buffer of the child process, size is 1024 * <n>
+    -c, --config <filePath>  path to json configuration file (defaults to './package.json')
+    -V, --version            output the version number
+    -h, --help               output usage information
 
 
   Commands:
@@ -57,7 +56,9 @@ iterated upon.
 ```
 Usage:
    $ tag-release prerelease
+   $ tag-release pre
    $ tag-release prerelease foo
+   $ tag-release pre foo
 
 Example:
 
@@ -248,7 +249,7 @@ Where `username` is your GitHub username and `token` is your Github authenticati
 ```
 const tagRelease = require( "tag-release" );
 
-tagRelease.run({release:'release-type', cwd: "/path/to/repo" }).then(result=>{
+tagRelease.run({release:'minor', cwd: "/path/to/repo" }).then(result=>{
 	console.log( "success", result);
 }).catch(error=>{
 	console.log("failiure", error );
@@ -304,7 +305,7 @@ my-dependency-project git:(master) tag-release promote
 
 > **Note**: This will change your pre-release from something like 1.2.3-new-feature.0 to 1.2.3 or whatever version is next in line. You will use this version in the next step.
 
-7. Update your consumer project's branch to use the real dependency project's version and create a GitHub PR for the QEs to merge into develop.
+7. Update your consumer project's branch to use the real dependency project's version and create a GitHub PR for the AEs to merge into develop.
 
 ```
 my-consumer-project git:(my-feature-branch) tag-release pr

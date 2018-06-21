@@ -41,7 +41,7 @@ const startTagRelease = options => {
 		}
 
 		return sequence(options.workflow, options).then(result =>
-			options.callback(result)
+			options.callback(result[result.length - 1])
 		); // eslint-disable-line no-console
 	} catch (error) {
 		console.log(`Tag-release encountered a problem: ${error}`);
@@ -50,7 +50,7 @@ const startTagRelease = options => {
 
 const bootstrap = options => {
 	utils
-		.getGitConfigs()
+		.getConfigs()
 		.then(([username, token]) => {
 			options = _.extend({}, options, { username, token });
 			startTagRelease(options);
@@ -61,7 +61,7 @@ const bootstrap = options => {
 				utils
 					.createGitHubAuthToken(username, password)
 					.then(token => {
-						utils.setGitConfigs(username, token);
+						utils.setConfigs(username, token);
 						options = _.extend({}, options, {
 							username,
 							token
@@ -79,7 +79,7 @@ const api = {
 			throw new Error("Missing required args: { release, cwd }");
 		}
 
-		const [username, token] = await utils.getGitConfigs();
+		const [username, token] = await utils.getConfigs();
 		process.env.NO_OUTPUT = true;
 		const options = extend(
 			{},

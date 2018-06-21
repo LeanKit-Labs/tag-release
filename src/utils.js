@@ -15,8 +15,12 @@ const semver = require("semver");
 const cowsay = require("cowsay");
 const advise = require("./advise.js");
 const rcfile = require("rcfile");
+const pathUtils = require("path");
 
 const GIT_CONFIG_COMMAND = "git config --global";
+const GIT_CONFIG_UNSET_COMMAND = "git config --global --unset";
+const GIT_CONFIG_REMOVE_SECTION_COMMAND =
+	"git config --global --remove-section";
 const MAX_BUFFER_SIZE = 5000; // eslint-disable-line no-magic-numbers
 
 const getMaxBuffer = size => {
@@ -131,17 +135,31 @@ const api = {
 			}
 		}
 	},
-	getGitConfig(name) {
+	queryGitConfig(name) {
 		return api
 			.exec(`${GIT_CONFIG_COMMAND} ${name}`)
-			.then(value => value.trim());
+			.then(value => value.trim())
+			.catch(() => undefined);
 	},
-	setGitConfig(name, value) {
-		return api.exec(`${GIT_CONFIG_COMMAND} ${name} ${value.trim()}`);
+	setConfig(name, value) {
+		const contents = rcfile("tag-release");
+		contents[name] = value;
+
+		return api.writeJSONFile(
+			pathUtils.join(process.env.HOME, ".tag-releaserc.json"),
+			contents
+		);
+	},
+	removeGitConfig(name) {
+		return api
+			.exec(`${GIT_CONFIG_UNSET_COMMAND} ${name}`)
+			.catch(() => undefined);
+	},
+	removeGitConfigSection(name) {
+		return api.exec(`${GIT_CONFIG_REMOVE_SECTION_COMMAND} ${name}`);
 	},
 	getOverrides() {
-		// reads root and assigns/overlays as it traverses to current directory
-		let overrides = rcfile("tag-release", { cwd: __dirname });
+		let overrides = rcfile("tag-release");
 
 		// check if there are ENV variables for username/token
 		if (process.env.LKR_GITHUB_USER && process.env.LKR_GITHUB_TOKEN) {
@@ -153,23 +171,32 @@ const api = {
 
 		return overrides;
 	},
-	getGitConfigs() {
-		const { username, token } = api.getOverrides();
+	async getConfigs() {
+		let [username, token] = await Promise.all([
+			api.queryGitConfig("tag-release.username"),
+			api.queryGitConfig("tag-release.token")
+		]);
+
+		if (username || token) {
+			await Promise.all([
+				api.setConfig("username", username),
+				api.setConfig("token", token),
+				api.removeGitConfig("tag-release.username"),
+				api.removeGitConfig("tag-release.token"),
+				api.removeGitConfigSection("tag-release")
+			]);
+		}
+		({ username, token } = api.getOverrides());
+
 		if (username && token) {
 			return Promise.resolve([username, token]);
 		}
-
-		// Remove git config global stuff and ONLY use rc file for
-		// git username and token
-		return Promise.all([
-			api.getGitConfig("tag-release.username"),
-			api.getGitConfig("tag-release.token")
-		]);
+		return Promise.reject("username or token doesn't exist");
 	},
-	setGitConfigs(username, token) {
+	setConfigs(username, token) {
 		return sequence([
-			api.setGitConfig.bind(this, "tag-release.username", username),
-			api.setGitConfig.bind(this, "tag-release.token", token)
+			api.setConfig.bind(this, "username", username),
+			api.setConfig.bind(this, "token", token)
 		]).catch(e => api.logger.log(chalk.red(e)));
 	},
 	escapeCurlPassword(source) {
@@ -376,7 +403,7 @@ const api = {
 			api.logger.log(
 				cowsay.say({
 					text: advise(text),
-					f: require("path").resolve(__dirname, "clippy.cow") // eslint-disable-line
+					f: pathUtils.resolve(__dirname, "clippy.cow") // eslint-disable-line
 				})
 			);
 		} catch (error) {
@@ -404,6 +431,19 @@ const api = {
 
 		/* istanbul ignore next */
 		console.log(content); // eslint-disable-line no-console
+	},
+	applyCommanderOptions(commander) {
+		commander.option("--verbose", "console additional information");
+		commander.option(
+			"--maxbuffer <n>",
+			"overrides the max stdout buffer of the child process, size is 1024 * <n>",
+			parseInt
+		);
+		commander.option(
+			"-c, --config <filePath>",
+			"path to json configuration file (defaults to './package.json')",
+			/^.*\.json$/
+		);
 	}
 };
 
