@@ -1,3 +1,14 @@
+## 6.x
+
+### 6.0.0
+
+* Updated rcfile to use current/HOME directories. Fixed workflow issues
+* Updated help
+* Updated documentation
+* Removed -i, --identifier flag from prerelease and added optional identifier arg
+* Added support for rc file and env variable overrides.
+* Only support git-style commands
+
 ## 5.x
 
 ### 5.19.0
