@@ -190,11 +190,11 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should not modify state with existing identifier", () => {
-			state.identifier = "some-identifier";
+			state.prerelease = "some-identifier";
 			state.currentVersion = "1.0.0-some-other-identifier.0";
 			return run.checkExistingPrereleaseIdentifier(state).then(() => {
-				expect(state).toHaveProperty("identifier");
-				expect(state.identifier).toEqual("some-identifier");
+				expect(state).toHaveProperty("prerelease");
+				expect(state.prerelease).toEqual("some-identifier");
 				expect(state).not.toHaveProperty("release");
 			});
 		});
@@ -202,8 +202,8 @@ describe("shared workflow steps", () => {
 		it("should set state with identifier and release type", () => {
 			state.currentVersion = "1.0.0-some-other-identifier.0";
 			return run.checkExistingPrereleaseIdentifier(state).then(() => {
-				expect(state).toHaveProperty("identifier");
-				expect(state.identifier).toEqual("some-other-identifier");
+				expect(state).toHaveProperty("prerelease");
+				expect(state.prerelease).toEqual("some-other-identifier");
 				expect(state).toHaveProperty("release");
 				expect(state.release).toEqual("prerelease");
 			});
@@ -212,7 +212,7 @@ describe("shared workflow steps", () => {
 		it("should do nothing with no existing identifier", () => {
 			state.currentVersion = "1.0.0";
 			return run.checkExistingPrereleaseIdentifier(state).then(() => {
-				expect(state).not.toHaveProperty("identifier");
+				expect(state).not.toHaveProperty("prerelease");
 				expect(state).not.toHaveProperty("release");
 			});
 		});
@@ -226,7 +226,7 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should not prompt if an identifier was provided at the command line", () => {
-			state = { identifier: "test" };
+			state = { prerelease: "test" };
 			return run.setPrereleaseIdentifier(state).then(() => {
 				expect(util.prompt).not.toHaveBeenCalled();
 			});
@@ -247,18 +247,18 @@ describe("shared workflow steps", () => {
 
 		it("should persist the given identifier to the workflow state", () => {
 			return run.setPrereleaseIdentifier(state).then(() => {
-				expect(state).toHaveProperty("identifier");
-				expect(state.identifier).toEqual("pre");
+				expect(state).toHaveProperty("prerelease");
+				expect(state.prerelease).toEqual("pre");
 			});
 		});
 
 		["defect", "feature", "rework"].forEach(redundantIdentifierPrefix => {
 			it(`should strip "${redundantIdentifierPrefix}-" from the beginning of the identifier when it is present`, () => {
 				state = {
-					identifier: `${redundantIdentifierPrefix}-test-prerelease-identifier`
+					prerelease: `${redundantIdentifierPrefix}-test-prerelease-identifier`
 				};
 				return run.setPrereleaseIdentifier(state).then(() => {
-					expect(state.identifier).toEqual(
+					expect(state.prerelease).toEqual(
 						"test-prerelease-identifier"
 					);
 				});
@@ -603,8 +603,7 @@ describe("shared workflow steps", () => {
 			it("should prompt the user with choices for Pre-major, Pre-minor, Pre-patch and Pre-release releases", () => {
 				state = {
 					currentVersion: "1.2.3",
-					prerelease: true,
-					identifier: "test"
+					prerelease: "test"
 				};
 
 				return run.askSemverJump(state).then(() => {
@@ -748,7 +747,7 @@ describe("shared workflow steps", () => {
 			state = {
 				configPath: "./package.json",
 				currentVersion: "1.2.3",
-				identifier: undefined,
+				prerelease: undefined,
 				release: "minor"
 			};
 		});
@@ -795,7 +794,7 @@ describe("shared workflow steps", () => {
 			state = {
 				configPath: "./manifest.json",
 				currentVersion: "1.2.3",
-				identifier: undefined,
+				prerelease: undefined,
 				release: "minor"
 			};
 
@@ -810,7 +809,7 @@ describe("shared workflow steps", () => {
 			state = {
 				configPath: "./manifest.json",
 				currentVersion: "1.2.3",
-				identifier: undefined,
+				prerelease: undefined,
 				release: "minor"
 			};
 
@@ -1141,8 +1140,7 @@ describe("shared workflow steps", () => {
 		it("should publish with identifier for pre-releases", () => {
 			state = {
 				configPath: "./package.json",
-				prerelease: true,
-				identifier: "my-identifier"
+				prerelease: "my-identifier"
 			};
 			util.prompt = jest.fn(() => Promise.resolve({ publish: true }));
 			return run.npmPublish(state).then(() => {
@@ -1709,6 +1707,36 @@ describe("shared workflow steps", () => {
 			});
 		});
 
+		describe("when prerelease is truthy", () => {
+			it("should call the GitHub API to create a new release for the repository", () => {
+				state.prerelease = true;
+				return run.githubRelease(state).then(() => {
+					expect(createRelease).toHaveBeenCalledTimes(1);
+					expect(createRelease).toHaveBeenCalledWith({
+						tag_name: "v1.2.3", // eslint-disable-line camelcase
+						name: "Something awesome",
+						body:
+							"* Added last feature\n* Added second feature\n* Added first feature",
+						prerelease: true
+					});
+				});
+			});
+
+			it("should call the GitHub API to create a new release for the repository", () => {
+				state.prerelease = "some-identifier";
+				return run.githubRelease(state).then(() => {
+					expect(createRelease).toHaveBeenCalledTimes(1);
+					expect(createRelease).toHaveBeenCalledWith({
+						tag_name: "v1.2.3", // eslint-disable-line camelcase
+						name: "Something awesome",
+						body:
+							"* Added last feature\n* Added second feature\n* Added first feature",
+						prerelease: true
+					});
+				});
+			});
+		});
+
 		it("should log an error to the console when the call to the API to create a release fails", () => {
 			logger.log = jest.fn();
 			GitHub.mockImplementation(mockGitHub(false));
@@ -1716,6 +1744,36 @@ describe("shared workflow steps", () => {
 			return run.githubRelease(state).then(() => {
 				expect(logger.log).toHaveBeenCalledTimes(1);
 				expect(logger.log).toHaveBeenCalledWith("nope");
+			});
+		});
+
+		it("should resolve with state", () => {
+			return run.githubRelease(state).then(result => {
+				expect(result).toEqual(state);
+			});
+		});
+
+		describe("when process.env.NO_OUTPUT is true", () => {
+			beforeEach(() => {
+				process.env.NO_OUTPUT = true;
+			});
+
+			it("should not prompt user and use default name for name", () => {
+				return run.githubRelease(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledTimes(0);
+					expect(createRelease).toHaveBeenCalledTimes(1);
+					expect(createRelease).toHaveBeenCalledWith({
+						tag_name: "v1.2.3", // eslint-disable-line camelcase
+						name: "Added first feature",
+						body:
+							"* Added last feature\n* Added second feature\n* Added first feature",
+						prerelease: false
+					});
+				});
+			});
+
+			afterEach(() => {
+				delete process.env.NO_OUTPUT;
 			});
 		});
 	});
@@ -2252,8 +2310,8 @@ describe("shared workflow steps", () => {
 
 		it("should persist the identifier to the workflow state", () => {
 			return run.askVersions(state).then(() => {
-				expect(state).toHaveProperty("identifier");
-				expect(state.identifier).toEqual("new");
+				expect(state).toHaveProperty("prerelease");
+				expect(state.prerelease).toEqual("new");
 			});
 		});
 
@@ -2274,8 +2332,8 @@ describe("shared workflow steps", () => {
 			);
 			state.changeReason = "magical powers";
 			return run.askVersions(state).then(() => {
-				expect(state).toHaveProperty("identifier");
-				expect(state.identifier).toEqual("magical-powers");
+				expect(state).toHaveProperty("prerelease");
+				expect(state.prerelease).toEqual("magical-powers");
 			});
 		});
 	});
@@ -3137,7 +3195,7 @@ describe("shared workflow steps", () => {
 		beforeEach(() => {
 			state = {
 				changeType: "feature",
-				identifier: "magic",
+				prerelease: "magic",
 				keepBranch: false
 			};
 			util.prompt = jest.fn(() =>
@@ -3448,7 +3506,7 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should log an error to the console when the call to the API to get detailss fails", () => {
-			logger.log = jest.fn();
+			logger.log = jest.fn(arg => arg);
 			GitHub.mockImplementation(mockGitHub(false));
 
 			return run.verifyUpstream(state).then(() => {
@@ -4441,6 +4499,46 @@ feature-last-branch`)
 					expect(git.rebaseUpstreamMaster).toHaveBeenCalledTimes(1);
 				});
 			});
+		});
+	});
+
+	describe("changeDirectory", () => {
+		let processSpy;
+		beforeEach(() => {
+			processSpy = jest
+				.spyOn(process, "chdir")
+				.mockImplementation(() => {});
+		});
+
+		it("should change directory", () => {
+			state.cwd = "/my/new/dir";
+			run.changeDirectory(state).then(() => {
+				expect(processSpy).toHaveBeenCalledTimes(1);
+				expect(processSpy).toHaveBeenCalledWith("/my/new/dir");
+			});
+		});
+
+		describe("when handling error", () => {
+			beforeEach(() => {
+				processSpy = jest
+					.spyOn(process, "chdir")
+					.mockImplementation(() => {
+						throw new Error();
+					});
+			});
+
+			it("should handle error", () => {
+				state.cwd = "/crazy/unknown/dir";
+				return run.changeDirectory(state).catch(error => {
+					expect(error).toEqual(
+						"Unable to cwd to provided: /crazy/unknown/dir"
+					);
+				});
+			});
+		});
+
+		afterEach(() => {
+			processSpy.mockRestore();
 		});
 	});
 });

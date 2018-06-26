@@ -18,7 +18,7 @@ const git = {
 	}) {
 		const command = fullCommand ? `${args}` : `git ${args}`;
 
-		if (!showOutput) {
+		if (!showOutput || process.env.NO_OUTPUT) {
 			return util.exec(command, maxBuffer ? maxBuffer : undefined);
 		}
 

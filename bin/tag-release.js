@@ -1,72 +1,43 @@
 #!/usr/bin/env node
 /* eslint no-console: 0 */
 const commander = require("commander");
-const _ = require("lodash");
-const utils = require("../src/utils.js");
-const help = require("../src/help");
 const pkg = require("../package.json");
 const path = require("path");
-const logger = require("better-console");
-const chalk = require("chalk");
+const help = require("../src/help");
+const utils = require("../src/utils.js");
 
-const api = require("../src/index.js");
-
-const questions = {
-	github: [
-		{
-			type: "input",
-			name: "username",
-			message: "What is your GitHub username"
-		},
-		{
-			type: "password",
-			name: "password",
-			message: "What is your GitHub password"
-		}
-	]
-};
+utils.applyCommanderOptions(commander);
 
 commander
 	.version(pkg.version)
-	.option(
-		"-r, --release [type]",
-		"Release type (major, minor, patch, premajor, preminor, prepatch, prerelease)",
-		/^(major|minor|patch|premajor|preminor|prepatch|prerelease)/i
+	.command("start", "default", { isDefault: true, noHelp: true })
+	.command("continue", "continue from a previously conflicted state")
+	.command(
+		"dev",
+		"create a PR from origin feature branch to upstream feature branch"
 	)
-	.option(
-		"-c, --config <filePath>",
-		"Path to JSON Configuration file (defaults to './package.json')",
-		/^.*\.json$/
+	.command(
+		"pr [scope]",
+		"update consumer project feature branch and create a PR to develop"
 	)
-	.option(
-		"--maxbuffer <n>",
-		"Overrides the max stdout buffer of the child process. Size is 1024 * <n>.",
-		parseInt
+	.command("prerelease [identifier]", "create a pre-release")
+	.alias("pre")
+	.command(
+		"promote [tag]",
+		"promote a pre-release tag previously created by tag-release"
 	)
-	.option("--verbose", "Console additional information")
-	.option("-p, --prerelease", "Create a pre-release")
-	.option("-i, --identifier <identifier>", "Identifier used for pre-release")
-	.option("--reset", "Reset repo to upstream master/develop branches.")
-	.option(
-		"--promote [tag]",
-		"Promotes specified pre-release tag to an offical release."
+	.alias("pro")
+	.command(
+		"qa [scope]",
+		"create initial upstream feature branch for consumer project"
 	)
-	.option("--continue", "Continues the rebase process of a tag promotion.")
-	.option("--qa [scope]", "Create initial upstream branch for lightning.")
-	.option(
-		"--pr [scope]",
-		"Update lightning branch and create a PR to develop."
-	)
-	.option(
-		"--dev",
-		"Creates a PR from origin feature branch to upstream feature branch"
-	);
+	.command("reset", "reset repo to upstream master/develop branches");
 
 commander.on("--help", () => {
 	help(commander);
 
 	if (commander.verbose) {
-		const diagramPath = path.resolve(__dirname, "workflow.txt");
+		const diagramPath = path.resolve(__dirname, "../src/workflow.txt");
 		console.log(utils.readFile(diagramPath));
 	} else {
 		console.log(
@@ -76,23 +47,3 @@ commander.on("--help", () => {
 });
 
 commander.parse(process.argv);
-
-if (commander.release) {
-	_.remove(questions.general, { name: "release" });
-}
-
-const options = _.extend({}, commander);
-
-const tagReleaseNext = chalk.green(`tag-release-next`);
-logger.log(
-	chalk.yellow(
-		`${chalk.bold(
-			`WARNING:`
-		)} In an effort to move towards git-style commands we are deprecating
-tag-release's current functionality of flags in future releases.
-Please use ${tagReleaseNext} to get familiar with what lies ahead!
-Try the "help" command to see example usage.`
-	)
-);
-
-api.run(options);

@@ -14,8 +14,13 @@ const npm = require("npm");
 const semver = require("semver");
 const cowsay = require("cowsay");
 const advise = require("./advise.js");
+const rcfile = require("rcfile");
+const pathUtils = require("path");
 
 const GIT_CONFIG_COMMAND = "git config --global";
+const GIT_CONFIG_UNSET_COMMAND = "git config --global --unset";
+const GIT_CONFIG_REMOVE_SECTION_COMMAND =
+	"git config --global --remove-section";
 const MAX_BUFFER_SIZE = 5000; // eslint-disable-line no-magic-numbers
 
 const getMaxBuffer = size => {
@@ -111,33 +116,88 @@ const api = {
 	log: {
 		lastLog: "",
 		begin(text) {
-			logUpdate(`${text} ☐`);
-			api.lastLog = text;
+			if (!process.env.NO_OUTPUT) {
+				logUpdate(`${text} ☐`);
+				api.lastLog = text;
+			}
 		},
 		end() {
-			logUpdate(`${api.lastLog} ☑`);
-			logUpdate.done();
+			if (!process.env.NO_OUTPUT) {
+				logUpdate(`${api.lastLog} ☑`);
+				logUpdate.done();
+			}
 		}
 	},
-	getGitConfig(name) {
+	logger: {
+		log(text, error) {
+			if (!process.env.NO_OUTPUT) {
+				return error ? logger.log(text, error) : logger.log(text);
+			}
+		}
+	},
+	queryGitConfig(name) {
 		return api
 			.exec(`${GIT_CONFIG_COMMAND} ${name}`)
-			.then(value => value.trim());
+			.then(value => value.trim())
+			.catch(() => undefined);
 	},
-	setGitConfig(name, value) {
-		return api.exec(`${GIT_CONFIG_COMMAND} ${name} ${value.trim()}`);
+	setConfig(name, value) {
+		const contents = rcfile("tag-release");
+		contents[name] = value;
+
+		return api.writeJSONFile(
+			pathUtils.join(process.env.HOME, ".tag-releaserc.json"),
+			contents
+		);
 	},
-	getGitConfigs() {
-		return Promise.all([
-			api.getGitConfig("tag-release.username"),
-			api.getGitConfig("tag-release.token")
+	removeGitConfig(name) {
+		return api
+			.exec(`${GIT_CONFIG_UNSET_COMMAND} ${name}`)
+			.catch(() => undefined);
+	},
+	removeGitConfigSection(name) {
+		return api.exec(`${GIT_CONFIG_REMOVE_SECTION_COMMAND} ${name}`);
+	},
+	getOverrides() {
+		let overrides = rcfile("tag-release");
+
+		// check if there are ENV variables for username/token
+		if (process.env.LKR_GITHUB_USER && process.env.LKR_GITHUB_TOKEN) {
+			overrides = Object.assign({}, overrides, {
+				username: process.env.LKR_GITHUB_USER,
+				token: process.env.LKR_GITHUB_TOKEN
+			});
+		}
+
+		return overrides;
+	},
+	async getConfigs() {
+		let [username, token] = await Promise.all([
+			api.queryGitConfig("tag-release.username"),
+			api.queryGitConfig("tag-release.token")
 		]);
+
+		if (username || token) {
+			await Promise.all([
+				api.setConfig("username", username),
+				api.setConfig("token", token),
+				api.removeGitConfig("tag-release.username"),
+				api.removeGitConfig("tag-release.token"),
+				api.removeGitConfigSection("tag-release")
+			]);
+		}
+		({ username, token } = api.getOverrides());
+
+		if (username && token) {
+			return Promise.resolve([username, token]);
+		}
+		return Promise.reject("username or token doesn't exist");
 	},
-	setGitConfigs(username, token) {
+	setConfigs(username, token) {
 		return sequence([
-			api.setGitConfig.bind(this, "tag-release.username", username),
-			api.setGitConfig.bind(this, "tag-release.token", token)
-		]).catch(e => logger.log(chalk.red(e)));
+			api.setConfig.bind(this, "username", username),
+			api.setConfig.bind(this, "token", token)
+		]).catch(e => api.logger.log(chalk.red(e)));
 	},
 	escapeCurlPassword(source) {
 		return source.replace(/([[\]$"\\])/g, "\\$1");
@@ -159,7 +219,7 @@ const api = {
 				{ url, headers, auth, json },
 				(err, response, body) => {
 					if (err) {
-						logger.log("error", err);
+						api.logger.log("error", err);
 						reject(err);
 					}
 
@@ -173,11 +233,11 @@ const api = {
 						);
 					} else {
 						// for any other HTTP status code...
-						logger.log(body.message);
+						api.logger.log(body.message);
 					}
 
 					if (errors && errors.length) {
-						errors.forEach(error => logger.log(error.message));
+						errors.forEach(error => api.logger.log(error.message));
 					}
 
 					resolve();
@@ -205,7 +265,7 @@ const api = {
 					});
 				});
 		}
-		logger.log(response.body.message);
+		api.logger.log(response.body.message);
 	},
 	getCurrentVersion() {
 		return currentPackage.version;
@@ -276,14 +336,14 @@ const api = {
 				const isPrerelease = upgradeTo.includes("-");
 				const upgradeVersion = isPrerelease ? `@${upgradeTo}` : "";
 				const upgradeCommand = `'npm install -g tag-release${upgradeVersion}'`;
-				logger.log(
+				api.logger.log(
 					chalk.red(`To upgrade, run ${chalk.yellow(upgradeCommand)}`)
 				);
 			};
 
 			const checkAgainstFullVersion = prerelease => {
 				if (semver.gt(latestFullVersion, currentVersion)) {
-					logger.log(
+					api.logger.log(
 						chalk.red(
 							`tag-release@${chalk.yellow(
 								currentVersion
@@ -298,7 +358,7 @@ const api = {
 					return Promise.resolve();
 				}
 
-				logger.log(
+				api.logger.log(
 					chalk.green(
 						`tag-release@${chalk.yellow(
 							currentVersion
@@ -312,7 +372,7 @@ const api = {
 
 			if (isRunningPrerelease) {
 				if (semver.gt(latestPrereleaseVersion, currentVersion)) {
-					logger.log(
+					api.logger.log(
 						chalk.red(
 							`tag-release@${chalk.yellow(
 								currentVersion
@@ -340,10 +400,10 @@ const api = {
 	},
 	advise(text, { exit = true } = {}) {
 		try {
-			logger.log(
+			api.logger.log(
 				cowsay.say({
 					text: advise(text),
-					f: require("path").resolve(__dirname, "clippy.cow") // eslint-disable-line
+					f: pathUtils.resolve(__dirname, "clippy.cow") // eslint-disable-line
 				})
 			);
 		} catch (error) {
@@ -371,6 +431,19 @@ const api = {
 
 		/* istanbul ignore next */
 		console.log(content); // eslint-disable-line no-console
+	},
+	applyCommanderOptions(commander) {
+		commander.option("--verbose", "console additional information");
+		commander.option(
+			"--maxbuffer <n>",
+			"overrides the max stdout buffer of the child process, size is 1024 * <n>",
+			parseInt
+		);
+		commander.option(
+			"-c, --config <filePath>",
+			"path to json configuration file (defaults to './package.json')",
+			/^.*\.json$/
+		);
 	}
 };
 

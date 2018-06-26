@@ -116,6 +116,10 @@ jest.mock("../package.json", () => ({
 	version: "1.1.1"
 }));
 
+jest.mock("rcfile", () => {
+	return jest.fn(() => ({ username: "rc@file.com", token: "token12345" }));
+});
+
 const cp = require("child_process");
 const fs = require("fs");
 const { get } = require("lodash");
@@ -132,6 +136,7 @@ const advise = require("../src/advise.js"); // eslint-disable-line no-unused-var
 const currentPackage = require("../package.json");
 const util = require("../src/utils");
 const { isPromise } = require("./helpers");
+const rcfile = require("rcfile"); // eslint-disable-line no-unused-vars
 
 const originalGithubUnauthorizedFunction = util.githubUnauthorized;
 
@@ -521,103 +526,348 @@ describe("utils", () => {
 			util.log.end();
 			expect(logUpdate.done).toHaveBeenCalledTimes(1);
 		});
+
+		describe("when process.env.NO_OUTPUT is true", () => {
+			beforeEach(() => {
+				logUpdate.mockReset();
+				process.env.NO_OUTPUT = true;
+				util.log.begin("monkey");
+			});
+
+			it("log begin should not write to logUpdate", () => {
+				expect(logUpdate).toHaveBeenCalledTimes(0);
+			});
+
+			it("log end should not update logUpdate", () => {
+				util.log.end();
+				expect(logUpdate).toHaveBeenCalledTimes(0);
+			});
+
+			afterEach(() => {
+				delete process.env.NO_OUTPUT;
+			});
+		});
 	});
 
-	describe("getGitConfig", () => {
+	describe("queryGitConfig", () => {
 		beforeEach(() => {
 			util.exec = jest.fn(() => Promise.resolve("some result"));
 		});
 
-		it("should returna a promise", () => {
-			const result = util.getGitConfig("foo");
+		it("should return a promise", () => {
+			const result = util.queryGitConfig("foo");
 			expect(isPromise(result)).toBeTruthy();
 		});
 
 		it("should call `exec` with the appropriate arguments", () => {
-			return util.getGitConfig("tag-release.username").then(() => {
+			return util.queryGitConfig("tag-release.username").then(() => {
 				expect(util.exec).toHaveBeenCalledTimes(1);
 				expect(util.exec).toHaveBeenCalledWith(
 					"git config --global tag-release.username"
 				);
 			});
 		});
+
+		describe("when handling error", () => {
+			beforeEach(() => {
+				util.exec = jest.fn(() => Promise.reject());
+			});
+
+			it("should return undefined", () => {
+				return util
+					.queryGitConfig("tag-release.username")
+					.then(result => {
+						expect(util.exec).toHaveBeenCalledTimes(1);
+						expect(util.exec).toHaveBeenCalledWith(
+							"git config --global tag-release.username"
+						);
+						expect(result).toEqual(undefined);
+					});
+			});
+		});
 	});
 
-	describe("setGitConfig", () => {
+	describe("setConfig", () => {
 		beforeEach(() => {
-			util.exec = jest.fn(() => Promise.resolve("some value"));
+			util.writeJSONFile = jest.fn();
+			util.setConfig("username", "monkey");
 		});
 
-		it("should return a promise", () => {
-			const result = util.setGitConfig("tag-release.username", "monkey");
-			expect(isPromise(result)).toBeTruthy();
+		it("should read from rcfile", () => {
+			expect(rcfile).toHaveBeenCalledTimes(1);
+		});
+
+		it("should write rcfile", () => {
+			expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("removeGitConfig", () => {
+		beforeEach(() => {
+			util.exec = jest.fn(() => Promise.resolve());
 		});
 
 		it("should call `exec` with the appropriate arguments", () => {
-			return util
-				.setGitConfig("tag-release.username", "monkey")
-				.then(() => {
-					expect(util.exec).toHaveBeenCalledTimes(1);
-					expect(util.exec).toHaveBeenCalledWith(
-						"git config --global tag-release.username monkey"
-					);
-				});
+			return util.removeGitConfig("tag-release.username").then(() => {
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith(
+					"git config --global --unset tag-release.username"
+				);
+			});
+		});
+
+		describe("when handling error", () => {
+			beforeEach(() => {
+				util.exec = jest.fn(() => Promise.reject());
+			});
+
+			it("should return undefined", () => {
+				return util
+					.removeGitConfig("tag-release.username")
+					.then(result => {
+						expect(util.exec).toHaveBeenCalledTimes(1);
+						expect(util.exec).toHaveBeenCalledWith(
+							"git config --global --unset tag-release.username"
+						);
+						expect(result).toEqual(undefined);
+					});
+			});
 		});
 	});
 
-	describe("getGitConfigs", () => {
+	describe("removeGitConfigSection", () => {
 		beforeEach(() => {
-			util.getGitConfig = jest.fn(() => Promise.resolve());
+			util.exec = jest.fn(() => Promise.resolve());
+		});
+
+		it("should call `exec` with the appropriate arguments", () => {
+			return util.removeGitConfigSection("tag-release").then(() => {
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith(
+					"git config --global --remove-section tag-release"
+				);
+			});
+		});
+	});
+
+	describe("getOverrides", () => {
+		it("should read overrides from rcfile", () => {
+			const overrides = util.getOverrides();
+			expect(overrides).toEqual({
+				username: "rc@file.com",
+				token: "token12345"
+			});
+		});
+
+		describe("environment variables", () => {
+			beforeEach(() => {
+				process.env.LKR_GITHUB_USER = "env@variable.com";
+				process.env.LKR_GITHUB_TOKEN = "envToken12345";
+			});
+
+			it("should use env variables over rcfile", () => {
+				const overrides = util.getOverrides();
+				expect(overrides).toEqual({
+					username: "env@variable.com",
+					token: "envToken12345"
+				});
+			});
+
+			afterEach(() => {
+				delete process.env.LKR_GITHUB_USER;
+				delete process.env.LKR_GITHUB_TOKEN;
+			});
+		});
+	});
+
+	describe("getConfigs", () => {
+		beforeEach(() => {
+			util.queryGitConfig = jest.fn(() => Promise.resolve("blah"));
+			util.setConfig = jest.fn(() => Promise.resolve());
+			util.removeGitConfig = jest.fn(() => Promise.resolve());
+			util.removeGitConfigSection = jest.fn(() => Promise.resolve());
+			util.getOverrides = jest.fn(() => ({
+				username: "user@name.com",
+				token: "token12345"
+			}));
 		});
 
 		it("should return a promise", () => {
-			const result = util.getGitConfigs();
+			const result = util.getConfigs();
 			expect(isPromise(result)).toBeTruthy();
 		});
 
-		it("calls getGitConfig for username and token", () => {
-			return util.getGitConfigs().then(() => {
-				expect(util.getGitConfig).toHaveBeenCalledTimes(2);
-				expect(util.getGitConfig).toHaveBeenCalledWith(
+		it("should query for existing username and token from .gitconfig", () => {
+			util.getConfigs().then(() => {
+				expect(util.queryGitConfig).toHaveBeenCalledTimes(2);
+				expect(util.queryGitConfig).toHaveBeenCalledWith(
 					"tag-release.username"
 				);
-				expect(util.getGitConfig).toHaveBeenCalledWith(
+				expect(util.queryGitConfig).toHaveBeenCalledWith(
 					"tag-release.token"
 				);
 			});
 		});
+
+		describe("when handling existing .gitconfig uername and token", () => {
+			describe("when both username and token exist", () => {
+				it("should set rcfile configs and remove .gitconfig entries", () => {
+					util.getConfigs().then(() => {
+						expect(util.setConfig).toHaveBeenCalledTimes(2);
+						expect(util.setConfig).toHaveBeenCalledWith(
+							"username",
+							"blah"
+						);
+						expect(util.setConfig).toHaveBeenCalledWith(
+							"token",
+							"blah"
+						);
+						expect(util.removeGitConfig).toHaveBeenCalledTimes(2);
+						expect(util.removeGitConfig).toHaveBeenCalledWith(
+							"tag-release.username"
+						);
+						expect(util.removeGitConfig).toHaveBeenCalledWith(
+							"tag-release.token"
+						);
+						expect(util.removeGitConfigSection).toHaveBeenCalled();
+						expect(
+							util.removeGitConfigSection
+						).toHaveBeenCalledWith("tag-release");
+					});
+				});
+			});
+
+			describe("when neither username and token exist", () => {
+				it("should set rcfile configs and remove .gitconfig entries", () => {
+					util.queryGitConfig = jest.fn(() =>
+						Promise.resolve(undefined)
+					);
+
+					util.getConfigs().then(() => {
+						expect(util.setConfig).toHaveBeenCalledTimes(0);
+						expect(util.removeGitConfig).toHaveBeenCalledTimes(0);
+						expect(
+							util.removeGitConfigSection
+						).toHaveBeenCalledTimes(0);
+					});
+				});
+			});
+
+			describe("when only username exists", () => {
+				it("should set rcfile configs and remove .gitconfig entries", () => {
+					util.queryGitConfig = jest
+						.fn(() => Promise.resolve())
+						.mockReturnValue(undefined)
+						.mockReturnValueOnce("username");
+
+					util.getConfigs().then(() => {
+						expect(util.setConfig).toHaveBeenCalledTimes(2);
+						expect(util.setConfig).toHaveBeenCalledWith(
+							"username",
+							"username"
+						);
+						expect(util.setConfig).toHaveBeenCalledWith(
+							"token",
+							undefined
+						);
+						expect(util.removeGitConfig).toHaveBeenCalledTimes(2);
+						expect(util.removeGitConfig).toHaveBeenCalledWith(
+							"tag-release.username"
+						);
+						expect(util.removeGitConfig).toHaveBeenCalledWith(
+							"tag-release.token"
+						);
+						expect(util.removeGitConfigSection).toHaveBeenCalled();
+						expect(
+							util.removeGitConfigSection
+						).toHaveBeenCalledWith("tag-release");
+					});
+				});
+			});
+
+			describe("when only token exist", () => {
+				it("should set rcfile configs and remove .gitconfig entries", () => {
+					util.queryGitConfig = jest
+						.fn(() => Promise.resolve())
+						.mockReturnValue(undefined)
+						.mockReturnValueOnce(undefined)
+						.mockReturnValueOnce("token12345");
+
+					util.getConfigs().then(() => {
+						expect(util.setConfig).toHaveBeenCalledTimes(2);
+						expect(util.setConfig).toHaveBeenCalledWith(
+							"username",
+							undefined
+						);
+						expect(util.setConfig).toHaveBeenCalledWith(
+							"token",
+							"token12345"
+						);
+						expect(util.removeGitConfig).toHaveBeenCalledTimes(2);
+						expect(util.removeGitConfig).toHaveBeenCalledWith(
+							"tag-release.username"
+						);
+						expect(util.removeGitConfig).toHaveBeenCalledWith(
+							"tag-release.token"
+						);
+						expect(util.removeGitConfigSection).toHaveBeenCalled();
+						expect(
+							util.removeGitConfigSection
+						).toHaveBeenCalledWith("tag-release");
+					});
+				});
+			});
+		});
+
+		describe("when overrides", () => {
+			describe("exist", () => {
+				it("should resolve", () => {
+					util.getConfigs().then(result => {
+						expect(result).toEqual(["user@name.com", "token12345"]);
+					});
+				});
+			});
+
+			describe("don't exist", () => {
+				it("should reject", () => {
+					util.getOverrides = jest.fn(() => ({}));
+					util.getConfigs().catch(error => {
+						expect(error).toEqual(
+							"username or token doesn't exist"
+						);
+					});
+				});
+			});
+		});
 	});
 
-	describe("setGitConfigs", () => {
+	describe("setConfigs", () => {
 		const USERNAME = "username";
 		const TOKEN = "token";
 
 		beforeEach(() => {
-			util.setGitConfig = jest.fn(() => Promise.resolve());
+			util.setConfig = jest.fn(() => Promise.resolve());
 		});
 
 		it("should return a promise", () => {
-			const result = util.setGitConfigs(USERNAME, TOKEN);
+			const result = util.setConfigs(USERNAME, TOKEN);
 			expect(isPromise(result)).toBeTruthy();
 		});
 
-		it("should call `setGitConfig` for username and token", () => {
-			return util.setGitConfigs(USERNAME, TOKEN).then(() => {
-				expect(util.setGitConfig).toHaveBeenCalledTimes(2);
-				expect(util.setGitConfig).toHaveBeenCalledWith(
-					"tag-release.username",
+		it("should call `setConfig` for username and token", () => {
+			return util.setConfigs(USERNAME, TOKEN).then(() => {
+				expect(util.setConfig).toHaveBeenCalledTimes(2);
+				expect(util.setConfig).toHaveBeenCalledWith(
+					"username",
 					"username"
 				);
-				expect(util.setGitConfig).toHaveBeenCalledWith(
-					"tag-release.token",
-					"token"
-				);
+				expect(util.setConfig).toHaveBeenCalledWith("token", "token");
 			});
 		});
 
-		it("should log an error if either call to `setGitConfig` fails", () => {
-			util.setGitConfig = jest.fn(() => Promise.reject("nope"));
-			return util.setGitConfigs(USERNAME, TOKEN).catch(() => {
+		it("should log an error if either call to `setConfig` fails", () => {
+			util.setConfig = jest.fn(() => Promise.reject("nope"));
+			return util.setConfigs(USERNAME, TOKEN).catch(() => {
 				expect(chalk.red).toHaveBeenCalledTimes(1);
 				expect(chalk.red).toHaveBeenCalledWith("nope");
 
@@ -1110,6 +1360,44 @@ describe("utils", () => {
 			cp.execSync = jest.fn(() => "undefined");
 			const isLK = util.hasLkScope();
 			expect(isLK).toBeFalsy();
+		});
+	});
+
+	describe("applyCommanderOptions", () => {
+		let commander;
+		beforeEach(() => {
+			commander = {
+				option: jest.fn(args => args)
+			};
+		});
+
+		it("should apply verbose option", () => {
+			util.applyCommanderOptions(commander);
+			expect(commander.option).toHaveBeenCalledTimes(3);
+			expect(commander.option).toHaveBeenCalledWith(
+				"--verbose",
+				"console additional information"
+			);
+		});
+
+		it("should apply maxbuffer option", () => {
+			util.applyCommanderOptions(commander);
+			expect(commander.option).toHaveBeenCalledTimes(3);
+			expect(commander.option).toHaveBeenCalledWith(
+				"--maxbuffer <n>",
+				"overrides the max stdout buffer of the child process, size is 1024 * <n>",
+				parseInt
+			);
+		});
+
+		it("should apply config option", () => {
+			util.applyCommanderOptions(commander);
+			expect(commander.option).toHaveBeenCalledTimes(3);
+			expect(commander.option).toHaveBeenCalledWith(
+				"-c, --config <filePath>",
+				"path to json configuration file (defaults to './package.json')",
+				/^.*\.json$/
+			);
 		});
 	});
 });
