@@ -379,10 +379,12 @@ ${chalk.green(log)}`);
 		const { versions: { newVersion } } = state;
 		const tag = `v${newVersion}`;
 
-		return git.tag(tag, tag);
+		return git.tag(tag, tag).then(() => {
+			state.tag = tag;
+		});
 	},
-	gitPushUpstreamMaster() {
-		return git.pushUpstreamMasterWithTags();
+	gitPushUpstreamMaster({ tag }) {
+		return git.pushUpstreamMasterWithTag({ tag });
 	},
 	npmPublish(state) {
 		const { configPath, prerelease } = state;
@@ -444,18 +446,23 @@ ${chalk.green(log)}`);
 			return git.pushUpstreamDevelop();
 		}
 	},
-	gitPushUpstreamFeatureBranch(state) {
-		const { branch } = state;
-
+	gitPushUpstreamFeatureBranch({ branch, tag }) {
 		if (branch && branch.length) {
-			return git.push({ branch, remote: "upstream" });
+			return git.push({
+				branch,
+				remote: "upstream",
+				option: "-u",
+				tag
+			});
 		}
 	},
-	gitForcePushUpstreamFeatureBranch(state) {
-		const { branch } = state;
-
+	gitForcePushUpstreamFeatureBranch({ branch }) {
 		if (branch && branch.length) {
-			return git.push({ branch: `-f ${branch}`, remote: "upstream" });
+			return git.push({
+				branch,
+				remote: "upstream",
+				option: "-f"
+			});
 		}
 	},
 	gitPushOriginMaster() {
@@ -1273,12 +1280,11 @@ ${chalk.green(log)}`);
 			return () => Promise.resolve();
 		};
 
-		return git.deleteBranchUpstream(
+		return git.deleteBranchUpstream({
 			branch,
-			true,
-			"Cleaning upstream feature branch",
+			logMessage: "Cleaning upstream feature branch",
 			onError
-		);
+		});
 	},
 	saveDependencies(state) {
 		const { dependencies, changeReason } = state;
