@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.1.0
+
+* Added pushing specific tags to remote instead of all tags
+
 ### 6.0.0
 
 * Updated rcfile to use current/HOME directories. Fixed workflow issues
