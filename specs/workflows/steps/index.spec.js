@@ -1085,10 +1085,10 @@ describe("shared workflow steps", () => {
 	});
 
 	describe("gitPushUpstreamMaster", () => {
-		it("should call `git.pushUpstreamMasterWithTags`", () => {
-			git.pushUpstreamMasterWithTags = jest.fn(() => Promise.resolve());
+		it("should call `git.pushUpstreamMasterWithTag`", () => {
+			git.pushUpstreamMasterWithTag = jest.fn(() => Promise.resolve());
 			return run.gitPushUpstreamMaster(state).then(() => {
-				expect(git.pushUpstreamMasterWithTags).toHaveBeenCalledTimes(1);
+				expect(git.pushUpstreamMasterWithTag).toHaveBeenCalledTimes(1);
 			});
 		});
 	});
@@ -1257,12 +1257,14 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should call `git.push` with the appropriate options", () => {
-			state = { branch: "feature-branch" };
+			state = { branch: "feature-branch", tag: "v1.0.0" };
 			return run.gitPushUpstreamFeatureBranch(state).then(() => {
 				expect(git.push).toHaveBeenCalledTimes(1);
 				expect(git.push).toHaveBeenCalledWith({
-					branch: "feature-branch",
-					remote: "upstream"
+					branch: state.branch,
+					remote: "upstream",
+					option: "-u",
+					tag: state.tag
 				});
 			});
 		});
@@ -1283,8 +1285,9 @@ describe("shared workflow steps", () => {
 			return run.gitForcePushUpstreamFeatureBranch(state).then(() => {
 				expect(git.push).toHaveBeenCalledTimes(1);
 				expect(git.push).toHaveBeenCalledWith({
-					branch: "-f feature-branch",
-					remote: "upstream"
+					branch: state.branch,
+					remote: "upstream",
+					option: "-f"
 				});
 			});
 		});
@@ -4042,8 +4045,8 @@ feature-last-branch`)
 		});
 
 		it("should resolve when deleteBranch fails", () => {
-			git.deleteBranchUpstream = jest.fn((...args) => {
-				return args[3]()();
+			git.deleteBranchUpstream = jest.fn(args => {
+				return args.onError()();
 			});
 			return run.deleteUpstreamFeatureBranch(state).then(() => {
 				expect(util.advise).toHaveBeenCalledTimes(0);

@@ -276,28 +276,26 @@ describe("git", () => {
 			push: {
 				args: { branch: "feature-branch", remote: "upstream" },
 				expectedRunCommandArgs: {
-					args: "push -u upstream feature-branch --tags"
+					args: "push upstream feature-branch"
 				}
 			},
 			pushUpstreamMaster: {
 				expectedRunCommandArgs: {
-					args: "push -u upstream master",
+					args: "push upstream master",
 					failHelpKey: "gitPushUpstreamFeatureBranch"
 				}
 			},
-			pushUpstreamMasterWithTags: {
+			pushUpstreamMasterWithTag: {
+				args: { tag: "v1.0.0" },
 				expectedRunCommandArgs: {
-					args: "push -u upstream master --tags"
+					args: "push upstream master refs/tags/v1.0.0"
 				}
 			},
 			pushOriginMaster: {
-				expectedRunCommandArgs: { args: "push -u origin master" }
-			},
-			pushOriginMasterWithTags: {
-				expectedRunCommandArgs: { args: "push -u origin master --tags" }
+				expectedRunCommandArgs: { args: "push origin master" }
 			},
 			pushUpstreamDevelop: {
-				expectedRunCommandArgs: { args: "push -u upstream develop" }
+				expectedRunCommandArgs: { args: "push upstream develop" }
 			},
 			uncommittedChangesExist: {
 				expectedRunCommandArgs: {
@@ -429,10 +427,9 @@ describe("git", () => {
 				}
 			},
 			deleteBranchUpstream: {
-				args: "feature-branch",
+				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
 					args: `push upstream :feature-branch`,
-					showOutput: true,
 					logMessage: "",
 					onError: {}
 				}
@@ -447,7 +444,7 @@ describe("git", () => {
 			createRemoteBranch: {
 				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
-					args: `push upstream master:feature-branch`
+					args: `push -u upstream master:feature-branch`
 				}
 			},
 			getLastCommitText: {
@@ -460,8 +457,7 @@ describe("git", () => {
 			pushRemoteBranch: {
 				args: { branch: "feature-branch" },
 				expectedRunCommandArgs: {
-					args: `push -u origin feature-branch`,
-					onError: {}
+					args: `push -u origin feature-branch`
 				}
 			}
 		};
@@ -538,13 +534,12 @@ describe("git", () => {
 				return git
 					.push({
 						branch: "feature-branch",
-						remote: "upstream",
-						includeTags: false
+						remote: "upstream"
 					})
 					.then(() => {
 						expect(git.runCommand).toHaveBeenCalledTimes(1);
 						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "push -u upstream feature-branch"
+							args: "push upstream feature-branch"
 						});
 					});
 			});
@@ -656,7 +651,7 @@ describe("git", () => {
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
-								args: "push upstream develop:feature-branch"
+								args: "push -u upstream develop:feature-branch"
 							});
 						});
 				});
@@ -670,7 +665,7 @@ describe("git", () => {
 						.then(() => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
-								args: "push origin master:feature-branch"
+								args: "push -u origin master:feature-branch"
 							});
 						});
 				});
@@ -686,7 +681,7 @@ describe("git", () => {
 							expect(git.runCommand).toHaveBeenCalledTimes(1);
 							expect(git.runCommand).toHaveBeenCalledWith({
 								args:
-									"push origin feature-branch:feature-branch"
+									"push -u origin feature-branch:feature-branch"
 							});
 						});
 				});
