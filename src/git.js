@@ -207,12 +207,23 @@ const git = {
 		return git.runCommand({ args });
 	},
 
-	push({ branch, remote, includeTags = true, failHelpKey }) {
-		const args = `push -u ${remote} ${branch}${
-			includeTags ? " --tags" : ""
-		}`;
+	push({
+		branch,
+		remote,
+		base,
+		option,
+		tag,
+		logMessage,
+		failHelpKey,
+		onError
+	}) {
+		const args = `push ${option ? `${option} ` : ""}${remote} ${
+			base ? `${base}:${branch}` : `${branch}`
+		}${tag ? ` refs/tags/${tag}` : ""}`;
 		return git.runCommand(
-			failHelpKey && failHelpKey.length ? { args, failHelpKey } : { args }
+			failHelpKey && failHelpKey.length
+				? { args, failHelpKey, logMessage, onError }
+				: { args, logMessage, onError }
 		);
 	},
 
@@ -220,40 +231,29 @@ const git = {
 		return git.push({
 			branch: "master",
 			remote: "upstream",
-			includeTags: false,
 			failHelpKey: "gitPushUpstreamFeatureBranch"
 		});
 	},
 
-	pushUpstreamMasterWithTags() {
+	pushUpstreamMasterWithTag({ tag }) {
 		return git.push({
 			branch: "master",
 			remote: "upstream",
-			includeTags: true
+			tag
 		});
 	},
 
 	pushOriginMaster() {
 		return git.push({
 			branch: "master",
-			remote: "origin",
-			includeTags: false
-		});
-	},
-
-	pushOriginMasterWithTags() {
-		return git.push({
-			branch: "master",
-			remote: "origin",
-			includeTags: true
+			remote: "origin"
 		});
 	},
 
 	pushUpstreamDevelop() {
 		return git.push({
 			branch: "develop",
-			remote: "upstream",
-			includeTags: false
+			remote: "upstream"
 		});
 	},
 
@@ -392,14 +392,13 @@ const git = {
 		return git.runCommand({ args, showOutput, logMessage, onError });
 	},
 
-	deleteBranchUpstream(
-		branch,
-		showOutput = true,
-		logMessage = "",
-		onError = {}
-	) {
-		const args = `push upstream :${branch}`;
-		return git.runCommand({ args, showOutput, logMessage, onError });
+	deleteBranchUpstream({ branch, logMessage = "", onError = {} }) {
+		return git.push({
+			branch: `:${branch}`,
+			remote: "upstream",
+			logMessage,
+			onError
+		});
 	},
 
 	stageFiles() {
@@ -463,13 +462,21 @@ const git = {
 	},
 
 	createRemoteBranch({ branch, remote = "upstream", base = "master" }) {
-		const args = `push ${remote} ${base}:${branch}`;
-		return git.runCommand({ args });
+		return git.push({
+			branch,
+			option: "-u",
+			base,
+			remote
+		});
 	},
 
-	pushRemoteBranch({ branch, remote = "origin", onError = {} }) {
-		const args = `push -u ${remote} ${branch}`;
-		return git.runCommand({ args, onError });
+	pushRemoteBranch({ branch, remote = "origin", onError }) {
+		return git.push({
+			branch,
+			option: "-u",
+			remote,
+			onError
+		});
 	},
 
 	getLastCommitText(showOutput = false) {
