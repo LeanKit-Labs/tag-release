@@ -156,27 +156,24 @@ const api = {
 
 			util.writeFile(CHANGELOG_PATH, contents);
 		} else {
-			return git
-				.getTagList()
-				.then(tags => {
-					let latestRelease = `v${currentVersion}`;
-					if (tags.length) {
-						if (!prerelease) {
-							tags = tags.filter(tag => !tag.includes("-"));
-							latestRelease = tags[tags.length - 1];
-						}
+			return git.getTagList().then(tags => {
+				let latestRelease = `v${currentVersion}`;
+				if (tags.length) {
+					if (!prerelease) {
+						tags = tags.filter(tag => !tag.includes("-"));
+						latestRelease = tags[tags.length - 1];
+					}
+				}
+
+				return git.shortLog(latestRelease).then(data => {
+					data = data.trim().replace(/^(.+)$/gm, "* $1");
+					if (!data.length) {
+						util.advise("gitLog.log");
 					}
 
-					return git.shortLog(latestRelease).then(data => {
-						data = data.trim().replace(/^(.+)$/gm, "* $1");
-						if (!data.length) {
-							util.advise("gitLog.log", { exit: false });
-						}
-
-						state.log = data;
-					});
-				})
-				.catch(() => util.advise("gitLog.log"));
+					state.log = data;
+				});
+			});
 		}
 	},
 	previewLog({ log }) {

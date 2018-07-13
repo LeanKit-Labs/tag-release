@@ -1340,6 +1340,22 @@ describe("utils", () => {
 			expect(process.exit).toHaveBeenCalledTimes(1);
 			expect(console.log).toHaveBeenCalledTimes(1); // eslint-disable-line no-console
 		});
+
+		describe("process.env.NO_OUTPUT is true", () => {
+			beforeEach(() => {
+				process.env.NO_OUTPUT = true;
+			});
+
+			it("should throw error", () => {
+				expect(() => util.advise("hello world")).toThrowError(
+					"hello world"
+				);
+			});
+
+			afterEach(() => {
+				delete process.env.NO_OUTPUT;
+			});
+		});
 	});
 
 	describe("hasLkScope", () => {

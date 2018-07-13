@@ -98,7 +98,7 @@ const api = {
 				return { tag };
 			})
 			.catch(error => {
-				throw new Error(error);
+				throw new Error(error.message);
 			});
 
 		return result;
