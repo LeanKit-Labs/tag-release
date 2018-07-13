@@ -405,7 +405,7 @@ describe("shared workflow steps", () => {
 			util.readFile = jest.fn(() => "sample content");
 			run.gitShortLog({}, {});
 			expect(util.readFile).toHaveBeenCalledTimes(1);
-			expect(util.readFile).toHaveBeenCalledWith("./CHANGELOG.md");
+			expect(util.readFile).toHaveBeenCalledWith("CHANGELOG.md");
 		});
 
 		describe("when a line containing `### Next` exists in the CHANGELOG.md contents", () => {
@@ -426,10 +426,7 @@ describe("shared workflow steps", () => {
 
 				run.gitShortLog(state);
 				expect(util.writeFile).toHaveBeenCalledTimes(1);
-				expect(util.writeFile).toHaveBeenCalledWith(
-					"./CHANGELOG.md",
-					""
-				);
+				expect(util.writeFile).toHaveBeenCalledWith("CHANGELOG.md", "");
 			});
 		});
 
@@ -856,7 +853,7 @@ describe("shared workflow steps", () => {
 		it("should read the current contents of CHANGELOG.md", () => {
 			run.updateChangelog(state);
 			expect(util.readFile).toHaveBeenCalledTimes(1);
-			expect(util.readFile).toHaveBeenCalledWith("./CHANGELOG.md");
+			expect(util.readFile).toHaveBeenCalledWith("CHANGELOG.md");
 		});
 
 		it("should insert an H3 header for minor and patch changes", () => {
@@ -865,7 +862,7 @@ describe("shared workflow steps", () => {
 				"## 1.x\n\n### 1.3.0\n\n* commit message\n\n### 1.2.3\n\n* update to v1.2.3";
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
 			expect(util.writeFile).toHaveBeenCalledWith(
-				"./CHANGELOG.md",
+				"CHANGELOG.md",
 				contents
 			);
 		});
@@ -878,7 +875,7 @@ describe("shared workflow steps", () => {
 				"## 2.x\n\n### 2.0.0\n\n* commit message\n\n## 1.x\n\n### 1.2.3\n\n* update to v1.2.3";
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
 			expect(util.writeFile).toHaveBeenCalledWith(
-				"./CHANGELOG.md",
+				"CHANGELOG.md",
 				contents
 			);
 		});
@@ -897,7 +894,7 @@ describe("shared workflow steps", () => {
 			const contents = "## 2.x\n\n### 2.0.1\n\n* just little stuff\n";
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
 			expect(util.writeFile).toHaveBeenCalledWith(
-				"./CHANGELOG.md",
+				"CHANGELOG.md",
 				contents
 			);
 		});
@@ -926,15 +923,15 @@ describe("shared workflow steps", () => {
 			});
 		});
 
-		describe(`when ./package-lock.json exists`, () => {
+		describe(`when package-lock.json exists`, () => {
 			it("should call `git.diff` with the appropriate arguments", () => {
 				return run.gitDiff(state).then(() => {
 					expect(git.diff).toHaveBeenCalledTimes(1);
 					expect(git.diff).toHaveBeenCalledWith({
 						files: [
-							"./CHANGELOG.md",
+							"CHANGELOG.md",
 							"./package.json",
-							"./package-lock.json"
+							"package-lock.json"
 						],
 						maxBuffer: undefined,
 						onError: expect.any(Function)
@@ -943,13 +940,13 @@ describe("shared workflow steps", () => {
 			});
 		});
 
-		describe(`when ./package-lock.json doesn't exists`, () => {
+		describe(`when package-lock.json doesn't exists`, () => {
 			it("should call `git.diff` with the appropriate arguments", () => {
 				util.fileExists = jest.fn(() => false);
 				return run.gitDiff(state).then(() => {
 					expect(git.diff).toHaveBeenCalledTimes(1);
 					expect(git.diff).toHaveBeenCalledWith({
-						files: ["./CHANGELOG.md", "./package.json"],
+						files: ["CHANGELOG.md", "./package.json"],
 						maxBuffer: undefined,
 						onError: expect.any(Function)
 					});
@@ -1027,9 +1024,9 @@ describe("shared workflow steps", () => {
 			return run.gitAdd(state).then(() => {
 				expect(git.add).toHaveBeenCalledTimes(1);
 				expect(git.add).toHaveBeenCalledWith([
-					"./CHANGELOG.md",
+					"CHANGELOG.md",
 					"./manifest.json",
-					"./package-lock.json"
+					"package-lock.json"
 				]);
 			});
 		});
@@ -1040,9 +1037,64 @@ describe("shared workflow steps", () => {
 				return run.gitAdd(state).then(() => {
 					expect(git.add).toHaveBeenCalledTimes(1);
 					expect(git.add).toHaveBeenCalledWith([
-						"./CHANGELOG.md",
+						"CHANGELOG.md",
 						"./manifest.json"
 					]);
+				});
+			});
+		});
+
+		describe(".gitignore", () => {
+			describe("exists", () => {
+				beforeEach(() => {
+					util.fileExists = jest.fn(() => true);
+				});
+
+				describe("contains package-lock.json path", () => {
+					it("should call `git.add` with the appropriate arguments", () => {
+						util.readFile = jest.fn(() => "package-lock.json");
+						return run.gitAdd(state).then(() => {
+							expect(git.add).toHaveBeenCalledTimes(1);
+							expect(git.add).toHaveBeenCalledWith([
+								"CHANGELOG.md",
+								"./manifest.json"
+							]);
+						});
+					});
+				});
+
+				describe("doesn't contain package-lock.json path", () => {
+					it("should call `git.add` with the appropriate arguments", () => {
+						util.readFile = jest.fn(() => "another-lock.json");
+						return run.gitAdd(state).then(() => {
+							expect(git.add).toHaveBeenCalledTimes(1);
+							expect(git.add).toHaveBeenCalledWith([
+								"CHANGELOG.md",
+								"./manifest.json",
+								"package-lock.json"
+							]);
+						});
+					});
+				});
+			});
+
+			describe("doesn't exist", () => {
+				beforeEach(() => {
+					util.fileExists = jest.fn();
+					util.fileExists
+						.mockReturnValueOnce(true)
+						.mockReturnValueOnce(false);
+				});
+
+				it("should call `git.add` with the appropriate arguments", () => {
+					return run.gitAdd(state).then(() => {
+						expect(git.add).toHaveBeenCalledTimes(1);
+						expect(git.add).toHaveBeenCalledWith([
+							"CHANGELOG.md",
+							"./manifest.json",
+							"package-lock.json"
+						]);
+					});
 				});
 			});
 		});
@@ -4004,11 +4056,11 @@ feature-last-branch`)
 					return run.updatePackageLockJson(state).then(() => {
 						expect(util.readJSONFile).toHaveBeenCalledTimes(1);
 						expect(util.readJSONFile).toHaveBeenCalledWith(
-							"./package-lock.json"
+							"package-lock.json"
 						);
 						expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
 						expect(util.writeJSONFile).toHaveBeenCalledWith(
-							"./package-lock.json",
+							"package-lock.json",
 							{ version: "12.1.1" }
 						);
 					});
