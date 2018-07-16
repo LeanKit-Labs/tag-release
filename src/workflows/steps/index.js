@@ -9,8 +9,9 @@ const path = require("path");
 const removeWords = require("remove-words");
 const { set } = require("lodash");
 
-const CHANGELOG_PATH = "./CHANGELOG.md";
-const PACKAGELOCKJSON_PATH = "./package-lock.json";
+const CHANGELOG_PATH = "CHANGELOG.md";
+const PACKAGELOCKJSON_PATH = "package-lock.json";
+const GIT_IGNORE_PATH = ".gitignore";
 const PULL_REQUEST_TEMPLATE_PATH = "./.github/PULL_REQUEST_TEMPLATE.md";
 
 const api = {
@@ -356,8 +357,17 @@ ${chalk.green(log)}`);
 		const { configPath } = state;
 		const files = [CHANGELOG_PATH, configPath];
 
+		let found;
 		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
-			files.push(PACKAGELOCKJSON_PATH);
+			if (util.fileExists(GIT_IGNORE_PATH)) {
+				found = !!util
+					.readFile(GIT_IGNORE_PATH)
+					.split("\n")
+					.find(line => line.includes(PACKAGELOCKJSON_PATH));
+			}
+			if (!found) {
+				files.push(PACKAGELOCKJSON_PATH);
+			}
 		}
 
 		return git.add(files);
