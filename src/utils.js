@@ -412,7 +412,11 @@ const api = {
 		}
 
 		if (exit) {
-			process.exit(0); // eslint-disable-line no-process-exit
+			if (process.env.NO_OUTPUT) {
+				throw new Error(advise(text));
+			} else {
+				process.exit(0); // eslint-disable-line no-process-exit
+			}
 		}
 	},
 	hasLkScope() {

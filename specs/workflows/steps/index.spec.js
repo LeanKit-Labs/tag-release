@@ -460,15 +460,6 @@ describe("shared workflow steps", () => {
 				);
 			});
 
-			it("should advise when the call to `git.getTagList` fails", () => {
-				git.getTagList = jest.fn(() => Promise.reject("nope"));
-
-				return run.gitShortLog(state).then(() => {
-					expect(util.advise).toHaveBeenCalledTimes(1);
-					expect(util.advise).toHaveBeenCalledWith("gitLog.log");
-				});
-			});
-
 			describe("and not in prerelease mode", () => {
 				beforeEach(() => {
 					state = {
@@ -504,9 +495,7 @@ describe("shared workflow steps", () => {
 
 					return run.gitShortLog(state).then(() => {
 						expect(util.advise).toHaveBeenCalledTimes(1);
-						expect(util.advise).toHaveBeenCalledWith("gitLog.log", {
-							exit: false
-						});
+						expect(util.advise).toHaveBeenCalledWith("gitLog.log");
 					});
 				});
 
