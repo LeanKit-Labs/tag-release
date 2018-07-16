@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.2.0
+
+* Added error on no commits
+* Added respect for package-lock.json being in .gitignore
+
 ### 6.1.0
 
 * Added pushing specific tags to remote instead of all tags
