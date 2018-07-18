@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.2.1
+
+* Updated contextual help messages to fit with new commands
+
 ### 6.2.0
 
 * Added error on no commits
