@@ -58,16 +58,16 @@ To add a remote origin run 'git remote add origin https://github.com/username/re
 You can double check by running 'git remote -v'`,
 	gitRebaseUpstreamDevelop: `It looks like there was some conflict(s) while trying to rebase with upstream/develop.
 
-Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue'. Tag-release
+Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
 will handle adding the conflicting files and continuing with the rebase.`,
 	gitRebaseInteractive: `It looks like there was some conflict(s) while trying to rebase with upstream/master.
 
-Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release --continue'. Tag-release
+Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
 will handle adding the conflicting files and continuing with the rebase.`,
 	gitCheckConflictMarkers: `We detected the presence of conflict markers: '<<<<<<<', '=======', and/or '>>>>>>>'
 
-Please fix all conflict markers with the current conflict before running 'tag-release --continue'.`,
-	noPackagesInScope: `It appears there are no packages under the current scope. Please verify the scope or that you are running 'tag-release --qa' from a valid repository.`,
+Please fix all conflict markers with the current conflict before running 'tag-release continue'.`,
+	noPackagesInScope: `It appears there are no packages under the current scope. Please verify the scope or that you are running 'tag-release qa' from a valid repository.`,
 	noPackages: `It appears that there are no packages to promote. Please make a selection using the spacebar and finalizing your selection with enter.`,
 	saveState: `It appears something went wrong attempting to save state.
 
@@ -77,15 +77,13 @@ You really shouldn't be seeing this message, so, if you are, ping someone in eng
 Either you don't have an upstream with the same name as your local, or we weren't able to 'merge --ff-only' on your local branch with the upstream.`,
 	missingPackageJson: `It appears you do not have a package.json. A package.json is required to use tag-release.
 
-You can use the 'npm init' command to generate a package.json for you.
-
-Alternatively, You can specifiy a different config file by using the -c command: 'tag-release -c another.json'`,
+You can use the 'npm init' command to generate a package.json for you.`,
 	privatePackage: `It appears you are trying to pre-release a private repository. The pre-release flag is meant for dependency projects.
 
-Did you mean to run 'tag-release --qa' instead?`,
+Did you mean to run 'tag-release qa' instead?`,
 	qaNoChangeNoDevelop: `It appears this repository doesn't have any new changes or a develop branch.
 
-Are you sure you need to run 'tag-release --qa'?`,
+Are you sure you need to run 'tag-release qa'?`,
 	gitBranchAlreadyExists: `The branch you are trying to create appears to already exist. Please choose a different name.`,
 	localBranchDeleteFailure: `The feature branch failed to be deleted locally. It most likely doesn't exist.`,
 	upstreamBranchDeleteFailure: `The feature branch failed to be deleted in the upstream. It most likely doesn't exist.`,
@@ -98,7 +96,7 @@ You really shouldn't be seeing this message, so, if you are, ping someone in eng
 It's most likely because your base has changed so you may need to run 'git push -f remote branch-name'`,
 	maxBufferExceeded: `It appears you have overflowed stdout. Congratulations!
 
-In order to override the maxBuffer limit run 'tag-relase --maxbuffer <n>' and provide it an appropriate buffer size.
+In order to override the maxBuffer limit run 'tag-relase maxbuffer <n>' and provide it an appropriate buffer size.
 
 The default size is 1024 * 5000. Where 5000 is <n>.`
 };
