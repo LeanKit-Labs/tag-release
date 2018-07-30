@@ -4,7 +4,7 @@ const MESSAGES = {
 	gitCommandFailed: `Ooops. Hhmmm...that didn't work very well.
 
 You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
-	gitFetchUpstream: `It looks like git couldn't fetch your upstream.
+	fetchUpstream: `It looks like git couldn't fetch your upstream.
 
 tag-release needs an upstream remote in order to work correctly. You can double check by running 'git remote -v'
 
@@ -30,12 +30,12 @@ You need at least version 2.x in order for tag-release to work properly.`,
 2. You may not be authorized with npm. You can authenticate by running 'npm adduser'
 3. You may not have rights to publish this package. If not, ask the owner to add you as a collaborator.
 `,
-	gitCheckoutDevelop: `It looks like you couldn't switch to your local develop branch.
+	checkoutDevelop: `It looks like you couldn't switch to your local develop branch.
 
 Your upstream has a develop branch and you need one too.
 
 You can retrieve upstream's develop by running 'git branch -t upstream/develop'`,
-	gitMergeMaster: `It looks like git couldn't merge master into develop.
+	gitMergeDevelopWithMaster: `It looks like git couldn't merge master into develop.
 
 It could be that your local environment is out of sync with your upstream.
 
@@ -56,7 +56,7 @@ To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`
 To add a remote origin run 'git remote add origin https://github.com/username/repo.git'
 
 You can double check by running 'git remote -v'`,
-	gitRebaseUpstreamDevelop: `It looks like there was some conflict(s) while trying to rebase with upstream/develop.
+	gitRebaseUpstreamBase: `It looks like there was some conflict(s) while trying to rebase with the upstream base.
 
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
 will handle adding the conflicting files and continuing with the rebase.`,

@@ -9,19 +9,25 @@ const {
 } = require("../src/workflows/pr");
 const sequence = require("when/sequence");
 const utils = require("../src/utils.js");
+const filterFlowBasedOnDevelopBranch = require("../src/helpers/filterFlowBasedOnDevelopBranch");
 
 utils.applyCommanderOptions(commander);
 
 commander.parse(process.argv);
 
 const callback = options => {
+	let flow;
 	if (options.conflict) {
-		return sequence(prRebaseConflict, options).then(
+		flow = filterFlowBasedOnDevelopBranch(options, prRebaseConflict);
+
+		return sequence(flow, options).then(
 			() => console.log("Finished") // eslint-disable-line no-console
 		);
 	}
 
-	return sequence(prRebaseSuccess, options).then(
+	flow = filterFlowBasedOnDevelopBranch(options, prRebaseSuccess);
+
+	return sequence(flow, options).then(
 		() => console.log("Finished") // eslint-disable-line no-console
 	);
 };

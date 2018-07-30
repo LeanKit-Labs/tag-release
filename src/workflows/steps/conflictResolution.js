@@ -1,3 +1,4 @@
+const command = require("../../command");
 const git = require("../../git");
 const util = require("../../utils");
 const logger = require("better-console");
@@ -147,18 +148,23 @@ const api = {
 		contents = newLines.join("\n");
 		util.writeFile(configPath, contents);
 	},
-	gitRebaseUpstreamDevelopWithConflictFlag(state) {
+	gitRebaseUpstreamBaseWithConflictFlag(state) {
+		const { hasDevelopBranch } = state;
 		const onError = () => {
 			return () =>
-				git.status(false).then(response => {
+				git.status({ showOutput: false }).then(response => {
 					if (response.includes("package.json")) {
 						return Promise.resolve({ conflict: true });
 					}
-					util.advise("gitRebaseUpstreamDevelop");
+					util.advise("gitRebaseUpstreamBase");
 				});
 		};
 
-		return git.rebaseUpstreamDevelop({ onError }).then(response => {
+		const call = hasDevelopBranch
+			? () => command.rebaseUpstreamDevelop({ onError })
+			: () => command.rebaseUpstreamMaster({ onError });
+
+		return call().then(response => {
 			const { conflict } = response;
 			state.conflict = conflict;
 			return Promise.resolve(state);
@@ -175,7 +181,7 @@ const api = {
 		return Promise.resolve();
 	},
 	verifyConflictResolution() {
-		return git.checkConflictMarkers();
+		return command.checkConflictMarkers();
 	}
 };
 

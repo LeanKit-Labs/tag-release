@@ -4,13 +4,11 @@ const run = require("../../src/workflows/steps");
 describe("dev workflow", () => {
 	it("should have all of the required steps", () => {
 		expect(resetWorkflow).toEqual([
-			run.gitFetchUpstream,
-			run.checkHasDevelopBranch,
-			run.getFeatureBranch,
+			run.fetchUpstream,
 			run.gitCreateBranchOrigin,
-			run.gitCheckoutDevelopOrMaster,
-			run.gitRebaseUpstreamDevelopOrMaster,
-			run.gitCheckoutBranch,
+			run.checkoutBaseBranch,
+			run.rebaseUpstreamBaseBranch,
+			run.checkoutWorkingBranch,
 			run.gitCreateBranchUpstream,
 			run.githubUpstream,
 			run.githubOrigin,

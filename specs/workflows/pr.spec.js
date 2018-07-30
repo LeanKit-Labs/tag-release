@@ -6,7 +6,7 @@ const {
 } = require("../../src/workflows/pr");
 const run = require("../../src/workflows/steps/index");
 const {
-	gitRebaseUpstreamDevelopWithConflictFlag,
+	gitRebaseUpstreamBaseWithConflictFlag,
 	resolvePackageJSONConflicts,
 	verifyConflictResolution
 } = require("../../src/workflows/steps/conflictResolution");
@@ -15,16 +15,15 @@ describe("pr workflows", () => {
 	describe("default", () => {
 		it("should have all of the required steps", () => {
 			expect(prWorkflow).toEqual([
-				run.gitFetchUpstream,
+				run.fetchUpstream,
 				run.getPackageScope,
-				run.getFeatureBranch,
 				run.gitRebaseUpstreamBranch,
 				run.saveState,
 				run.getReposFromBumpCommit,
 				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
 				run.saveDependencies,
-				gitRebaseUpstreamDevelopWithConflictFlag
+				gitRebaseUpstreamBaseWithConflictFlag
 			]);
 		});
 	});
@@ -36,7 +35,6 @@ describe("pr workflows", () => {
 				verifyConflictResolution,
 				run.gitStageFiles,
 				run.gitRebaseContinue,
-				run.getFeatureBranch,
 				run.getDependenciesFromFile,
 				run.githubUpstream,
 				run.askVersions,
@@ -47,7 +45,7 @@ describe("pr workflows", () => {
 				run.gitAmendCommitBumpMessage,
 				run.gitForcePushUpstreamFeatureBranch,
 				run.githubUpstream,
-				run.createGithubPullRequestAganistDevelop,
+				run.createGithubPullRequestAganistBase,
 				run.cleanUpTmpFiles
 			]);
 		});
@@ -66,7 +64,7 @@ describe("pr workflows", () => {
 				run.gitAmendCommitBumpMessage,
 				run.gitForcePushUpstreamFeatureBranch,
 				run.githubUpstream,
-				run.createGithubPullRequestAganistDevelop,
+				run.createGithubPullRequestAganistBase,
 				run.cleanUpTmpFiles
 			]);
 		});
@@ -86,7 +84,7 @@ describe("pr workflows", () => {
 				run.gitAmendCommitBumpMessage,
 				run.gitForcePushUpstreamFeatureBranch,
 				run.githubUpstream,
-				run.createGithubPullRequestAganistDevelop,
+				run.createGithubPullRequestAganistBase,
 				run.cleanUpTmpFiles
 			]);
 		});

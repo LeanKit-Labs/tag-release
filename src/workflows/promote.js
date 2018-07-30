@@ -3,14 +3,13 @@ const { rebaseUpdateLogCommitTagRelease } = require("./shared");
 
 module.exports = {
 	promoteWorkflow: [
-		run.gitFetchUpstream,
+		run.fetchUpstream,
 		run.selectPrereleaseToPromote,
-		run.gitCheckoutTag,
-		run.getFeatureBranch,
+		run.checkoutTag,
 		run.gitGenerateRebaseCommitLog,
 		run.gitRemovePreReleaseCommits,
 		run.gitRebaseUpstreamMaster,
-		run.gitCheckoutMaster,
+		run.checkoutMaster,
 		run.gitMergeUpstreamMaster,
 		run.gitMergePromotionBranch,
 		...rebaseUpdateLogCommitTagRelease,
@@ -22,7 +21,7 @@ module.exports = {
 	],
 	promoteContinue: [
 		run.setPromote,
-		run.gitCheckoutMaster,
+		run.checkoutMaster,
 		run.gitMergeUpstreamMaster,
 		run.gitMergePromotionBranch,
 		...rebaseUpdateLogCommitTagRelease,

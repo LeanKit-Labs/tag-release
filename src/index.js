@@ -9,6 +9,7 @@ const fmt = require("fmt");
 const sequence = require("when/sequence");
 const { extend } = require("lodash");
 const automatedWorkflow = require("../src/workflows/automated");
+const { init } = require("./workflows/steps/index.js");
 
 const questions = {
 	github: [
@@ -25,7 +26,7 @@ const questions = {
 	]
 };
 
-const startTagRelease = options => {
+const startTagRelease = async options => {
 	try {
 		if (options.verbose) {
 			fmt.title("GitHub Configuration");
@@ -34,11 +35,11 @@ const startTagRelease = options => {
 			fmt.line();
 		}
 
-		options.configPath = options.config || "./package.json";
-
 		if (!options.callback) {
 			options.callback = () => console.log("Finished");
 		}
+
+		await init(options);
 
 		return sequence(options.workflow, options).then(result =>
 			options.callback(result[result.length - 1])

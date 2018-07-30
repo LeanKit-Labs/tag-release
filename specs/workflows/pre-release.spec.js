@@ -5,11 +5,10 @@ describe("pre-release workflow", () => {
 	it("should have all of the required steps", () => {
 		expect(preReleaseWorkflow).toEqual([
 			run.isPackagePrivate,
-			run.gitFetchUpstream,
+			run.fetchUpstream,
 			run.getCurrentBranchVersion,
 			run.checkExistingPrereleaseIdentifier,
 			run.setPrereleaseIdentifier,
-			run.getFeatureBranch,
 			run.gitMergeUpstreamBranch,
 			run.gitShortLog,
 			run.previewLog,
