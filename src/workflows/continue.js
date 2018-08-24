@@ -1,13 +1,4 @@
-const {
-	gitStageFiles,
-	gitRebaseContinue,
-	getFeatureBranch
-} = require("./steps/index");
+const { gitStageFiles, gitRebaseContinue } = require("./steps/index");
 const { verifyConflictResolution } = require("./steps/conflictResolution");
 
-module.exports = [
-	verifyConflictResolution,
-	gitStageFiles,
-	gitRebaseContinue,
-	getFeatureBranch
-];
+module.exports = [verifyConflictResolution, gitStageFiles, gitRebaseContinue];

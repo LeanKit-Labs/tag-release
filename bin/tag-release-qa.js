@@ -9,6 +9,7 @@ const {
 } = require("../src/workflows/qa");
 const sequence = require("when/sequence");
 const utils = require("../src/utils.js");
+const filterFlowBasedOnDevelopBranch = require("../src/helpers/filterFlowBasedOnDevelopBranch");
 
 utils.applyCommanderOptions(commander);
 
@@ -17,13 +18,19 @@ commander.parse(process.argv);
 const callback = options => {
 	const onFeatureBranch =
 		options.branch !== "develop" && options.branch !== "master";
+
+	let flow;
 	if (options.packages.length && onFeatureBranch) {
-		return sequence(qaUpdate, options).then(
+		flow = filterFlowBasedOnDevelopBranch(options, qaUpdate);
+
+		return sequence(flow, options).then(
 			() => console.log("Finished") // eslint-disable-line no-console
 		);
 	}
 
-	return sequence(qaDefault, options).then(
+	flow = filterFlowBasedOnDevelopBranch(options, qaDefault);
+
+	return sequence(flow, options).then(
 		() => console.log("Finished") // eslint-disable-line no-console
 	);
 };

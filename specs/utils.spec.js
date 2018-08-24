@@ -549,6 +549,35 @@ describe("utils", () => {
 		});
 	});
 
+	describe("logger", () => {
+		it("should log text", () => {
+			util.logger.log("text");
+			expect(logger.log).toHaveBeenCalledTimes(1);
+			expect(logger.log).toHaveBeenCalledWith("text");
+		});
+
+		it("should log error", () => {
+			util.logger.log("text", "error");
+			expect(logger.log).toHaveBeenCalledTimes(1);
+			expect(logger.log).toHaveBeenCalledWith("text", "error");
+		});
+
+		describe("when process.env.NO_OUTPUT is true", () => {
+			beforeEach(() => {
+				process.env.NO_OUTPUT = true;
+				util.logger.log("text");
+			});
+
+			it("log begin should not write to logUpdate", () => {
+				expect(logger.log).toHaveBeenCalledTimes(0);
+			});
+
+			afterEach(() => {
+				delete process.env.NO_OUTPUT;
+			});
+		});
+	});
+
 	describe("queryGitConfig", () => {
 		beforeEach(() => {
 			util.exec = jest.fn(() => Promise.resolve("some result"));

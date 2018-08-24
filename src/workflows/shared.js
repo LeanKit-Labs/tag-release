@@ -3,7 +3,6 @@ const run = require("./steps");
 module.exports = {
 	rebaseUpdateLogCommitTagRelease: [
 		run.getCurrentBranchVersion,
-		run.checkHasDevelopBranch,
 		run.gitMergeUpstreamDevelop,
 		run.gitShortLog,
 		run.previewLog,
@@ -18,8 +17,8 @@ module.exports = {
 		run.gitTag,
 		run.gitPushUpstreamMaster,
 		run.npmPublish,
-		run.gitCheckoutDevelop,
-		run.gitMergeMaster,
+		run.checkoutDevelop,
+		run.gitMergeDevelopWithMaster,
 		run.gitPushUpstreamDevelop,
 		run.gitPushOriginMaster,
 		run.githubUpstream,
@@ -36,7 +35,7 @@ module.exports = {
 		run.gitAmendCommitBumpMessage,
 		run.gitForcePushUpstreamFeatureBranch,
 		run.githubUpstream,
-		run.createGithubPullRequestAganistDevelop,
+		run.createGithubPullRequestAganistBase,
 		run.cleanUpTmpFiles
 	]
 };

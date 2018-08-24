@@ -2,11 +2,10 @@ const run = require("./steps/index");
 
 module.exports = [
 	run.isPackagePrivate,
-	run.gitFetchUpstream,
+	run.fetchUpstream,
 	run.getCurrentBranchVersion,
 	run.checkExistingPrereleaseIdentifier,
 	run.setPrereleaseIdentifier,
-	run.getFeatureBranch,
 	run.gitMergeUpstreamBranch,
 	run.gitShortLog,
 	run.previewLog,

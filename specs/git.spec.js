@@ -1,896 +1,531 @@
-jest.mock("../src/utils", () => ({
-	exec: jest.fn(() => Promise.resolve()),
-	log: {
-		begin: jest.fn(),
-		end: jest.fn()
-	}
-}));
-
-const util = require("../src/utils");
 const git = require("../src/git");
-const path = require("path");
+const runCommand = require("../src/helpers/runCommand");
+const getCurrentBranch = require("../src/helpers/getCurrentBranch");
+
+jest.mock("../src/helpers/runCommand", () => jest.fn(() => Promise.resolve()));
+jest.mock("../src/helpers/getCurrentBranch");
 
 describe("git", () => {
-	describe("runCommand", () => {
+	let branch, onError;
+	beforeEach(() => {
+		branch = "feature-branch";
+		onError = jest.fn();
+	});
+
+	describe("add", () => {
+		let files;
 		beforeEach(() => {
-			util.advise = jest.fn();
-			util.writeFile = jest.fn();
-			util.deleteFile = jest.fn();
+			files = ["./package.json"];
 		});
 
-		it("should run `git` with the given args", () => {
-			const branch = "master";
-			const includeTags = true;
-			const args = `fetch upstream ${branch}${
-				includeTags ? " --tags" : ""
-			}`;
-
-			return git.runCommand({ args }).then(() => {
-				expect(util.exec).toHaveBeenCalledTimes(1);
-				expect(util.exec).toHaveBeenCalledWith(
-					"git fetch upstream master --tags",
-					undefined
-				);
+		it("should call add", () => {
+			git.add({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "add "
 			});
 		});
 
-		it("should pass maxBuffer when provided", () => {
-			const args = "--version";
-			return git.runCommand({ args, maxBuffer: 123 }).then(() => {
-				expect(util.exec).toHaveBeenCalledTimes(1);
-				expect(util.exec).toHaveBeenCalledWith("git --version", 123);
+		it("should call add with files", () => {
+			git.add({ files });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "add ./package.json"
 			});
 		});
 
-		it("should log output by default", () => {
-			return git.runCommand({ args: "--version" }).then(() => {
-				expect(util.log.begin).toHaveBeenCalledTimes(1);
-				expect(util.log.end).toHaveBeenCalledTimes(1);
-			});
-		});
-
-		it("should log with the given `logMessage` when provided", () => {
-			return git
-				.runCommand({
-					args: "--version",
-					logMessage: "Get git version"
-				})
-				.then(() => {
-					expect(util.log.begin).toHaveBeenCalledTimes(1);
-					expect(util.log.begin).toHaveBeenCalledWith(
-						"Get git version"
-					);
-				});
-		});
-
-		it("should log with the command with the `logMessage` option is not provided", () => {
-			return git.runCommand({ args: "--version" }).then(() => {
-				expect(util.log.begin).toHaveBeenCalledTimes(1);
-				expect(util.log.begin).toHaveBeenCalledWith("git --version");
-			});
-		});
-
-		describe("showOutput is false", () => {
-			it("should not log output", () => {
-				return git
-					.runCommand({ args: "--version", showOutput: false })
-					.then(() => {
-						expect(util.log.begin).not.toHaveBeenCalled();
-						expect(util.log.end).not.toHaveBeenCalled();
-					});
-			});
-
-			describe("maxBuffer is passed", () => {
-				it("should not log output when and pass buffer", () => {
-					return git
-						.runCommand({
-							args: "--version",
-							showOutput: false,
-							maxBuffer: 500
-						})
-						.then(() => {
-							expect(util.log.begin).not.toHaveBeenCalled();
-							expect(util.log.end).not.toHaveBeenCalled();
-							expect(util.exec).toHaveBeenCalled();
-							expect(util.exec).toHaveBeenCalledWith(
-								"git --version",
-								500
-							);
-						});
-				});
-			});
-		});
-
-		describe("process.env.NO_OUTPUT is true", () => {
-			beforeEach(() => {
-				process.env.NO_OUTPUT = true;
-			});
-
-			it("should not log output", () => {
-				return git.runCommand({ args: "--version" }).then(() => {
-					expect(util.log.begin).not.toHaveBeenCalled();
-					expect(util.log.end).not.toHaveBeenCalled();
-				});
-			});
-
-			afterEach(() => {
-				delete process.env.NO_OUTPUT;
-			});
-		});
-
-		it("should use full command and not append `git` when the `fullCommand` option is true", () => {
-			return git
-				.runCommand({ args: "some command", fullCommand: true })
-				.then(() => {
-					expect(util.exec).toHaveBeenCalledTimes(1);
-					expect(util.exec).toHaveBeenCalledWith(
-						"some command",
-						undefined
-					);
-				});
-		});
-
-		describe("failure", () => {
-			beforeEach(() => {
-				util.exec = jest.fn(() => Promise.reject("fail"));
-			});
-
-			it("should reject when the command execution fails", () => {
-				return git.runCommand({ args: "--version" }).catch(err => {
-					expect(util.log.end).toHaveBeenCalledTimes(1);
-					expect(err).toEqual("fail");
-				});
-			});
-
-			it("should reject with no error when the command execution fails and `showError` is false", () => {
-				return git
-					.runCommand({ args: "--version", showError: false })
-					.catch(err => {
-						expect(util.log.end).toHaveBeenCalledTimes(1);
-						expect(err).toEqual(undefined);
-					});
-			});
-
-			it("should use onError passed as arg when provided", () => {
-				const onError = jest.fn(() => Promise.resolve(""));
-				return git
-					.runCommand({ args: "--version", onError })
-					.catch(() => {
-						expect(onError).toHaveBeenCalledTimes(1);
-					});
+		it("should call add with files and option", () => {
+			git.add({ option: "-u", files });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "add -u ./package.json"
 			});
 		});
 	});
 
-	describe("commands", () => {
-		const onError = () => {};
-		const commands = {
-			getRemoteBranches: {
-				expectedRunCommandArgs: { args: "branch -r" }
-			},
-			fetch: {
-				expectedRunCommandArgs: { args: "fetch upstream --tags" }
-			},
-			fetchUpstream: {
-				args: "gitFetchUpstream",
-				expectedRunCommandArgs: {
-					args: "fetch upstream --tags",
-					failHelpKey: "gitFetchUpstream"
-				}
-			},
-			checkout: {
-				args: "feature-branch",
-				expectedRunCommandArgs: { args: "checkout feature-branch" }
-			},
-			checkoutMaster: {
-				expectedRunCommandArgs: { args: "checkout master" }
-			},
-			checkoutDevelop: {
-				expectedRunCommandArgs: {
-					args: "checkout develop",
-					failHelpKey: "gitCheckoutDevelop"
-				}
-			},
-			merge: {
-				args: { branch: "feature-branch", remote: "upstream" },
-				expectedRunCommandArgs: {
-					args: "merge upstream/feature-branch --ff-only"
-				}
-			},
-			rebase: {
-				args: { branch: "upstream/feature-branch", onError },
-				expectedRunCommandArgs: {
-					args: "rebase upstream/feature-branch --preserve-merges",
-					onError,
-					exitOnFail: true
-				}
-			},
-			mergeMaster: {
-				expectedRunCommandArgs: {
-					args: "merge master --ff-only",
-					failHelpKey: "gitMergeMaster"
-				}
-			},
-			mergeUpstreamMaster: {
-				expectedRunCommandArgs: {
-					args: "merge upstream/master --ff-only"
-				}
-			},
-			mergeUpstreamDevelop: {
-				expectedRunCommandArgs: {
-					args: "merge upstream/develop --ff-only"
-				}
-			},
-			mergePromotionBranch: {
-				args: "v1.1.1-feature.0",
-				expectedRunCommandArgs: {
-					args: "merge promote-release-v1.1.1-feature.0 --no-ff"
-				}
-			},
-			getCurrentBranch: {
-				expectedRunCommandArgs: {
-					args: "rev-parse --abbrev-ref HEAD",
-					log: "Getting current branch"
-				}
-			},
-			getTagList: {
-				expectedRunCommandArgs: {
-					args: "tag --sort=v:refname",
-					logMessage: "Getting list of tags"
-				}
-			},
-			shortLog: {
-				expectedRunCommandArgs: {
-					args: `--no-pager log --no-merges --date-order --pretty=format:"%s"`,
-					logMessage: "Parsing git log"
-				}
-			},
-			diff: {
-				args: { files: ["CHANGELOG.md", "package.json"] },
-				expectedRunCommandArgs: {
-					args: "diff --color CHANGELOG.md package.json"
-				}
-			},
-			add: {
-				args: ["CHANGELOG.md", "package.json"],
-				expectedRunCommandArgs: {
-					args: "add CHANGELOG.md package.json"
-				}
-			},
-			commit: {
-				args: "This is a test commit",
-				expectedRunCommandArgs: {
-					args: `commit -m "This is a test commit"`
-				}
-			},
-			amend: {
-				args: "This is a test comment",
-				expectedRunCommandArgs: {
-					args: `commit --amend -m "This is a test comment"`
-				}
-			},
-			tag: {
-				args: "v1.0.0",
-				expectedRunCommandArgs: { args: `tag -a v1.0.0 -m v1.0.0` }
-			},
-			push: {
-				args: { branch: "feature-branch", remote: "upstream" },
-				expectedRunCommandArgs: {
-					args: "push upstream feature-branch"
-				}
-			},
-			pushUpstreamMaster: {
-				expectedRunCommandArgs: {
-					args: "push upstream master",
-					failHelpKey: "gitPushUpstreamFeatureBranch"
-				}
-			},
-			pushUpstreamMasterWithTag: {
-				args: { tag: "v1.0.0" },
-				expectedRunCommandArgs: {
-					args: "push upstream master refs/tags/v1.0.0"
-				}
-			},
-			pushOriginMaster: {
-				expectedRunCommandArgs: { args: "push origin master" }
-			},
-			pushUpstreamDevelop: {
-				expectedRunCommandArgs: { args: "push upstream develop" }
-			},
-			uncommittedChangesExist: {
-				expectedRunCommandArgs: {
-					args: "diff-index HEAD --",
-					logMessage: "Checking for uncommitted changes"
-				}
-			},
-			stash: {
-				expectedRunCommandArgs: {
-					args: "stash",
-					logMessage: "Stashing uncommitted changes"
-				}
-			},
-			branchExists: {
-				args: "feature-branch",
-				expectedRunCommandArgs: {
-					args: "branch --list feature-branch",
-					logMessage: `Verifying branch: "feature-branch" exists`
-				}
-			},
-			createLocalBranch: {
-				args: "feature-branch",
-				expectedRunCommandArgs: {
-					args: "branch feature-branch upstream/feature-branch",
-					logMessage: `Creating local branch "feature-branch"`
-				}
-			},
-			resetBranch: {
-				args: "feature-branch",
-				expectedRunCommandArgs: {
-					args: "reset --hard upstream/feature-branch",
-					logMessage: `Hard reset on branch: "feature-branch"`
-				}
-			},
-			checkoutTag: {
-				args: "v1.1.1-blah.0",
-				expectedRunCommandArgs: {
-					args:
-						"checkout -b promote-release-v1.1.1-blah.0 v1.1.1-blah.0"
-				}
-			},
-			generateRebaseCommitLog: {
-				args: "v1.1.1-blah.0",
-				expectedRunCommandArgs: {
-					args: `log upstream/master..HEAD --pretty=format:"%h %s"`
-				}
-			},
-			rebaseUpstreamMaster: {
-				args: { onError },
-				expectedRunCommandArgs: {
-					args: "rebase upstream/master --preserve-merges",
-					onError,
-					exitOnFail: true
-				}
-			},
-			getBranchList: {
-				expectedRunCommandArgs: {
-					args: "branch",
-					logMessage: `Getting branch list`
-				}
-			},
-			deleteBranch: {
-				args: "promote-release-v1.1.1-feature.0",
-				expectedRunCommandArgs: {
-					args: "branch -D promote-release-v1.1.1-feature.0",
-					logMessage: "",
-					onError: {},
-					showOutput: true
-				}
-			},
-			stageFiles: {
-				expectedRunCommandArgs: { args: "add -u" }
-			},
-			rebaseContinue: {
-				expectedRunCommandArgs: {
-					args: `GIT_EDITOR="cat" git rebase --continue`,
-					logMessage: "Continuing with rebase",
-					failHelpKey: "gitRebaseInteractive",
-					showError: false,
-					fullCommand: true
-				}
-			},
-			checkConflictMarkers: {
-				expectedRunCommandArgs: {
-					args: "diff --check",
-					logMessage: "Verifying conflict resolution",
-					failHelpKey: "gitCheckConflictMarkers",
-					showError: false
-				}
-			},
-			checkoutBranch: {
-				args: "feature-branch",
-				expectedRunCommandArgs: { args: `checkout feature-branch` }
-			},
-			rebaseUpstreamBranch: {
-				args: { branch: "feature-branch", onError },
-				expectedRunCommandArgs: {
-					args: `rebase upstream/feature-branch --preserve-merges`,
-					onError,
-					exitOnFail: true
-				}
-			},
-			rebaseUpstreamDevelop: {
-				args: { onError },
-				expectedRunCommandArgs: {
-					args: `rebase upstream/develop --preserve-merges`,
-					failHelpKey: `gitRebaseUpstreamDevelop`,
-					exitOnFail: true,
-					onError
-				}
-			},
-			getLatestCommitMessage: {
-				expectedRunCommandArgs: { args: `log --format=%B -n 1` }
-			},
-			checkoutAndCreateBranch: {
-				args: { branch: "feature-branch" },
-				expectedRunCommandArgs: {
-					args: `checkout -b feature-branch`,
-					onError: {}
-				}
-			},
-			status: {
-				expectedRunCommandArgs: { args: `status`, showOutput: true }
-			},
-			getAllBranchesWithTag: {
-				args: "v1.1.1-tag.1",
-				expectedRunCommandArgs: {
-					args: `branch -a --contains tags/v1.1.1-tag.1`
-				}
-			},
-			deleteBranchUpstream: {
-				args: { branch: "feature-branch" },
-				expectedRunCommandArgs: {
-					args: `push upstream :feature-branch`,
-					logMessage: "",
-					onError: {}
-				}
-			},
-			branchExistsRemote: {
-				args: { branch: "feature-branch", remote: "upstream" },
-				expectedRunCommandArgs: {
-					args: `ls-remote upstream feature-branch`,
-					logMessage: `Checking if "feature-branch" exists on upstream`
-				}
-			},
-			createRemoteBranch: {
-				args: { branch: "feature-branch" },
-				expectedRunCommandArgs: {
-					args: `push -u upstream master:feature-branch`
-				}
-			},
-			getLastCommitText: {
-				args: true,
-				expectedRunCommandArgs: {
-					args: `log -1 --pretty=%B`,
-					showOutput: true
-				}
-			},
-			pushRemoteBranch: {
-				args: { branch: "feature-branch" },
-				expectedRunCommandArgs: {
-					args: `push -u origin feature-branch`
-				}
-			}
-		};
-
+	describe("branch", () => {
+		let showOutput;
 		beforeEach(() => {
-			git.runCommand = jest.fn(() => Promise.resolve(""));
+			showOutput = true;
 		});
 
-		describe("default behavior", () => {
-			Object.keys(commands).forEach(command => {
-				const testData = commands[command];
-
-				it(`should call "git.${command}" with the appropriate options`, () => {
-					const result = testData.args
-						? git[command](testData.args)
-						: git[command]();
-
-					return result.then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith(
-							testData.expectedRunCommandArgs
-						);
-					});
-				});
+		it("should call branch", () => {
+			git.branch({ showOutput, onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "branch",
+				showOutput,
+				onError
 			});
 		});
 
-		describe("alternate behaviors", () => {
-			it("should call `git.runCommand` with failHelpKey when provided in the call to `git.checkout`", () => {
-				return git.checkout("feature-branch", "test-key").then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "checkout feature-branch",
-						failHelpKey: "test-key"
-					});
-				});
+		it("should call branch with branch", () => {
+			git.branch({ branch, showOutput, onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "branch feature-branch",
+				showOutput,
+				onError
 			});
+		});
 
-			it("should call `git.shortLog` with the appropriate options when a tag is given", () => {
-				return git.shortLog("v1.2.3").then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: `--no-pager log --no-merges --date-order --pretty=format:"%s" v1.2.3..`,
-						logMessage: "Parsing git log"
-					});
-				});
+		it("should call branch with opiton", () => {
+			git.branch({ branch, option: "-r", showOutput, onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "branch -r feature-branch",
+				showOutput,
+				onError
 			});
+		});
 
-			it(`should call "git.merge" without fast-forward when specified`, () => {
-				return git
-					.merge({
-						branch: "feature-branch",
-						remote: "upstream",
-						fastForwardOnly: false
-					})
-					.then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "merge upstream/feature-branch --no-ff"
-						});
-					});
+		it("should call branch with tag", () => {
+			git.branch({ branch, tag: "v1.0.0-pre", showOutput, onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "branch feature-branch tags/v1.0.0-pre",
+				showOutput,
+				onError
 			});
+		});
 
-			it(`should call "git.merge" without remote when not specified`, () => {
-				return git.merge({ branch: "feature-branch" }).then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "merge feature-branch --ff-only"
-					});
-				});
+		it("should call branch with tracking", () => {
+			git.branch({
+				branch,
+				tracking: "another-branch",
+				showOutput,
+				onError
 			});
-
-			it(`should call "git.push" without tags when specified`, () => {
-				return git
-					.push({
-						branch: "feature-branch",
-						remote: "upstream"
-					})
-					.then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "push upstream feature-branch"
-						});
-					});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "branch feature-branch upstream/another-branch",
+				showOutput,
+				onError
 			});
+		});
 
-			it(`should call "git.merge" with provided promotion tag`, () => {
-				return git.mergePromotionBranch("v1.1.1").then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "merge promote-release-v1.1.1 --no-ff"
-					});
-				});
+		it("should call branch with appropriate args", () => {
+			git.branch({
+				branch,
+				option: "-r",
+				tag: "v1.0.0-pre",
+				tracking: "another-branch",
+				showOutput,
+				logMessage: "some message to display",
+				onError
 			});
-
-			it(`should call "git.merge" with provided promotion tag`, () => {
-				return git.mergePromotionBranch("v1.1.1").then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "merge promote-release-v1.1.1 --no-ff"
-					});
-				});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args:
+					"branch -r feature-branch tags/v1.0.0-pre upstream/another-branch",
+				showOutput,
+				logMessage: "some message to display",
+				onError
 			});
+		});
+	});
 
-			it(`should call "checkoutTag" with provided promotion tag`, () => {
-				return git.checkoutTag("v1.1.1").then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "checkout -b promote-release-v1.1.1 v1.1.1"
-					});
-				});
+	describe("checkout", () => {
+		it("should checkout branch", () => {
+			git.checkout({ branch, onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "checkout feature-branch",
+				onError
 			});
+		});
 
-			it(`should call "deleteBranch" with provided branch`, () => {
-				return git
-					.deleteBranch("promote-release-v1.1.1", false)
-					.then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "branch -D promote-release-v1.1.1",
-							logMessage: "",
-							onError: {},
-							showOutput: false
-						});
-					});
+		it("should checkout branch with option", () => {
+			git.checkout({ branch, option: "-b", onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "checkout -b feature-branch",
+				onError
 			});
+		});
 
-			it(`should call "createLocalBranch" with provided tracking`, () => {
-				return git
-					.createLocalBranch("feature-branch", "tracking-branch")
-					.then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args:
-								"branch feature-branch upstream/tracking-branch",
-							logMessage: `Creating local branch "feature-branch"`
-						});
-					});
+		it("should checkout branch with tag", () => {
+			git.checkout({ branch, tag: "v1.0.0-pre", onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "checkout feature-branch v1.0.0-pre",
+				onError
 			});
+		});
 
-			it(`should call "git.runCommand" with provided failHelpKey when passed to "git.rebase"`, () => {
-				return git
-					.rebase({
-						branch: "feature-branch",
-						onError,
-						failHelpKey: "test-key"
-					})
-					.then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "rebase feature-branch --preserve-merges",
-							failHelpKey: "test-key",
-							onError,
-							exitOnFail: true
-						});
-					});
+		it("should checkout branch with option and tag", () => {
+			git.checkout({ branch, option: "-b", tag: "v1.0.0-pre", onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "checkout -b feature-branch v1.0.0-pre",
+				onError
 			});
+		});
 
-			it(`should call "rebaseUpstreamDevelop" with default onError of undefined`, () => {
-				git.rebase = jest.fn(() => Promise.resolve(""));
-				return git.rebaseUpstreamDevelop().then(() => {
-					expect(git.rebase).toHaveBeenCalledTimes(1);
-					expect(git.rebase).toHaveBeenCalledWith({
-						branch: "upstream/develop",
-						failHelpKey: "gitRebaseUpstreamDevelop",
-						onError: undefined,
-						exitOnFail: true
-					});
-				});
+		it("should pass failHelpKey when provided", () => {
+			git.checkout({ branch, failHelpKey: "failureKey", onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "checkout feature-branch",
+				failHelpKey: "failureKey",
+				onError
 			});
+		});
 
-			it(`should call "rebaseUpstreamMaster" with default onError of undefined`, () => {
-				git.rebase = jest.fn(() => Promise.resolve(""));
-				return git.rebaseUpstreamMaster().then(() => {
-					expect(git.rebase).toHaveBeenCalledTimes(1);
-					expect(git.rebase).toHaveBeenCalledWith({
-						branch: "upstream/master",
-						onError: undefined
-					});
-				});
+		it("should call getCurrentBranch when successful", async () => {
+			await git.checkout({ branch });
+			expect(getCurrentBranch).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("commit", () => {
+		it("should call commit", () => {
+			git.commit({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: `commit -m "undefined"`
 			});
+		});
 
-			describe("createRemoteBranch", () => {
-				it("should create branch on upstream with base", () => {
-					return git
-						.createRemoteBranch({
-							branch: "feature-branch",
-							remote: "upstream",
-							base: "develop"
-						})
-						.then(() => {
-							expect(git.runCommand).toHaveBeenCalledTimes(1);
-							expect(git.runCommand).toHaveBeenCalledWith({
-								args: "push -u upstream develop:feature-branch"
-							});
-						});
-				});
-
-				it("should create branch on origin without base", () => {
-					return git
-						.createRemoteBranch({
-							branch: "feature-branch",
-							remote: "origin"
-						})
-						.then(() => {
-							expect(git.runCommand).toHaveBeenCalledTimes(1);
-							expect(git.runCommand).toHaveBeenCalledWith({
-								args: "push -u origin master:feature-branch"
-							});
-						});
-				});
-
-				it("should create branch on origin with base", () => {
-					return git
-						.createRemoteBranch({
-							branch: "feature-branch",
-							remote: "origin",
-							base: "feature-branch"
-						})
-						.then(() => {
-							expect(git.runCommand).toHaveBeenCalledTimes(1);
-							expect(git.runCommand).toHaveBeenCalledWith({
-								args:
-									"push -u origin feature-branch:feature-branch"
-							});
-						});
-				});
+		it("should call commit with option", () => {
+			git.commit({ option: "--amend -m" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: `commit --amend -m "undefined"`
 			});
+		});
 
-			it(`should call "getLastCommitText" with appropriate args`, () => {
-				return git.getLastCommitText().then(() => {
-					expect(git.runCommand).toHaveBeenCalledTimes(1);
-					expect(git.runCommand).toHaveBeenCalledWith({
-						args: "log -1 --pretty=%B",
-						showOutput: false
-					});
-				});
+		it("should call commit with comment", () => {
+			git.commit({ comment: "my comment" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: `commit -m "my comment"`
 			});
+		});
+	});
 
-			it(`should call "pushRemoteBranch" with appropriate args`, () => {
-				return git
-					.pushRemoteBranch({
-						branch: "feature-branch",
-						remote: "upstream",
-						onError: {}
-					})
-					.then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "push -u upstream feature-branch",
-							onError: {}
-						});
-					});
+	describe("config", () => {
+		it("should call config", () => {
+			git.config({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "config remote.undefined.url",
+				showOutput: false
 			});
+		});
 
-			describe("branchExistsRemote", () => {
-				it(`should return if branch exists on "origin" remote`, () => {
-					return git
-						.branchExistsRemote({
-							branch: "feature-branch",
-							remote: "origin"
-						})
-						.then(() => {
-							expect(git.runCommand).toHaveBeenCalledTimes(1);
-							expect(git.runCommand).toHaveBeenCalledWith({
-								args: "ls-remote origin feature-branch",
-								logMessage: `Checking if "feature-branch" exists on origin`
-							});
-						});
-				});
+		it("should call config with remote", () => {
+			git.config({ remote: "origin" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "config remote.origin.url",
+				showOutput: false
 			});
+		});
 
-			describe("removePreReleaseCommits", () => {
-				let joinSpy;
-				beforeEach(() => {
-					git.runCommand = jest.fn(() => Promise.resolve(""));
-					joinSpy = jest
-						.spyOn(path, "join")
-						.mockImplementation(() => "my_path/");
-				});
-
-				it("should call 'git.runCommand' with appropriate arguments", () => {
-					return git.removePreReleaseCommits().then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args:
-								'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i -p upstream/master',
-							failHelpKey: "gitRebaseInteractive",
-							fullCommand: true,
-							logMessage: "Removing pre-release commit history",
-							exitOnFail: true
-						});
-					});
-				});
-
-				afterEach(() => {
-					joinSpy.mockRestore();
-				});
+		it("should call config with appropriate args", () => {
+			git.config({ remote: "origin", showOutput: true });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "config remote.origin.url",
+				showOutput: true
 			});
+		});
+	});
 
-			describe("removePromotionBranches", () => {
-				it("should remove all promotion branches", () => {
-					git.getBranchList = jest.fn(() =>
-						Promise.resolve([
-							"feature-branch",
-							"promote-release-v1.1.1-feature.0",
-							"* master",
-							"develop",
-							"promote-release-v1.1.1-feature.1"
-						])
-					);
-					git.deleteBranch = jest.fn(branch =>
-						Promise.resolve(branch)
-					);
-					return git.removePromotionBranches().then(result => {
-						expect(result).toEqual([
-							"promote-release-v1.1.1-feature.0",
-							"promote-release-v1.1.1-feature.1"
-						]);
-						expect(git.deleteBranch).toHaveBeenCalledTimes(2);
-					});
-				});
+	describe("diff", () => {
+		it("should call diff", () => {
+			git.diff({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "diff --color"
 			});
+		});
 
-			describe("getPrereleaseTagList", () => {
-				it("should run `git` with the given args", () => {
-					git.runCommand = jest.fn(() =>
-						Promise.resolve(`v18.0.0-robert.0
-v17.12.0-break.1
-v17.12.0-break.0
-v17.11.2`)
-					);
-					return git.getPrereleaseTagList().then(() => {
-						expect(git.runCommand).toHaveBeenCalledTimes(1);
-						expect(git.runCommand).toHaveBeenCalledWith({
-							args: "tag --sort=-v:refname",
-							logMessage: "Getting list of pre-releases"
-						});
-					});
-				});
-
-				it("should return list of latest tags", () => {
-					git.runCommand = jest.fn(() =>
-						Promise.resolve(`v18.0.0-robert.0
-v17.12.0-break.0
-v17.12.0-break.1
-v17.11.2`)
-					);
-					return git.getPrereleaseTagList(10).then(result => {
-						expect(result).toEqual([
-							"v18.0.0-robert.0",
-							"v17.12.0-break.1"
-						]);
-					});
-				});
+		it("should call diff with option", () => {
+			git.diff({ option: "--check" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "diff --check"
 			});
+		});
 
-			describe("generateRebaseCommitLog", () => {
-				let writeSpy;
-				beforeEach(() => {
-					writeSpy = jest
-						.spyOn(util, "writeFile")
-						.mockImplementation(() => "");
-				});
-
-				it("should remove all pre-release commits", () => {
-					git.runCommand = jest.fn(() =>
-						Promise.resolve(`0987654 1.1.1-feature.1
-et768df this is commit 2
-23fe4e3 1.1.1-feature.0
-0dda789 this is commit 1`)
-					);
-					return git.generateRebaseCommitLog().then(() => {
-						expect(writeSpy.mock.calls[0][1])
-							.toEqual(`pick 0dda789 this is commit 1
-pick et768df this is commit 2
-`);
-					});
-				});
-
-				it("should remove all pre-release commits part 2", () => {
-					git.runCommand = jest.fn(() =>
-						Promise.resolve(`eabc473 1.1.1-feature.1
-2f3e4a5 v1.1.1-fancy.9
-23ae89c this is commit 2
-e7a8e93 1.1.1-feature.0
-098abc7 this is commit 1
-3eabc56 something random
-987abc6 1.0.0-new.0
-9b8a76c 0.0.9-new-thing.18
-0a9b8c7 another commit
-abcd9e8 0.1.1-feature.1 should also be left
-e8d9f00 should leave this 0.1.1-feature.0`)
-					);
-					return git.generateRebaseCommitLog().then(() => {
-						expect(writeSpy.mock.calls[0][1])
-							.toEqual(`pick e8d9f00 should leave this 0.1.1-feature.0
-pick abcd9e8 0.1.1-feature.1 should also be left
-pick 0a9b8c7 another commit
-pick 3eabc56 something random
-pick 098abc7 this is commit 1
-pick 23ae89c this is commit 2
-`);
-					});
-				});
-
-				afterEach(() => {
-					writeSpy.mockRestore();
-				});
+		it("should call diff with files", () => {
+			git.diff({ files: ["./package.json"] });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "diff --color ./package.json"
 			});
+		});
 
-			describe("cleanUp", () => {
-				let joinSpy, deleteSpy;
-				beforeEach(() => {
-					joinSpy = jest
-						.spyOn(path, "join")
-						.mockImplementation(() => "my_path/");
-					deleteSpy = jest
-						.spyOn(util, "deleteFile")
-						.mockImplementation(() => "");
-				});
+		it("should call diff with appropriate args", () => {
+			git.diff({
+				option: "--check",
+				files: ["./package.json"],
+				maxBuffer: 5000,
+				logMessage: "some message",
+				failHelpKey: "failureKey",
+				showError: true,
+				onError
+			});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "diff --check ./package.json",
+				maxBuffer: 5000,
+				logMessage: "some message",
+				failHelpKey: "failureKey",
+				showError: true,
+				onError
+			});
+		});
+	});
 
-				it("should call 'git.runCommand' with appropriate arguments", () => {
-					return git.cleanUp().then(() => {
-						expect(deleteSpy).toHaveBeenCalledTimes(1);
-						expect(deleteSpy).toHaveBeenCalledWith(`my_path/`);
-					});
-				});
+	describe("fetch", () => {
+		it("should call fetch", () => {
+			git.fetch({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "fetch upstream --tags"
+			});
+		});
 
-				afterEach(() => {
-					joinSpy.mockRestore();
-					deleteSpy.mockRestore();
-				});
+		it("should call fetch", () => {
+			git.fetch({ failHelpKey: "failureKey" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "fetch upstream --tags",
+				failHelpKey: "failureKey"
+			});
+		});
+	});
+
+	describe("merge", () => {
+		it("should call merge", () => {
+			git.merge({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "merge undefined --ff-only"
+			});
+		});
+
+		it("should call merge with branch", () => {
+			git.merge({ branch });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "merge feature-branch --ff-only"
+			});
+		});
+
+		it("should call merge with remote", () => {
+			git.merge({ remote: "origin" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "merge origin/undefined --ff-only"
+			});
+		});
+
+		it("should call merge with appropriate args", () => {
+			git.merge({
+				branch,
+				remote: "origin",
+				fastForwardOnly: false,
+				failHelpKey: "failureKey"
+			});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "merge origin/feature-branch --no-ff",
+				failHelpKey: "failureKey"
+			});
+		});
+	});
+
+	describe("push", () => {
+		it("should call push", () => {
+			git.push({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "push undefined undefined"
+			});
+		});
+
+		it("should call push with branch", () => {
+			git.push({ branch });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "push undefined feature-branch"
+			});
+		});
+
+		it("should call push with option", () => {
+			git.push({ option: "-f" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "push -f undefined undefined"
+			});
+		});
+
+		it("should call push with remote", () => {
+			git.push({ remote: "origin" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "push origin undefined"
+			});
+		});
+
+		it("should call push with base", () => {
+			git.push({ base: "develop" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "push undefined develop:undefined"
+			});
+		});
+
+		it("should call push with tag", () => {
+			git.push({ tag: "v1.0.0-pre" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "push undefined undefined refs/tags/v1.0.0-pre"
+			});
+		});
+
+		it("should call push with appropriate args", () => {
+			git.push({
+				branch,
+				option: "-f",
+				remote: "origin",
+				base: "develop",
+				tag: "v1.0.0-pre",
+				logMessage: "some message",
+				failHelpKey: "failureKey",
+				onError
+			});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args:
+					"push -f origin develop:feature-branch refs/tags/v1.0.0-pre",
+				logMessage: "some message",
+				failHelpKey: "failureKey",
+				onError
+			});
+		});
+	});
+
+	describe("rebase", () => {
+		it("should call rebase", () => {
+			git.rebase({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "rebase upstream/undefined --preserve-merges",
+				exitOnFail: true
+			});
+		});
+
+		it("should call rebase with branch", () => {
+			git.rebase({ branch });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "rebase upstream/feature-branch --preserve-merges",
+				exitOnFail: true
+			});
+		});
+
+		it("should call rebase with remote", () => {
+			git.rebase({ remote: "origin" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "rebase origin/undefined --preserve-merges",
+				exitOnFail: true
+			});
+		});
+
+		it("should call rebase with appropriate args", () => {
+			git.rebase({
+				branch,
+				remote: "origin",
+				failHelpKey: "failureKey",
+				exitOnFail: false,
+				onError
+			});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "rebase origin/feature-branch --preserve-merges",
+				failHelpKey: "failureKey",
+				exitOnFail: false,
+				onError
+			});
+		});
+	});
+
+	describe("remote", () => {
+		it("should call remote", () => {
+			git.remote();
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "remote"
+			});
+		});
+	});
+
+	describe("stash", () => {
+		it("should call stash with appropriate args", () => {
+			git.stash();
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "stash",
+				logMessage: "stashing uncommitted changes"
+			});
+		});
+	});
+
+	describe("status", () => {
+		it("should call status", () => {
+			git.status({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "status"
+			});
+		});
+
+		it("should call status with appropriate args", () => {
+			git.status({ showOutput: false });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "status",
+				showOutput: false
+			});
+		});
+	});
+
+	describe("tag", () => {
+		it("should call tag", () => {
+			git.tag({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "tag -a undefined -m undefined"
+			});
+		});
+
+		it("should call tag with tag", () => {
+			git.tag({ tag: "v1.0.0-pre" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "tag -a v1.0.0-pre -m v1.0.0-pre"
+			});
+		});
+
+		it("should call tag with annotation", () => {
+			git.tag({ annotation: "annotation" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "tag -a undefined -m annotation"
+			});
+		});
+
+		it("should call tag with appropriate args", () => {
+			git.tag({ tag: "v1.0.0-pre", annotation: "annotation" });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "tag -a v1.0.0-pre -m annotation"
 			});
 		});
 	});

@@ -271,7 +271,7 @@
 ### 3.0.1
 
 * Fix windows babel path bug
-* Don't log in gitCheckoutDevelop if there is no develop branch
+* Don't log in checkoutDevelop if there is no develop branch
 
 ### 3.0.0
 

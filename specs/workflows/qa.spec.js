@@ -5,8 +5,7 @@ describe("qa workflows", () => {
 	describe("qaWorkflow", () => {
 		it("should have all of the required steps", () => {
 			expect(qaWorkflow).toEqual([
-				run.gitFetchUpstream,
-				run.getFeatureBranch,
+				run.fetchUpstream,
 				run.getReposFromBumpCommit
 			]);
 		});
@@ -14,14 +13,12 @@ describe("qa workflows", () => {
 	describe("qaDefault", () => {
 		it("should have all of the required steps", () => {
 			expect(qaDefault).toEqual([
-				run.checkHasDevelopBranch,
 				run.getCurrentBranchVersion,
 				run.checkNewCommits,
-				run.useCurrentBranchOrCheckoutDevelop,
+				run.useCurrentOrBaseBranch,
 				run.gitRebaseUpstreamDevelop,
 				run.getPackageScope,
 				run.askReposToUpdate,
-				run.verifyPackagesToPromote,
 				run.getCurrentDependencyVersions,
 				run.askChangeReason,
 				run.githubUpstream,
@@ -29,8 +26,7 @@ describe("qa workflows", () => {
 				run.promptKeepBranchOrCreateNew,
 				run.askChangeType,
 				run.promptBranchName,
-				run.gitCheckoutAndCreateBranch,
-				run.getFeatureBranch,
+				run.checkoutAndCreateBranch,
 				run.updateDependencies,
 				run.gitDiff,
 				run.gitAdd,
