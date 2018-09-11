@@ -9,7 +9,8 @@ const fmt = require("fmt");
 const sequence = require("when/sequence");
 const { extend } = require("lodash");
 const automatedWorkflow = require("../src/workflows/automated");
-const { init } = require("./workflows/steps/index.js");
+const setup = require("./helpers/setup");
+const runWorkflow = require("./helpers/runWorkflow");
 
 const questions = {
 	github: [
@@ -27,26 +28,16 @@ const questions = {
 };
 
 const startTagRelease = async options => {
-	try {
-		if (options.verbose) {
-			fmt.title("GitHub Configuration");
-			fmt.field("username", options.username);
-			fmt.field("token", options.token);
-			fmt.line();
-		}
-
-		if (!options.callback) {
-			options.callback = () => console.log("Finished");
-		}
-
-		await init(options);
-
-		return sequence(options.workflow, options).then(result =>
-			options.callback(result[result.length - 1])
-		); // eslint-disable-line no-console
-	} catch (error) {
-		console.log(`Tag-release encountered a problem: ${error}`);
+	if (options.verbose) {
+		fmt.title("GitHub Configuration");
+		fmt.field("username", options.username);
+		fmt.field("token", options.token);
+		fmt.line();
 	}
+
+	await setup(options);
+
+	return runWorkflow(options.workflow, options);
 };
 
 const bootstrap = options => {

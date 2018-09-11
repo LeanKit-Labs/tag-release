@@ -46,8 +46,6 @@ import path from "path";
 const util = require("../../../src/utils");
 const git = require("../../../src/git");
 const command = require("../../../src/command");
-const getCurrentBranch = require("../../../src/helpers/getCurrentBranch");
-const filterFlowBasedOnDevelopBranch = require("../../../src/helpers/filterFlowBasedOnDevelopBranch");
 
 jest.mock("../../../src/git");
 jest.mock("../../../src/command");
@@ -62,7 +60,7 @@ jest.mock("../../../src/helpers/filterFlowBasedOnDevelopBranch", flow =>
 );
 
 describe("shared workflow steps", () => {
-	let state = {};
+	let state;
 
 	beforeEach(() => {
 		util.log.begin = jest.fn();
@@ -70,10 +68,9 @@ describe("shared workflow steps", () => {
 		command.runCommand = jest.fn(() =>
 			Promise.resolve("command.runCommand")
 		);
-	});
-
-	afterEach(() => {
-		state = {};
+		state = {
+			step: ""
+		};
 	});
 
 	describe("checkoutWorkingBranch", () => {
@@ -1198,7 +1195,7 @@ describe("shared workflow steps", () => {
 
 	describe("gitPushUpstreamDevelop", () => {
 		it(`should call "command.pushUpstreamDevelop" when there is a develop branch`, () => {
-			run.gitPushUpstreamDevelop();
+			run.gitPushUpstreamDevelop(state);
 			expect(command.pushUpstreamDevelop).toHaveBeenCalledTimes(1);
 		});
 	});
@@ -1281,7 +1278,8 @@ describe("shared workflow steps", () => {
 							upstream: {
 								url: "https://github.com/JohnDoe/test_repo.git"
 							}
-						}
+						},
+						step: "githubUpstream"
 					});
 				});
 			});
@@ -1301,7 +1299,8 @@ describe("shared workflow steps", () => {
 							upstream: {
 								url: "git@github.com:JohnDoe/test_repo.git"
 							}
-						}
+						},
+						step: "githubUpstream"
 					});
 				});
 			});
@@ -1325,7 +1324,8 @@ describe("shared workflow steps", () => {
 							upstream: {
 								url: ""
 							}
-						}
+						},
+						step: "githubUpstream"
 					});
 				});
 			});
@@ -1392,7 +1392,8 @@ describe("shared workflow steps", () => {
 							origin: {
 								url: "https://github.com/JohnDoe/test_repo.git"
 							}
-						}
+						},
+						step: "githubOrigin"
 					});
 				});
 			});
@@ -1412,7 +1413,8 @@ describe("shared workflow steps", () => {
 							origin: {
 								url: "git@github.com:JohnDoe/test_repo.git"
 							}
-						}
+						},
+						step: "githubOrigin"
 					});
 				});
 			});
@@ -1430,7 +1432,8 @@ describe("shared workflow steps", () => {
 							origin: {
 								url: ""
 							}
-						}
+						},
+						step: "githubOrigin"
 					});
 				});
 			});
@@ -1664,11 +1667,11 @@ describe("shared workflow steps", () => {
 	});
 
 	describe("gitStash", () => {
-		it("should call `command.stash`", () => {
-			command.stash = jest.fn(() => Promise.resolve());
+		it("should call `git.stash`", () => {
+			git.stash = jest.fn(() => Promise.resolve());
 			util.advise = jest.fn();
 			return run.gitStash(state).then(() => {
-				expect(command.stash).toHaveBeenCalledTimes(1);
+				expect(git.stash).toHaveBeenCalledTimes(1);
 				expect(util.advise).toHaveBeenCalledTimes(1);
 				expect(util.advise).toHaveBeenCalledWith("gitStash", {
 					exit: false
@@ -1678,18 +1681,18 @@ describe("shared workflow steps", () => {
 	});
 
 	describe("stashIfUncommittedChangesExist", () => {
-		it("should call `command.stash` when uncommitted changes exist", () => {
-			state = { uncommittedChangesExist: true };
-			command.stash = jest.fn(() => Promise.resolve());
+		it("should call `git.stash` when uncommitted changes exist", () => {
+			state = { uncommittedChangesExist: true, step: "blah" };
+			git.stash = jest.fn(() => Promise.resolve());
 			return run.stashIfUncommittedChangesExist(state).then(() => {
-				expect(command.stash).toHaveBeenCalledTimes(1);
+				expect(git.stash).toHaveBeenCalledTimes(1);
 			});
 		});
 
 		it("should not call `gitStash` when uncommitted changes do not exist", () => {
-			command.stash = jest.fn(() => Promise.resolve());
+			git.stash = jest.fn(() => Promise.resolve());
 			run.stashIfUncommittedChangesExist(state);
-			expect(command.stash).not.toHaveBeenCalled();
+			expect(git.stash).not.toHaveBeenCalled();
 		});
 	});
 
@@ -1700,21 +1703,21 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should call `command.branchExists` with the appropriate arguments", () => {
-			return run.verifyMasterBranch().then(() => {
+			return run.verifyMasterBranch(state).then(() => {
 				expect(command.branchExists).toHaveBeenCalledTimes(1);
 				expect(command.branchExists).toHaveBeenCalledWith("master");
 			});
 		});
 
 		it("should not call `command.createLocalBranch` when the branch does exist locally", () => {
-			return run.verifyMasterBranch().then(() => {
+			return run.verifyMasterBranch(state).then(() => {
 				expect(command.createLocalBranch).not.toHaveBeenCalled();
 			});
 		});
 
 		it("should call `command.createLocalBranch` when the branch doesn't exist locally", () => {
 			command.branchExists = jest.fn(() => Promise.resolve(false));
-			return run.verifyMasterBranch().then(() => {
+			return run.verifyMasterBranch(state).then(() => {
 				expect(command.createLocalBranch).toHaveBeenCalledTimes(1);
 				expect(command.createLocalBranch).toHaveBeenCalledWith(
 					"master"
@@ -1730,14 +1733,14 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should call `command.branchExists` with the appropriate arguments", () => {
-			return run.verifyDevelopBranch().then(() => {
+			return run.verifyDevelopBranch(state).then(() => {
 				expect(command.branchExists).toHaveBeenCalledTimes(1);
 				expect(command.branchExists).toHaveBeenCalledWith("develop");
 			});
 		});
 
 		it("should not call `command.createLocalBranch` when the branch does exist locally", () => {
-			return run.verifyDevelopBranch().then(() => {
+			return run.verifyDevelopBranch(state).then(() => {
 				expect(command.createLocalBranch).not.toHaveBeenCalled();
 			});
 		});
@@ -1764,7 +1767,7 @@ describe("shared workflow steps", () => {
 	describe("resetMaster", () => {
 		it("should call `command.resetBranch` with the appropriate arguments", () => {
 			command.resetBranch = jest.fn(() => Promise.resolve());
-			return run.gitResetMaster().then(() => {
+			return run.gitResetMaster(state).then(() => {
 				expect(command.resetBranch).toHaveBeenCalledTimes(1);
 				expect(command.resetBranch).toHaveBeenCalledWith("master");
 			});
@@ -1838,7 +1841,7 @@ describe("shared workflow steps", () => {
 	describe("gitRebaseUpstreamMaster", () => {
 		it("should call `command.rebaseUpstreamMaster`", () => {
 			command.rebaseUpstreamMaster = jest.fn(() => Promise.resolve());
-			return run.gitRebaseUpstreamMaster().then(() => {
+			return run.gitRebaseUpstreamMaster(state).then(() => {
 				expect(command.rebaseUpstreamMaster).toHaveBeenCalledTimes(1);
 			});
 		});
@@ -1847,7 +1850,7 @@ describe("shared workflow steps", () => {
 	describe("gitRemovePromotionBranches", () => {
 		it("should call `command.removePromotionBranches`", () => {
 			command.removePromotionBranches = jest.fn(() => Promise.resolve());
-			return run.gitRemovePromotionBranches().then(() => {
+			return run.gitRemovePromotionBranches(state).then(() => {
 				expect(command.removePromotionBranches).toHaveBeenCalledTimes(
 					1
 				);
@@ -1858,7 +1861,7 @@ describe("shared workflow steps", () => {
 	describe("gitStageFiles", () => {
 		it("should call `command.stageFiles`", () => {
 			command.stageFiles = jest.fn(() => Promise.resolve());
-			return run.gitStageFiles().then(() => {
+			return run.gitStageFiles(state).then(() => {
 				expect(command.stageFiles).toHaveBeenCalledTimes(1);
 			});
 		});
@@ -1867,7 +1870,7 @@ describe("shared workflow steps", () => {
 	describe("gitRebaseContinue", () => {
 		it("should call `command.rebaseContinue`", () => {
 			command.rebaseContinue = jest.fn(() => Promise.resolve());
-			return run.gitRebaseContinue().then(() => {
+			return run.gitRebaseContinue(state).then(() => {
 				expect(command.rebaseContinue).toHaveBeenCalledTimes(1);
 			});
 		});
@@ -2498,7 +2501,7 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should call `command.gitRebaseUpstreamDevelop` with the appropriate argument", () => {
-			return run.gitRebaseUpstreamDevelop().then(() => {
+			return run.gitRebaseUpstreamDevelop(state).then(() => {
 				expect(command.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
 			});
 		});
@@ -3999,7 +4002,9 @@ feature-last-branch`)
 		it(`should use {} when no dependencies/changeReason read from ".dependencies.json"`, () => {
 			util.readJSONFile = jest.fn(() => ({}));
 			return run.getDependenciesFromFile(state).then(() => {
-				expect(state).toEqual({});
+				expect(state).toEqual({
+					step: "getDependenciesFromFile"
+				});
 			});
 		});
 
@@ -4383,49 +4388,6 @@ feature-last-branch`)
 
 		afterEach(() => {
 			processSpy.mockRestore();
-		});
-	});
-
-	describe("init", () => {
-		beforeEach(() => {
-			state = {};
-			command.getRemoteBranches = jest.fn(() =>
-				Promise.resolve("upstream/develop")
-			);
-			util.fileExists = jest.fn(() => true);
-			util.advise = jest.fn(() => {});
-		});
-
-		it("should setup initial state", async () => {
-			await run.init(state);
-
-			expect(getCurrentBranch).toHaveBeenCalledTimes(1);
-			expect(filterFlowBasedOnDevelopBranch).toHaveBeenCalledTimes(1);
-			expect(util.fileExists).toHaveBeenCalledTimes(1);
-			expect(util.fileExists).toHaveBeenCalledWith("./package.json");
-			expect(state).toEqual({
-				branch: "current-branch",
-				workingBranch: "current-branch",
-				configPath: "./package.json",
-				hasDevelopBranch: true
-			});
-		});
-
-		it("should use state defined config when provided", async () => {
-			state.config = "./state.config.json";
-
-			await run.init(state);
-
-			expect(state.configPath).toEqual("./state.config.json");
-		});
-
-		it(`should advise when "util.fileExists" fails`, async () => {
-			util.fileExists = jest.fn(() => false);
-
-			await run.init(state);
-
-			expect(util.advise).toHaveBeenCalledTimes(1);
-			expect(util.advise).toHaveBeenCalledWith("updateVersion");
 		});
 	});
 });
