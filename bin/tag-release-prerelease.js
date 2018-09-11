@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 const commander = require("commander");
-const { extend } = require("lodash");
 const api = require("../src/index.js");
 const workflow = require("../src/workflows/pre-release");
 const utils = require("../src/utils.js");
@@ -12,6 +11,6 @@ commander.parse(process.argv);
 let options = {};
 const { verbose, maxbuffer, args } = commander;
 const prerelease = args.length ? args[0] : true;
-options = extend({}, { prerelease, verbose, maxbuffer, workflow });
+options = { prerelease, verbose, maxbuffer, workflow, command: "prerelease" };
 
 api.cli(options);

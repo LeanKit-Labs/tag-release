@@ -2,7 +2,7 @@ const runCommand = require("../../src/helpers/runCommand");
 const getCurrentBranch = require("../../src/helpers/getCurrentBranch");
 
 jest.mock("../../src/helpers/runCommand", () =>
-	jest.fn(() => Promise.resolve("feature-branch "))
+	jest.fn(() => Promise.resolve("feature-branch"))
 );
 
 describe("getCurrentBranch", () => {
