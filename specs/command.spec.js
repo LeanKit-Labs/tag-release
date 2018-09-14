@@ -484,7 +484,8 @@ v17.11.2`)
 				expected: {
 					branch,
 					remote: "upstream",
-					onError
+					onError,
+					exitOnFail: false
 				}
 			},
 			rebaseUpstreamDevelop: {

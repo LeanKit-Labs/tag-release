@@ -37,6 +37,7 @@
     "babel-register": "^6.11.6",
     "better-console": "^0.2.4",
     "chalk": "^2.0.0",
+    "cli-table2": "^0.2.0",
     "commander": "^2.9.0",
     "cowsay": "^1.1.8",
     "detect-indent": "^4.0.0",

@@ -9,8 +9,6 @@ const sequence = require("when/sequence");
 const path = require("path");
 const removeWords = require("remove-words");
 const { set } = require("lodash");
-const getCurrentBranch = require("../../helpers/getCurrentBranch");
-const filterFlowBasedOnDevelopBranch = require("../../helpers/filterFlowBasedOnDevelopBranch");
 
 const CHANGELOG_PATH = "CHANGELOG.md";
 const PACKAGELOCKJSON_PATH = "package-lock.json";
@@ -19,18 +17,22 @@ const PULL_REQUEST_TEMPLATE_PATH = "./.github/PULL_REQUEST_TEMPLATE.md";
 
 const api = {
 	checkoutWorkingBranch(state) {
+		state.step = "checkoutWorkingBranch";
 		state.branch = state.workingBranch;
 		return command.checkoutBranch(state);
 	},
 	checkoutMaster(state) {
+		state.step = "checkoutMaster";
 		state.branch = "master";
 		return command.checkoutBranch(state);
 	},
 	checkoutDevelop(state) {
+		state.step = "checkoutDevelop";
 		state.branch = "develop";
 		return command.checkoutBranch(state);
 	},
 	checkoutTag(state) {
+		state.step = "checkoutTag";
 		if (state.promote.charAt(0) !== "v") {
 			state.promote = `v${state.promote}`;
 		}
@@ -38,6 +40,7 @@ const api = {
 		return command.checkoutTag({ tag: state.promote });
 	},
 	checkoutBaseBranch(state) {
+		state.step = "checkoutBaseBranch";
 		const { hasDevelopBranch } = state;
 
 		if (hasDevelopBranch) {
@@ -46,6 +49,7 @@ const api = {
 		return api.checkoutMaster(state);
 	},
 	checkoutAndCreateBranch(state) {
+		state.step = "checkoutAndCreateBranch";
 		const { branch, keepBranch } = state;
 
 		const onError = err => {
@@ -68,6 +72,7 @@ const api = {
 		return result();
 	},
 	useCurrentOrBaseBranch(state) {
+		state.step = "useCurrentOrBaseBranch";
 		const { log, hasDevelopBranch } = state;
 
 		let result;
@@ -81,10 +86,12 @@ const api = {
 
 		return result();
 	},
-	fetchUpstream() {
+	fetchUpstream(state) {
+		state.step = "fetchUpstream";
 		return command.fetchUpstream();
 	},
 	gitMergeUpstreamBranch(state) {
+		state.step = "gitMergeUpstreamBranch";
 		const { branch } = state;
 		return git.merge({
 			branch,
@@ -92,16 +99,20 @@ const api = {
 			failHelpKey: "gitMergeUpstreamBranch"
 		});
 	},
-	gitMergeUpstreamMaster() {
+	gitMergeUpstreamMaster(state) {
+		state.step = "gitMergeUpstreamMaster";
 		return command.mergeUpstreamMaster();
 	},
-	gitMergeUpstreamDevelop() {
+	gitMergeUpstreamDevelop(state) {
+		state.step = "gitMergeUpstreamDevelop";
 		return command.mergeUpstreamDevelop();
 	},
-	gitMergePromotionBranch({ promote }) {
-		return command.mergePromotionBranch(promote);
+	gitMergePromotionBranch(state) {
+		state.step = "gitMergePromotionBranch";
+		return command.mergePromotionBranch(state.promote);
 	},
 	checkHasDevelopBranch(state) {
+		state.step = "checkHasDevelopBranch";
 		return command
 			.getRemoteBranches()
 			.then(data => {
@@ -115,6 +126,7 @@ const api = {
 			});
 	},
 	checkExistingPrereleaseIdentifier(state) {
+		state.step = "checkExistingPrereleaseIdentifier";
 		const { prerelease, currentVersion } = state;
 
 		if (prerelease && prerelease.length) {
@@ -132,6 +144,7 @@ const api = {
 		return Promise.resolve();
 	},
 	setPrereleaseIdentifier(state) {
+		state.step = "setPrereleaseIdentifier";
 		const { prerelease } = state;
 
 		const cleanIdentifier = targetIdentifier => {
@@ -159,6 +172,7 @@ const api = {
 			});
 	},
 	selectPrereleaseToPromote(state) {
+		state.step = "selectPrereleaseToPromote";
 		if (state.promote && typeof state.promote === "boolean") {
 			return command.getPrereleaseTagList().then(prereleases => {
 				return util
@@ -181,6 +195,7 @@ const api = {
 		return Promise.resolve();
 	},
 	getCurrentBranchVersion(state) {
+		state.step = "getCurrentBranchVersion";
 		const { configPath } = state;
 		const { version } = util.readJSONFile(configPath);
 
@@ -188,6 +203,7 @@ const api = {
 		return Promise.resolve();
 	},
 	gitShortLog(state) {
+		state.step = "gitShortLog";
 		const { currentVersion, prerelease } = state;
 
 		let contents = util.readFile(CHANGELOG_PATH);
@@ -223,11 +239,14 @@ const api = {
 			});
 		}
 	},
-	previewLog({ log }) {
+	previewLog(state) {
+		state.step = "previewLog";
+		const { log } = state;
 		util.logger.log(`${chalk.bold("Here is a preview of your log:")}
 ${chalk.green(log)}`);
 	},
 	askSemverJump(state) {
+		state.step = "askSemverJump";
 		const { currentVersion, prerelease, release } = state;
 
 		// don't bother prompting if this information was already provided in the CLI options
@@ -288,6 +307,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	updateLog(state) {
+		state.step = "updateLog";
 		return util
 			.prompt([
 				{
@@ -310,6 +330,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	updateVersion(state) {
+		state.step = "updateVersion";
 		const { configPath, currentVersion, prerelease, release } = state;
 		const pkg = util.readJSONFile(configPath);
 
@@ -330,6 +351,7 @@ ${chalk.green(log)}`);
 		);
 	},
 	updateChangelog(state) {
+		state.step = "updateChangelog";
 		const { log, release, versions: { newVersion } } = state;
 		const version = `### ${newVersion}`;
 		const update = `${version}\n\n${log}`;
@@ -350,6 +372,7 @@ ${chalk.green(log)}`);
 		util.log.end();
 	},
 	gitDiff(state) {
+		state.step = "gitDiff";
 		const { configPath } = state;
 		const files = [CHANGELOG_PATH, configPath];
 
@@ -393,6 +416,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	gitAdd(state) {
+		state.step = "gitAdd";
 		const { configPath } = state;
 		const files = [CHANGELOG_PATH, configPath];
 
@@ -412,16 +436,19 @@ ${chalk.green(log)}`);
 		return git.add({ files });
 	},
 	gitStageConfigFile(state) {
+		state.step = "gitStageConfigFile";
 		const { configPath } = state;
 
 		return git.add({ files: [configPath] });
 	},
 	gitCommit(state) {
+		state.step = "gitCommit";
 		const { versions: { newVersion } } = state;
 
 		return git.commit({ comment: newVersion });
 	},
 	gitTag(state) {
+		state.step = "gitTag";
 		const { versions: { newVersion } } = state;
 		const tag = `v${newVersion}`;
 
@@ -429,10 +456,13 @@ ${chalk.green(log)}`);
 			state.tag = tag;
 		});
 	},
-	gitPushUpstreamMaster({ tag }) {
+	gitPushUpstreamMaster(state) {
+		state.step = "gitPushUpstreamMaster";
+		const { tag } = state;
 		return command.pushUpstreamMasterWithTag({ tag });
 	},
 	npmPublish(state) {
+		state.step = "npmPublish";
 		const { configPath, prerelease } = state;
 		if (configPath !== "./package.json") {
 			return null;
@@ -473,13 +503,17 @@ ${chalk.green(log)}`);
 				.catch(err => util.logger.log(chalk.red(err)));
 		}
 	},
-	gitMergeDevelopWithMaster() {
+	gitMergeDevelopWithMaster(state) {
+		state.step = "gitMergeDevelopWithMaster";
 		return command.mergeMaster();
 	},
-	gitPushUpstreamDevelop() {
+	gitPushUpstreamDevelop(state) {
+		state.step = "gitPushUpstreamDevelop";
 		return command.pushUpstreamDevelop();
 	},
-	gitPushUpstreamFeatureBranch({ branch, tag }) {
+	gitPushUpstreamFeatureBranch(state) {
+		state.step = "gitPushUpstreamFeatureBranch";
+		const { branch, tag } = state;
 		if (branch && branch.length) {
 			return git.push({
 				branch,
@@ -489,7 +523,9 @@ ${chalk.green(log)}`);
 			});
 		}
 	},
-	gitForcePushUpstreamFeatureBranch({ branch }) {
+	gitForcePushUpstreamFeatureBranch(state) {
+		state.step = "gitForcePushUpstreamFeatureBranch";
+		const { branch } = state;
 		if (branch && branch.length) {
 			return git.push({
 				branch,
@@ -498,10 +534,12 @@ ${chalk.green(log)}`);
 			});
 		}
 	},
-	gitPushOriginMaster() {
+	gitPushOriginMaster(state) {
+		state.step = "gitPushOriginMaster";
 		return command.pushOriginMaster();
 	},
 	githubUpstream(state) {
+		state.step = "githubUpstream";
 		const remote = "upstream";
 		return git
 			.config({ remote })
@@ -519,6 +557,7 @@ ${chalk.green(log)}`);
 			.catch(error => util.logger.log("error", error));
 	},
 	githubOrigin(state) {
+		state.step = "githubOrigin";
 		const remote = "origin";
 		return git
 			.config({ remote })
@@ -535,6 +574,7 @@ ${chalk.green(log)}`);
 			.catch(error => util.logger.log("error", error));
 	},
 	githubRelease(state) {
+		state.step = "githubRelease";
 		const {
 			github: {
 				upstream: { owner: repositoryOwner, name: repositoryName }
@@ -588,24 +628,28 @@ ${chalk.green(log)}`);
 		});
 	},
 	checkForUncommittedChanges(state) {
+		state.step = "checkForUncommittedChanges";
 		return command.uncommittedChangesExist().then(results => {
 			state.uncommittedChangesExist = results.length;
 			return Promise.resolve(state.uncommittedChangesExist);
 		});
 	},
-	gitStash() {
-		return command.stash().then(() => {
+	gitStash(state) {
+		state.step = "gitStash";
+		return git.stash().then(() => {
 			util.advise("gitStash", { exit: false });
 			return Promise.resolve();
 		});
 	},
 	stashIfUncommittedChangesExist(state) {
+		state.step = "stashIfUncommittedChangesExist";
 		const { uncommittedChangesExist } = state;
 		if (uncommittedChangesExist) {
-			return api.gitStash();
+			return api.gitStash(state);
 		}
 	},
-	verifyMasterBranch() {
+	verifyMasterBranch(state) {
+		state.step = "verifyMasterBranch";
 		return command.branchExists("master").then(exists => {
 			if (!exists) {
 				return command.createLocalBranch("master");
@@ -613,40 +657,50 @@ ${chalk.green(log)}`);
 		});
 	},
 	verifyDevelopBranch(state) {
+		state.step = "verifyDevelopBranch";
 		return command.branchExists("develop").then(exists => {
 			if (!exists && state.hasDevelopBranch) {
 				return command.createLocalBranch("develop");
 			}
 		});
 	},
-	gitResetMaster() {
+	gitResetMaster(state) {
+		state.step = "gitResetMaster";
 		return command.resetBranch("master");
 	},
 	gitResetDevelop(state) {
+		state.step = "gitResetDevelop";
 		if (state.hasDevelopBranch) {
 			return command.resetBranch("develop");
 		}
 		return Promise.resolve();
 	},
-	gitGenerateRebaseCommitLog() {
+	gitGenerateRebaseCommitLog(state) {
+		state.step = "gitGenerateRebaseCommitLog";
 		return command.generateRebaseCommitLog();
 	},
-	gitRemovePreReleaseCommits() {
+	gitRemovePreReleaseCommits(state) {
+		state.step = "gitRemovePreReleaseCommits";
 		return command.removePreReleaseCommits();
 	},
-	gitRebaseUpstreamMaster() {
+	gitRebaseUpstreamMaster(state) {
+		state.step = "gitRebaseUpstreamMaster";
 		return command.rebaseUpstreamMaster();
 	},
-	gitRemovePromotionBranches() {
+	gitRemovePromotionBranches(state) {
+		state.step = "gitRemovePromotionBranches";
 		return command.removePromotionBranches();
 	},
-	gitStageFiles() {
+	gitStageFiles(state) {
+		state.step = "gitStageFiles";
 		return command.stageFiles();
 	},
 	gitRebaseContinue(state) {
+		state.step = "gitRebaseContinue";
 		return command.rebaseContinue().then(() => state);
 	},
 	setPromote(state) {
+		state.step = "setPromote";
 		state.promote = state.branch.slice(
 			state.branch.indexOf("v"),
 			state.branch.length
@@ -654,6 +708,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	getPackageScope(state) {
+		state.step = "getPackageScope";
 		const defaultOrProvidedScope = flag => {
 			return flag.charAt(0) === "@" ? `${flag}` : `@${flag}`;
 		};
@@ -669,6 +724,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	getScopedRepos(state) {
+		state.step = "getScopedRepos";
 		const { configPath, scope } = state;
 		const content = util.readJSONFile(configPath);
 
@@ -690,6 +746,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve(repos);
 	},
 	askReposToUpdate(state) {
+		state.step = "askReposToUpdate";
 		return api.getScopedRepos(state).then(packages => {
 			return util
 				.prompt([
@@ -707,6 +764,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	askVersion(state, dependency) {
+		state.step = "askVersion";
 		const { pkg, version } = dependency;
 		return () => {
 			return api.getTagsFromRepo(state, pkg).then(tags => {
@@ -728,6 +786,7 @@ ${chalk.green(log)}`);
 		};
 	},
 	askVersions(state) {
+		state.step = "askVersions";
 		const { dependencies } = state;
 		const prompts = dependencies.map(dependency =>
 			api.askVersion(state, dependency)
@@ -755,6 +814,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	askChangeType(state) {
+		state.step = "askChangeType";
 		const { keepBranch } = state;
 
 		if (keepBranch) {
@@ -776,9 +836,11 @@ ${chalk.green(log)}`);
 			});
 	},
 	changeReasonValidator(changeReason) {
+		// TODO: Does this need to go into it's own helper file?
 		return changeReason.trim().length > 0;
 	},
 	askChangeReason(state) {
+		state.step = "askChangeReason";
 		return util
 			.prompt([
 				{
@@ -796,6 +858,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	updateDependencies(state) {
+		state.step = "updateDependencies";
 		const { dependencies, configPath, scope } = state;
 		const content = util.readJSONFile(configPath);
 
@@ -814,6 +877,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	gitCommitBumpMessage(state) {
+		state.step = "gitCommitBumpMessage";
 		const { dependencies, changeReason } = state;
 		const arr = [];
 		dependencies.forEach(item => {
@@ -825,6 +889,7 @@ ${chalk.green(log)}`);
 		return git.commit({ comment: state.bumpComment });
 	},
 	verifyPackagesToPromote(state) {
+		state.step = "verifyPackagesToPromote";
 		const { packages } = state;
 		if (packages && packages.length === 0) {
 			util.advise("noPackages");
@@ -833,13 +898,16 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	gitRebaseUpstreamBranch(state) {
+		state.step = "gitRebaseUpstreamBranch";
 		const { branch } = state;
 		return command.rebaseUpstreamBranch({ branch });
 	},
-	gitRebaseUpstreamDevelop() {
+	gitRebaseUpstreamDevelop(state) {
+		state.step = "gitRebaseUpstreamDevelop";
 		return command.rebaseUpstreamDevelop();
 	},
 	getReposFromBumpCommit(state) {
+		state.step = "getReposFromBumpCommit";
 		return command.getLatestCommitMessage().then(msg => {
 			const [, versions = "", reason = ""] =
 				msg.match(/Bumped (.*): (.*)/) || [];
@@ -859,6 +927,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	gitAmendCommitBumpMessage(state) {
+		state.step = "gitAmendCommitBumpMessage";
 		const { dependencies, changeReason } = state;
 		const arr = [];
 		dependencies.forEach(item => {
@@ -870,6 +939,7 @@ ${chalk.green(log)}`);
 		return command.commitAmend({ comment: state.bumpComment });
 	},
 	getCurrentDependencyVersions(state) {
+		state.step = "getCurrentDependencyVersions";
 		const { packages, configPath, scope } = state;
 		state.dependencies = [];
 
@@ -894,6 +964,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	createGithubPullRequestAganistBase(state) {
+		state.step = "createGithubPullRequestAganistBase";
 		const {
 			github: {
 				upstream: { owner: repositoryOwner, name: repositoryName }
@@ -936,6 +1007,7 @@ ${chalk.green(log)}`);
 			.catch(err => util.logger.log(chalk.red(err)));
 	},
 	createGithubPullRequestAganistBranch(state) {
+		state.step = "createGithubPullRequestAganistBranch";
 		const {
 			github: {
 				upstream: {
@@ -982,6 +1054,7 @@ ${chalk.green(log)}`);
 			.catch(err => util.logger.log(chalk.red(err)));
 	},
 	saveState(state) {
+		state.step = "saveState";
 		const { scope } = state;
 		try {
 			const content = {
@@ -995,13 +1068,15 @@ ${chalk.green(log)}`);
 
 		return Promise.resolve();
 	},
-	cleanUpTmpFiles() {
+	cleanUpTmpFiles(state) {
+		state.step = "cleanUpTmpFiles";
 		util.deleteFile(path.join(__dirname, ".state.json"));
 		util.deleteFile(path.join(__dirname, ".dependencies.json"));
 
 		return command.cleanUp();
 	},
 	promptBranchName(state) {
+		state.step = "promptBranchName";
 		const { keepBranch, changeType, prerelease } = state;
 
 		if (keepBranch) {
@@ -1022,6 +1097,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	getTagsFromRepo(state, repositoryName) {
+		state.step = "getTagsFromRepo";
 		const {
 			github: { upstream: { owner: repositoryOwner } },
 			token
@@ -1041,6 +1117,7 @@ ${chalk.green(log)}`);
 			.catch(err => util.logger.log(chalk.red(err)));
 	},
 	verifyRemotes(state) {
+		state.step = "verifyRemotes";
 		return git.remote().then(response => {
 			state.remotes = {
 				origin: {
@@ -1053,6 +1130,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	verifyOrigin(state) {
+		state.step = "verifyOrigin";
 		const { remotes: { origin } } = state;
 		util.log.begin("Verifying origin remote");
 
@@ -1064,6 +1142,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	verifyUpstream(state) {
+		state.step = "verifyUpstream";
 		const {
 			github: {
 				origin: { owner: repositoryOwner, name: repositoryName }
@@ -1104,7 +1183,8 @@ ${chalk.green(log)}`);
 		util.log.end();
 		return Promise.resolve();
 	},
-	verifyChangelog() {
+	verifyChangelog(state) {
+		state.step = "verifyChangelog";
 		util.log.begin("Verifying CHANGELOG.md");
 		if (util.fileExists(CHANGELOG_PATH)) {
 			util.log.end();
@@ -1132,6 +1212,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	verifyPackageJson(state) {
+		state.step = "verifyPackageJson";
 		const { configPath } = state;
 		util.log.begin("Verifying package.json");
 		util.log.end();
@@ -1143,6 +1224,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	isPackagePrivate(state) {
+		state.step = "isPackagePrivate";
 		const { configPath } = state;
 		if (util.isPackagePrivate(configPath)) {
 			util.advise("privatePackage");
@@ -1151,6 +1233,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	checkNewCommits(state) {
+		state.step = "checkNewCommits";
 		const { currentVersion } = state;
 		const latestRelease = `v${currentVersion}`;
 
@@ -1159,6 +1242,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	promptKeepBranchOrCreateNew(state) {
+		state.step = "promptKeepBranchOrCreateNew";
 		const { log, branch } = state;
 
 		if (!log.length) {
@@ -1190,6 +1274,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	findBranchByTag(state) {
+		state.step = "findBranchByTag";
 		const { promote: tag } = state;
 		return command.getAllBranchesWithTag(tag).then(response => {
 			const regexp = /[^*/ ]+$/;
@@ -1229,6 +1314,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	deleteLocalFeatureBranch(state) {
+		state.step = "deleteLocalFeatureBranch";
 		const { branchToRemove: branch } = state;
 
 		const onError = () => {
@@ -1242,6 +1328,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	deleteUpstreamFeatureBranch(state) {
+		state.step = "deleteUpstreamFeatureBranch";
 		const { branchToRemove: branch } = state;
 
 		const onError = () => {
@@ -1255,6 +1342,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	saveDependencies(state) {
+		state.step = "saveDependencies";
 		const { dependencies, changeReason } = state;
 
 		try {
@@ -1274,6 +1362,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	getDependenciesFromFile(state) {
+		state.step = "getDependenciesFromFile";
 		const content = util.readJSONFile(
 			path.join(__dirname, ".dependencies.json")
 		);
@@ -1285,6 +1374,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	updatePackageLockJson(state) {
+		state.step = "updatePackageLockJson";
 		const { dependencies, currentVersion, scope } = state;
 
 		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
@@ -1305,6 +1395,7 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	npmInstallPackage(dependency) {
+		// TODO: should this be a helper?
 		const installCommand = `npm install ${dependency} -E`;
 
 		return () => {
@@ -1322,6 +1413,7 @@ ${chalk.green(log)}`);
 		};
 	},
 	gitCreateBranchUpstream(state) {
+		state.step = "gitCreateBranchUpstream";
 		const { hasDevelopBranch, branch } = state;
 		const remote = "upstream";
 
@@ -1333,6 +1425,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	gitCreateBranchOrigin(state) {
+		state.step = "gitCreateBranchOrigin";
 		const { branch } = state;
 		const remote = "origin";
 
@@ -1353,6 +1446,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	updatePullRequestTitle(state) {
+		state.step = "updatePullRequestTitle";
 		return command.getLastCommitText().then(commitText => {
 			const questions = [
 				{
@@ -1371,6 +1465,7 @@ ${chalk.green(log)}`);
 		});
 	},
 	updatePullRequestBody(state) {
+		state.step = "updatePullRequestBody";
 		return util
 			.prompt([
 				{
@@ -1406,6 +1501,7 @@ ${chalk.green(log)}`);
 			});
 	},
 	rebaseUpstreamBaseBranch(state) {
+		state.step = "rebaseUpstreamBaseBranch";
 		const { hasDevelopBranch } = state;
 
 		if (hasDevelopBranch) {
@@ -1415,27 +1511,13 @@ ${chalk.green(log)}`);
 		return command.rebaseUpstreamMaster();
 	},
 	changeDirectory(state) {
+		state.step = "changeDirectory";
 		try {
 			process.chdir(state.cwd);
 		} catch (err) {
 			return Promise.reject(`Unable to cwd to provided: ${state.cwd}`);
 		}
 
-		return Promise.resolve();
-	},
-	async init(state) {
-		state.branch = await getCurrentBranch();
-		state.workingBranch = state.branch;
-
-		await api.checkHasDevelopBranch(state);
-
-		state.workflow = filterFlowBasedOnDevelopBranch(state, state.workflow);
-
-		state.configPath = state.config || "./package.json";
-
-		if (!util.fileExists(state.configPath)) {
-			util.advise("updateVersion");
-		}
 		return Promise.resolve();
 	}
 };

@@ -9,6 +9,6 @@ utils.applyCommanderOptions(commander);
 commander.parse(process.argv);
 
 const { verbose, maxbuffer } = commander;
-const options = { dev: true, verbose, maxbuffer, workflow };
+const options = { dev: true, verbose, maxbuffer, workflow, command: "dev" };
 
 api.cli(options);

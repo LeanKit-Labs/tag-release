@@ -330,7 +330,8 @@ const command = {
 		return git.rebase({
 			branch,
 			remote: "upstream",
-			onError
+			onError,
+			exitOnFail: false
 		});
 	},
 
