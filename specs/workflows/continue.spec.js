@@ -1,8 +1,7 @@
 const continueWorkflow = require("../../src/workflows/continue");
 const {
 	gitStageFiles,
-	gitRebaseContinue,
-	getFeatureBranch
+	gitRebaseContinue
 } = require("../../src/workflows/steps/index");
 const {
 	verifyConflictResolution
@@ -13,8 +12,7 @@ describe("continue workflow", () => {
 		expect(continueWorkflow).toEqual([
 			verifyConflictResolution,
 			gitStageFiles,
-			gitRebaseContinue,
-			getFeatureBranch
+			gitRebaseContinue
 		]);
 	});
 });

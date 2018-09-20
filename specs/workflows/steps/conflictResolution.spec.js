@@ -10,6 +10,7 @@ jest.mock("chalk", () => ({
 import chalk from "chalk"; // eslint-disable-line no-unused-vars
 import logger from "better-console";
 import util from "../../../src/utils";
+import command from "../../../src/command";
 import git from "../../../src/git";
 import * as run from "../../../src/workflows/steps/conflictResolution";
 
@@ -38,46 +39,61 @@ describe("conflict resolution workflow steps", () => {
 		util.advise = jest.fn(() => Promise.resolve());
 	});
 
-	describe("gitRebaseUpstreamDevelopWithConflictFlag", () => {
-		it("should call `git.rebaseUpstreamDevelop`", () => {
-			git.rebaseUpstreamDevelop = jest.fn(() =>
+	describe("gitRebaseUpstreamBaseWithConflictFlag", () => {
+		beforeEach(() => {
+			state = {
+				hasDevelopBranch: true
+			};
+		});
+
+		it(`should call "command.rebaseUpstreamDevelop"`, () => {
+			command.rebaseUpstreamDevelop = jest.fn(() =>
 				Promise.resolve({ conflict: false })
 			);
-			return run
-				.gitRebaseUpstreamDevelopWithConflictFlag(state)
-				.then(() => {
-					expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
-					expect(state.conflict).toEqual(false);
-				});
+			return run.gitRebaseUpstreamBaseWithConflictFlag(state).then(() => {
+				expect(command.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
+				expect(state.conflict).toEqual(false);
+			});
+		});
+
+		it(`should call "command.rebaseUpstreamMaster"`, () => {
+			state.hasDevelopBranch = false;
+			command.rebaseUpstreamMaster = jest.fn(() =>
+				Promise.resolve({ conflict: false })
+			);
+			return run.gitRebaseUpstreamBaseWithConflictFlag(state).then(() => {
+				expect(command.rebaseUpstreamMaster).toHaveBeenCalledTimes(1);
+				expect(state.conflict).toEqual(false);
+			});
 		});
 
 		it("onError should resolve to true when conflict is in package.json", () => {
-			git.rebaseUpstreamDevelop = jest.fn(({ onError }) => {
+			command.rebaseUpstreamDevelop = jest.fn(({ onError }) => {
 				return onError("error")();
 			});
 			git.status = jest.fn(() => Promise.resolve("package.json"));
-			return run
-				.gitRebaseUpstreamDevelopWithConflictFlag(state)
-				.then(() => {
-					expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
-					expect(state.conflict).toEqual(true);
-				});
+			return run.gitRebaseUpstreamBaseWithConflictFlag(state).then(() => {
+				expect(command.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
+				expect(state.conflict).toEqual(true);
+			});
 		});
 
 		it("onError should reject with false when there isn't a conflict in package.json", () => {
-			git.rebaseUpstreamDevelop = jest.fn(({ onError }) => {
+			command.rebaseUpstreamDevelop = jest.fn(({ onError }) => {
 				return onError("error")();
 			});
 			git.status = jest.fn(() =>
 				Promise.resolve("just some random string")
 			);
 			return run
-				.gitRebaseUpstreamDevelopWithConflictFlag(state)
+				.gitRebaseUpstreamBaseWithConflictFlag(state)
 				.catch(() => {
-					expect(git.rebaseUpstreamDevelop).toHaveBeenCalledTimes(1);
+					expect(command.rebaseUpstreamDevelop).toHaveBeenCalledTimes(
+						1
+					);
 					expect(util.advise).toHaveBeenCalledTimes(1);
 					expect(util.advise).toHaveBeenCalledWith(
-						"gitRebaseUpstreamDevelop"
+						"gitRebaseUpstreamBase"
 					);
 					expect(state.conflict).toEqual(undefined);
 				});
@@ -85,10 +101,10 @@ describe("conflict resolution workflow steps", () => {
 	});
 
 	describe("verifyConflictResolution", () => {
-		it("should call `git.checkConflictMarkers`", () => {
-			git.checkConflictMarkers = jest.fn(() => Promise.resolve());
+		it("should call `command.checkConflictMarkers`", () => {
+			command.checkConflictMarkers = jest.fn(() => Promise.resolve());
 			return run.verifyConflictResolution().then(() => {
-				expect(git.checkConflictMarkers).toHaveBeenCalledTimes(1);
+				expect(command.checkConflictMarkers).toHaveBeenCalledTimes(1);
 			});
 		});
 	});

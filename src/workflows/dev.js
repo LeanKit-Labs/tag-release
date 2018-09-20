@@ -1,13 +1,11 @@
 const run = require("./steps/index");
 
 module.exports = [
-	run.gitFetchUpstream,
-	run.checkHasDevelopBranch,
-	run.getFeatureBranch,
+	run.fetchUpstream,
 	run.gitCreateBranchOrigin,
-	run.gitCheckoutDevelopOrMaster,
-	run.gitRebaseUpstreamDevelopOrMaster,
-	run.gitCheckoutBranch,
+	run.checkoutBaseBranch,
+	run.rebaseUpstreamBaseBranch,
+	run.checkoutWorkingBranch,
 	run.gitCreateBranchUpstream,
 	run.githubUpstream,
 	run.githubOrigin,

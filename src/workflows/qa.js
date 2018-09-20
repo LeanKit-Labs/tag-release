@@ -1,20 +1,14 @@
 const run = require("./steps/index");
 
 module.exports = {
-	qaWorkflow: [
-		run.gitFetchUpstream,
-		run.getFeatureBranch,
-		run.getReposFromBumpCommit
-	],
+	qaWorkflow: [run.fetchUpstream, run.getReposFromBumpCommit],
 	qaDefault: [
-		run.checkHasDevelopBranch,
 		run.getCurrentBranchVersion,
 		run.checkNewCommits,
-		run.useCurrentBranchOrCheckoutDevelop,
+		run.useCurrentOrBaseBranch,
 		run.gitRebaseUpstreamDevelop,
 		run.getPackageScope,
 		run.askReposToUpdate,
-		run.verifyPackagesToPromote,
 		run.getCurrentDependencyVersions,
 		run.askChangeReason,
 		run.githubUpstream,
@@ -22,8 +16,7 @@ module.exports = {
 		run.promptKeepBranchOrCreateNew,
 		run.askChangeType,
 		run.promptBranchName,
-		run.gitCheckoutAndCreateBranch,
-		run.getFeatureBranch,
+		run.checkoutAndCreateBranch,
 		run.updateDependencies,
 		run.gitDiff,
 		run.gitAdd,

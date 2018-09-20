@@ -9,7 +9,6 @@ describe("shared workflows", () => {
 		it("should have all of the required steps", () => {
 			expect(rebaseUpdateLogCommitTagRelease).toEqual([
 				run.getCurrentBranchVersion,
-				run.checkHasDevelopBranch,
 				run.gitMergeUpstreamDevelop,
 				run.gitShortLog,
 				run.previewLog,
@@ -24,8 +23,8 @@ describe("shared workflows", () => {
 				run.gitTag,
 				run.gitPushUpstreamMaster,
 				run.npmPublish,
-				run.gitCheckoutDevelop,
-				run.gitMergeMaster,
+				run.checkoutDevelop,
+				run.gitMergeDevelopWithMaster,
 				run.gitPushUpstreamDevelop,
 				run.gitPushOriginMaster,
 				run.githubUpstream,
@@ -47,7 +46,7 @@ describe("shared workflows", () => {
 				run.gitAmendCommitBumpMessage,
 				run.gitForcePushUpstreamFeatureBranch,
 				run.githubUpstream,
-				run.createGithubPullRequestAganistDevelop,
+				run.createGithubPullRequestAganistBase,
 				run.cleanUpTmpFiles
 			]);
 		});
