@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.3.0
+
+* Added informative error format
+* Addressed several tech debt issues
+
 ### 6.2.1
 
 * Updated contextual help messages to fit with new commands
