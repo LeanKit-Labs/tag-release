@@ -46,6 +46,7 @@ import path from "path";
 const util = require("../../../src/utils");
 const git = require("../../../src/git");
 const command = require("../../../src/command");
+const conflictResolution = require("../../../src/workflows/steps/conflictResolution");
 
 jest.mock("../../../src/git");
 jest.mock("../../../src/command");
@@ -58,6 +59,10 @@ jest.mock("../../../src/helpers/getCurrentBranch", () =>
 jest.mock("../../../src/helpers/filterFlowBasedOnDevelopBranch", flow =>
 	jest.fn(() => flow)
 );
+
+jest.mock("../../../src/workflows/steps/conflictResolution", () => ({
+	retryRebase: jest.fn(() => Promise.resolve())
+}));
 
 describe("shared workflow steps", () => {
 	let state;
@@ -1836,6 +1841,15 @@ describe("shared workflow steps", () => {
 				);
 			});
 		});
+
+		it("should call onError when `command.removePreReleaseCommits` fails", () => {
+			command.removePreReleaseCommits = jest.fn(args => {
+				return args.onError()();
+			});
+			return run.gitRemovePreReleaseCommits(state).then(() => {
+				expect(conflictResolution.retryRebase).toHaveBeenCalledTimes(1);
+			});
+		});
 	});
 
 	describe("gitRebaseUpstreamMaster", () => {
@@ -1872,6 +1886,15 @@ describe("shared workflow steps", () => {
 			command.rebaseContinue = jest.fn(() => Promise.resolve());
 			return run.gitRebaseContinue(state).then(() => {
 				expect(command.rebaseContinue).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("should call onError when `command.rebaseContinue` fails", () => {
+			command.rebaseContinue = jest.fn(args => {
+				return args.onError()();
+			});
+			return run.gitRebaseContinue(state).then(() => {
+				expect(conflictResolution.retryRebase).toHaveBeenCalledTimes(1);
 			});
 		});
 	});

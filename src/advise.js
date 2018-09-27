@@ -66,7 +66,7 @@ Unfortunately, tag-release can't auto-magically fix them. Please fix the conflic
 will handle adding the conflicting files and continuing with the rebase.`,
 	gitCheckConflictMarkers: `We detected the presence of conflict markers: '<<<<<<<', '=======', and/or '>>>>>>>'
 
-Please fix all conflict markers with the current conflict before running 'tag-release continue'.`,
+Please fix all conflict markers with the current conflict and then run 'tag-release continue'.`,
 	noPackagesInScope: `It appears there are no packages under the current scope. Please verify the scope or that you are running 'tag-release qa' from a valid repository.`,
 	noPackages: `It appears that there are no packages to promote. Please make a selection using the spacebar and finalizing your selection with enter.`,
 	saveState: `It appears something went wrong attempting to save state.

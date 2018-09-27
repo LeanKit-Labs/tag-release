@@ -51,6 +51,7 @@ const git = {
 		maxBuffer,
 		logMessage,
 		failHelpKey,
+		exitOnFail,
 		showError,
 		onError
 	}) {
@@ -60,6 +61,7 @@ const git = {
 			maxBuffer,
 			logMessage,
 			failHelpKey,
+			exitOnFail,
 			showError,
 			onError
 		});
