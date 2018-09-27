@@ -2,6 +2,7 @@ const sequence = require("when/sequence");
 const Table = require("cli-table2");
 const path = require("path");
 const fs = require("fs");
+const { get } = require("lodash");
 
 const logErrorToFile = (options, error) => {
 	const logPath = path.join(__dirname, "../../.log.txt");
@@ -9,7 +10,7 @@ const logErrorToFile = (options, error) => {
 	version: ${options.version}
 	command: ${options.command}
 	step: ${options.step}
-	error: ${error.message}\n\n`;
+	error: ${get(error, "message", "undefined")}\n\n`;
 	fs.appendFileSync(logPath, content);
 };
 
@@ -22,7 +23,7 @@ const runWorkflow = (workflow, options) => {
 				["version", options.version],
 				["command", options.command],
 				["step", options.step],
-				["error", error.message]
+				["error", get(error, "message", "undefined")]
 			);
 			logErrorToFile(options, error);
 			console.log(`\nTag-release encountered a problem:`); // eslint-disable-line no-console

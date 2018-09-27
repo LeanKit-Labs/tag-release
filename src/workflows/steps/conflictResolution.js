@@ -182,6 +182,17 @@ const api = {
 	},
 	verifyConflictResolution() {
 		return command.checkConflictMarkers();
+	},
+	retryRebase(err) {
+		return git
+			.diff({
+				option: "--check",
+				logMessage: "retrying rebase",
+				failHelpKey: "gitRebaseUpstreamBase",
+				exitOnFail: true
+			})
+			.then(() => command.rebaseContinue())
+			.catch(() => Promise.reject(err));
 	}
 };
 

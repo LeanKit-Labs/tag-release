@@ -278,7 +278,7 @@ const command = {
 		return runCommand({ args });
 	},
 
-	removePreReleaseCommits() {
+	removePreReleaseCommits({ onError } = {}) {
 		const args = `GIT_SEQUENCE_EDITOR="cat ${path.join(
 			__dirname,
 			".commits-to-rebase.txt"
@@ -288,7 +288,8 @@ const command = {
 			logMessage: "Removing pre-release commit history",
 			failHelpKey: "gitRebaseInteractive",
 			exitOnFail: true,
-			fullCommand: true
+			fullCommand: true,
+			onError
 		});
 	},
 
@@ -315,14 +316,15 @@ const command = {
 		});
 	},
 
-	rebaseContinue() {
+	rebaseContinue({ onError } = {}) {
 		const args = `GIT_EDITOR="cat" git rebase --continue`;
 		return runCommand({
 			args,
 			logMessage: "continuing with rebase",
 			failHelpKey: "gitRebaseInteractive",
 			showError: false,
-			fullCommand: true
+			fullCommand: true,
+			onError
 		});
 	},
 

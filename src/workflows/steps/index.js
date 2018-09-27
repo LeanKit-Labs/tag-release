@@ -9,6 +9,7 @@ const sequence = require("when/sequence");
 const path = require("path");
 const removeWords = require("remove-words");
 const { set } = require("lodash");
+const { retryRebase } = require("./conflictResolution");
 
 const CHANGELOG_PATH = "CHANGELOG.md";
 const PACKAGELOCKJSON_PATH = "package-lock.json";
@@ -681,7 +682,12 @@ ${chalk.green(log)}`);
 	},
 	gitRemovePreReleaseCommits(state) {
 		state.step = "gitRemovePreReleaseCommits";
-		return command.removePreReleaseCommits();
+
+		const onError = err => {
+			return () => retryRebase(err);
+		};
+
+		return command.removePreReleaseCommits({ onError });
 	},
 	gitRebaseUpstreamMaster(state) {
 		state.step = "gitRebaseUpstreamMaster";
@@ -697,7 +703,12 @@ ${chalk.green(log)}`);
 	},
 	gitRebaseContinue(state) {
 		state.step = "gitRebaseContinue";
-		return command.rebaseContinue().then(() => state);
+
+		const onError = err => {
+			return () => retryRebase(err);
+		};
+
+		return command.rebaseContinue({ onError }).then(() => state);
 	},
 	setPromote(state) {
 		state.step = "setPromote";
