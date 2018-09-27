@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.4.0
+
+* Added retry for rebasing to handle empty conflicts
+
 ### 6.3.0
 
 * Added informative error format
