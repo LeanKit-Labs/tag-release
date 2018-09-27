@@ -228,6 +228,21 @@ v17.11.2`)
 			});
 		});
 
+		it("should pass onError to 'runCommand'", () => {
+			return command.removePreReleaseCommits({ onError }).then(() => {
+				expect(runCommand).toHaveBeenCalledTimes(1);
+				expect(runCommand).toHaveBeenCalledWith({
+					args:
+						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i -p upstream/master',
+					failHelpKey: "gitRebaseInteractive",
+					fullCommand: true,
+					logMessage: "Removing pre-release commit history",
+					exitOnFail: true,
+					onError
+				});
+			});
+		});
+
 		afterEach(() => {
 			joinSpy.mockRestore();
 		});

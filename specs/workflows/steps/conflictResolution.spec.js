@@ -470,4 +470,37 @@ describe("conflict resolution workflow steps", () => {
 			expect(util.writeFile).toHaveBeenCalledTimes(0);
 		});
 	});
+
+	describe("retryRebase", () => {
+		describe("success", () => {
+			beforeEach(() => {
+				git.diff = jest.fn(() => Promise.resolve());
+				command.rebaseContinue = jest.fn(() => Promise.resolve());
+			});
+
+			it("should call 'git.diff'", () => {
+				return run.retryRebase().then(() => {
+					expect(git.diff).toHaveBeenCalledTimes(1);
+				});
+			});
+
+			it("should call 'command.rebaseContinue' on success", () => {
+				return run.retryRebase().then(() => {
+					expect(command.rebaseContinue).toHaveBeenCalledTimes(1);
+				});
+			});
+		});
+
+		describe("failure", () => {
+			beforeEach(() => {
+				git.diff = jest.fn(() => Promise.reject());
+			});
+
+			it("should reject", () => {
+				return run.retryRebase().catch(() => {
+					expect(git.diff).toHaveBeenCalledTimes(1);
+				});
+			});
+		});
+	});
 });
