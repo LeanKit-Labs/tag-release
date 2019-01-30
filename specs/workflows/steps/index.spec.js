@@ -2928,6 +2928,21 @@ describe("shared workflow steps", () => {
 			});
 		});
 
+		describe("when devBranch provided", () => {
+			it("should call `editIssue` with issue number and label", () => {
+				util.logger.log = jest.fn();
+				state.devBranch = "master";
+				return run
+					.createGithubPullRequestAganistBranch(state)
+					.then(() => {
+						expect(editIssue).toHaveBeenCalledTimes(1);
+						expect(editIssue).toHaveBeenCalledWith(47, {
+							labels: ["Needs Developer Review"]
+						});
+					});
+			});
+		});
+
 		it("should create a new GitHub client instance given a valid auth token", () => {
 			return run.createGithubPullRequestAganistBranch(state).then(() => {
 				expect(GitHub).toHaveBeenCalledTimes(1);
@@ -4131,6 +4146,45 @@ feature-last-branch`)
 					expect(command.createRemoteBranch).toHaveBeenCalledTimes(1);
 					expect(command.createRemoteBranch).toHaveBeenCalledWith({
 						branch: "feature-branch",
+						remote: "upstream",
+						base: "master"
+					});
+				});
+			});
+		});
+
+		describe("when devBranch provided", () => {
+			beforeEach(() => {
+				state.devBranch = "master";
+			});
+
+			it(`should call "createBranchUpstream" with appropriate args when repo has develop branch`, () => {
+				state.hasDevelopBranch = true;
+				return run.gitCreateBranchUpstream(state).then(() => {
+					expect(command.branchExistsRemote).toHaveBeenCalledTimes(1);
+					expect(command.branchExistsRemote).toHaveBeenCalledWith({
+						branch: "master",
+						remote: "upstream"
+					});
+					expect(command.createRemoteBranch).toHaveBeenCalledTimes(1);
+					expect(command.createRemoteBranch).toHaveBeenCalledWith({
+						branch: "master",
+						remote: "upstream",
+						base: "develop"
+					});
+				});
+			});
+
+			it(`should call "createBranchUpstream" with appropriate args when repo doesn't have develop branch`, () => {
+				return run.gitCreateBranchUpstream(state).then(() => {
+					expect(command.branchExistsRemote).toHaveBeenCalledTimes(1);
+					expect(command.branchExistsRemote).toHaveBeenCalledWith({
+						branch: "master",
+						remote: "upstream"
+					});
+					expect(command.createRemoteBranch).toHaveBeenCalledTimes(1);
+					expect(command.createRemoteBranch).toHaveBeenCalledWith({
+						branch: "master",
 						remote: "upstream",
 						base: "master"
 					});
