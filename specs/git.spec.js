@@ -153,6 +153,15 @@ describe("git", () => {
 			});
 		});
 
+		it("should checkout branch with tracking", () => {
+			git.checkout({ branch, tracking: "tracking-branch", onError });
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "checkout feature-branch upstream/tracking-branch",
+				onError
+			});
+		});
+
 		it("should checkout branch with option and tag", () => {
 			git.checkout({ branch, option: "-b", tag: "v1.0.0-pre", onError });
 			expect(runCommand).toHaveBeenCalledTimes(1);
@@ -471,7 +480,7 @@ describe("git", () => {
 			git.stash();
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "stash",
+				args: "stash --include-untracked",
 				logMessage: "stashing uncommitted changes"
 			});
 		});
