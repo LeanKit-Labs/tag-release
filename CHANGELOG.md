@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.5.0
+
+* Updated README.md
+* Added branch arg to dev workflow
+
 ### 6.4.0
 
 * Added retry for rebasing to handle empty conflicts
