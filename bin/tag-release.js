@@ -13,7 +13,7 @@ commander
 	.command("start", "default", { isDefault: true, noHelp: true })
 	.command("continue", "continue from a previously conflicted state")
 	.command(
-		"dev",
+		"dev [branch]",
 		"create a PR from origin feature branch to upstream feature branch"
 	)
 	.command(

@@ -1029,6 +1029,7 @@ ${chalk.green(log)}`);
 			},
 			token,
 			branch,
+			devBranch,
 			pullRequest: { title, body }
 		} = state;
 		const github = new GitHub({ token });
@@ -1043,7 +1044,7 @@ ${chalk.green(log)}`);
 			title,
 			body,
 			head: `${repositoryOriginOwner}:${branch}`,
-			base: `${branch}`
+			base: devBranch ? `${devBranch}` : `${branch}`
 		};
 
 		return repository
@@ -1425,7 +1426,9 @@ ${chalk.green(log)}`);
 	},
 	gitCreateBranchUpstream(state) {
 		state.step = "gitCreateBranchUpstream";
-		const { hasDevelopBranch, branch } = state;
+		let { branch } = state;
+		const { hasDevelopBranch, devBranch } = state;
+		branch = devBranch ? devBranch : branch;
 		const remote = "upstream";
 
 		return command.branchExistsRemote({ branch, remote }).then(exists => {

@@ -36,7 +36,7 @@ verify, modify, or cancel the `tag-release` process.
 
     continue                     continue from a previously conflicted state
     config <filePath>            override .json configuration file path, defaults to './package.json'
-    dev                          create a PR from origin feature branch to upstream feature branch
+    dev [branch]                 create a PR from origin feature branch to upstream feature branch
     pr [scope]                   update consumer project feature branch and create a PR to develop
     prerelease|pre [identifier]  create a pre-release
     promote|pro [tag]            promote a pre-release tag previously created by tag-release
