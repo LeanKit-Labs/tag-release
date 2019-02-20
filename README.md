@@ -42,6 +42,7 @@ verify, modify, or cancel the `tag-release` process.
     promote|pro [tag]            promote a pre-release tag previously created by tag-release
     qa [scope]                   create initial upstream feature branch for consumer project
     reset                        reset repo to upstream master/develop branches
+    l10n                         update and prerelease updated localization branches
     help [cmd]                   display help for [cmd]
 ```
 
@@ -195,6 +196,24 @@ Example:
 ```
 
 > **Note**: `pr` will automatically create the GitHub PR for you and add the appropriate `Ready to Merge into Develop` label
+
+### l10n
+
+This command is used when you want to create pre-releases of all updated consumer project's localization branches.
+
+You are required to setup the following in your `.tag-releaserc.json` file in your root:
+
+```
+{
+   "rootDirectory": "/path/to/root/of/repos",
+   "repos": [
+       { "repo_name": "localization-branch-name" },
+       { "another_repo_name": "another-localization-branch-name" }
+   ]
+}
+```
+
+> **Note**: `l10n` will automatically create a qa branch and pull in all you pre-releases if it finds a host project amoung the lists of repos you are wanting to pre-release.
 
 ### GitHub Integration
 

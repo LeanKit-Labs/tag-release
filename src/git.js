@@ -21,10 +21,18 @@ const git = {
 		);
 	},
 
-	checkout({ branch, option, tag, failHelpKey, onError }) {
+	checkout({
+		branch,
+		option,
+		tag,
+		tracking,
+		remote = "upstream",
+		failHelpKey,
+		onError
+	}) {
 		const args = `checkout${option ? ` ${option}` : ""} ${branch}${
 			tag ? ` ${tag}` : ""
-		}`;
+		}${tracking ? ` ${remote}/${tracking}` : ""}`;
 
 		return runCommand(
 			failHelpKey && failHelpKey.length
@@ -124,7 +132,7 @@ const git = {
 	},
 
 	stash() {
-		const args = "stash";
+		const args = "stash --include-untracked";
 		return runCommand({
 			args,
 			logMessage: "stashing uncommitted changes"

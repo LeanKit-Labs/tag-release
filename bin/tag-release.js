@@ -6,6 +6,9 @@ const path = require("path");
 const help = require("../src/help");
 const utils = require("../src/utils.js");
 
+const trFolder = path.join(process.env.HOME, ".");
+process.env.TR_DIRECTORY = trFolder;
+
 utils.applyCommanderOptions(commander);
 
 commander
@@ -31,7 +34,9 @@ commander
 		"qa [scope]",
 		"create initial upstream feature branch for consumer project"
 	)
-	.command("reset", "reset repo to upstream master/develop branches");
+	.command("reset", "reset repo to upstream master/develop branches")
+	.command("l10n", "update and prerelease updated localization branches")
+	.command("config", "open the tag-release config in your default editor");
 
 commander.on("--help", () => {
 	help(commander);

@@ -104,6 +104,14 @@ const api = {
 		state.step = "gitMergeUpstreamMaster";
 		return command.mergeUpstreamMaster();
 	},
+	gitMergeUpstreamMasterNoFF(state) {
+		state.step = "gitMergeUpstreamMasterNoFF";
+		return git.merge({
+			branch: "master",
+			remote: "upstream",
+			fastForwardOnly: false
+		});
+	},
 	gitMergeUpstreamDevelop(state) {
 		state.step = "gitMergeUpstreamDevelop";
 		return command.mergeUpstreamDevelop();
@@ -475,33 +483,12 @@ ${chalk.green(log)}`);
 			: publishCommand;
 
 		if (!util.isPackagePrivate(configPath)) {
+			state.private = false;
+			util.log.begin(publishCommand);
 			return util
-				.getPackageRegistry(configPath)
-				.then(registry => {
-					return util
-						.prompt([
-							{
-								type: "confirm",
-								name: "publish",
-								message: `Do you want to publish this package to ${registry}?`,
-								default: true
-							}
-						])
-						.then(answers => {
-							if (answers.publish) {
-								util.log.begin(publishCommand);
-								return util
-									.exec(publishCommand)
-									.then(() => util.log.end())
-									.catch(() =>
-										util.advise("npmPublish", {
-											exit: false
-										})
-									);
-							}
-						});
-				})
-				.catch(err => util.logger.log(chalk.red(err)));
+				.exec(publishCommand)
+				.then(() => util.log.end())
+				.catch(() => util.advise("npmPublish", { exit: false }));
 		}
 	},
 	gitMergeDevelopWithMaster(state) {
@@ -583,7 +570,8 @@ ${chalk.green(log)}`);
 			log,
 			prerelease,
 			token,
-			versions: { newVersion }
+			versions: { newVersion },
+			releaseName
 		} = state;
 		const tagName = `v${newVersion}`;
 		const github = new GitHub({ token });
@@ -600,9 +588,13 @@ ${chalk.green(log)}`);
 			}
 		];
 
-		const method = process.env.NO_OUTPUT
-			? () => Promise.resolve({ name: defaultName })
-			: args => util.prompt(args);
+		const method =
+			process.env.NO_OUTPUT || releaseName
+				? () =>
+						Promise.resolve({
+							name: releaseName ? releaseName : defaultName
+						})
+				: args => util.prompt(args);
 
 		return method(questions).then(answers => {
 			util.log.begin("release to github");
@@ -648,6 +640,14 @@ ${chalk.green(log)}`);
 		if (uncommittedChangesExist) {
 			return api.gitStash(state);
 		}
+	},
+	stashChanges(state) {
+		state.step = "stashChanges";
+		return command.uncommittedChangesExist().then(results => {
+			if (results.length) {
+				return git.stash();
+			}
+		});
 	},
 	verifyMasterBranch(state) {
 		state.step = "verifyMasterBranch";
@@ -1533,6 +1533,59 @@ ${chalk.green(log)}`);
 		}
 
 		return Promise.resolve();
+	},
+	createOrCheckoutBranch(state) {
+		state.step = "createOrCheckoutBranch";
+		const { branch } = state;
+
+		return command.branchExists(branch).then(exists => {
+			if (!exists) {
+				return command
+					.branchExistsRemote({ branch, remote: "upstream" })
+					.then(existsRemote => {
+						if (existsRemote) {
+							return git.checkout({
+								branch,
+								option: "-b",
+								tracking: branch
+							});
+						}
+						return command.checkoutBranch({ branch });
+					});
+			}
+			return command.checkoutBranch({ branch });
+		});
+	},
+	diffWithUpstreamMaster(state) {
+		state.step = "diffWithUpstreamMaster";
+		const { maxbuffer } = state;
+
+		return git
+			.diff({ option: "upstream/master", maxBuffer: maxbuffer })
+			.then(diff => {
+				if (diff) {
+					state.hasChanges = true;
+				}
+			});
+	},
+	checkoutl10nBranch(state) {
+		state.step = "checkoutl10nBranch";
+		const today = new Date();
+		const currentMonth = today
+			.toLocaleString("en-us", { month: "short" })
+			.toLowerCase();
+		const branch = `feature-localization-${currentMonth}-${today.getDate()}`;
+
+		return command.branchExists(branch).then(exists => {
+			state.branch = branch;
+			if (!exists) {
+				return command.checkoutAndCreateBranch({ branch });
+			}
+			state.status = "skipped";
+			return command.checkoutBranch({ branch }).then(() => {
+				return Promise.resolve();
+			});
+		});
 	}
 };
 

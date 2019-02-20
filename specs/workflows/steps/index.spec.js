@@ -116,6 +116,24 @@ describe("shared workflow steps", () => {
 		});
 	});
 
+	describe("gitMergeUpstreamMasterNoFF", () => {
+		it("should call git.merge with appropriate args", () => {
+			run.gitMergeUpstreamMasterNoFF(state);
+			expect(git.merge).toHaveBeenCalledTimes(1);
+			expect(git.merge).toHaveBeenCalledWith({
+				branch: "master",
+				remote: "upstream",
+				fastForwardOnly: false
+			});
+		});
+
+		it("should set step on state", () => {
+			run.gitMergeUpstreamMasterNoFF(state);
+			expect(state).toHaveProperty("step");
+			expect(state.step).toEqual("gitMergeUpstreamMasterNoFF");
+		});
+	});
+
 	describe("gitMergeUpstreamDevelop", () => {
 		it(`should call "command.mergeUpstreamDevelop"`, () => {
 			run.gitMergeUpstreamDevelop(state);
@@ -1102,29 +1120,6 @@ describe("shared workflow steps", () => {
 			});
 		});
 
-		it("should prompt the user to confirm whether or not they wish to publish", () => {
-			return run.npmPublish(state).then(() => {
-				expect(util.prompt).toHaveBeenCalledTimes(1);
-				expect(util.prompt).toHaveBeenCalledWith([
-					{
-						type: "confirm",
-						name: "publish",
-						message:
-							"Do you want to publish this package to http://example-registry.com?",
-						default: true
-					}
-				]);
-			});
-		});
-
-		it("should not publish if the user declines at the prompt", () => {
-			util.prompt = jest.fn(() => Promise.resolve({ publish: false }));
-			return run.npmPublish(state).then(() => {
-				expect(util.log.begin).not.toHaveBeenCalled();
-				expect(util.exec).not.toHaveBeenCalled();
-			});
-		});
-
 		it("should publish with identifier for pre-releases", () => {
 			state = {
 				configPath: "./package.json",
@@ -1173,14 +1168,6 @@ describe("shared workflow steps", () => {
 			util.isPackagePrivate = jest.fn(() => Promise.resolve());
 			run.npmPublish(state);
 			expect(util.isPackagePrivate).not.toHaveBeenCalled();
-		});
-
-		it("should log an error to the console when the call to `util.getPackageRegistry` fails", () => {
-			util.getPackageRegistry = jest.fn(() => Promise.reject("nope"));
-			return run.npmPublish(state).then(() => {
-				expect(util.logger.log).toHaveBeenCalledTimes(1);
-				expect(util.logger.log).toHaveBeenCalledWith("nope");
-			});
 		});
 	});
 
@@ -1613,6 +1600,23 @@ describe("shared workflow steps", () => {
 			});
 		});
 
+		describe("releaseName provided", () => {
+			it("should not prompt user and use releaseName for name", () => {
+				state.releaseName = "provided release name";
+				return run.githubRelease(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledTimes(0);
+					expect(createRelease).toHaveBeenCalledTimes(1);
+					expect(createRelease).toHaveBeenCalledWith({
+						tag_name: "v1.2.3", // eslint-disable-line camelcase
+						name: "provided release name",
+						body:
+							"* Added last feature\n* Added second feature\n* Added first feature",
+						prerelease: false
+					});
+				});
+			});
+		});
+
 		describe("when process.env.NO_OUTPUT is true", () => {
 			beforeEach(() => {
 				process.env.NO_OUTPUT = true;
@@ -1681,6 +1685,44 @@ describe("shared workflow steps", () => {
 				expect(util.advise).toHaveBeenCalledWith("gitStash", {
 					exit: false
 				});
+			});
+		});
+	});
+
+	describe("stashChanges", () => {
+		describe("changes exist", () => {
+			beforeEach(() => {
+				command.uncommittedChangesExist = jest.fn(() =>
+					Promise.resolve("some result")
+				);
+				run.stashChanges(state);
+			});
+
+			it("should call git.stash", () => {
+				expect(git.stash).toHaveBeenCalledTimes(1);
+			});
+
+			it("should set step on state", () => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("stashChanges");
+			});
+		});
+
+		describe("changes don't exist", () => {
+			beforeEach(() => {
+				command.uncommittedChangesExist = jest.fn(() =>
+					Promise.resolve("")
+				);
+				run.stashChanges(state);
+			});
+
+			it("shouldn't call git.stash", () => {
+				expect(git.stash).toHaveBeenCalledTimes(0);
+			});
+
+			it("should set step on state", () => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("stashChanges");
 			});
 		});
 	});
@@ -4465,6 +4507,164 @@ feature-last-branch`)
 
 		afterEach(() => {
 			processSpy.mockRestore();
+		});
+	});
+
+	describe("createOrCheckoutBranch", () => {
+		beforeEach(() => {
+			command.branchExists = jest.fn(() => Promise.resolve(true));
+			command.checkoutBranch = jest.fn(() => Promise.resolve());
+			state.branch = "feature-branch";
+			git.checkout = jest.fn(() => Promise.resolve());
+		});
+
+		it("should set step on state", () => {
+			run.createOrCheckoutBranch(state).then(() => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("createOrCheckoutBranch");
+			});
+		});
+
+		describe("branch exists locally", () => {
+			it("should call checkoutBranch", () => {
+				run.createOrCheckoutBranch(state).then(() => {
+					expect(command.checkoutBranch).toHaveBeenCalledTimes(1);
+					expect(command.checkoutBranch).toHaveBeenCalledWith({
+						branch: "feature-branch"
+					});
+				});
+			});
+		});
+
+		describe("branch doesn't exist locally", () => {
+			describe("branch exists on remote", () => {
+				it("should call git.checkout", () => {
+					command.branchExists = jest.fn(() =>
+						Promise.resolve(false)
+					);
+					command.branchExistsRemote = jest.fn(() =>
+						Promise.resolve(true)
+					);
+					run.createOrCheckoutBranch(state).then(() => {
+						expect(git.checkout).toHaveBeenCalledTimes(1);
+						expect(git.checkout).toHaveBeenCalledWith({
+							branch: "feature-branch",
+							option: "-b",
+							tracking: "feature-branch"
+						});
+					});
+				});
+			});
+
+			describe("branch doesn't exist on remote", () => {
+				it("should call checkoutBranch", () => {
+					command.branchExists = jest.fn(() =>
+						Promise.resolve(false)
+					);
+					command.branchExistsRemote = jest.fn(() =>
+						Promise.resolve(false)
+					);
+					run.createOrCheckoutBranch(state).then(() => {
+						expect(command.checkoutBranch).toHaveBeenCalledTimes(1);
+						expect(command.checkoutBranch).toHaveBeenCalledWith({
+							branch: "feature-branch"
+						});
+					});
+				});
+			});
+		});
+	});
+
+	describe("diffWithUpstreamMaster", () => {
+		beforeEach(() => {
+			git.diff = jest.fn(() => Promise.resolve(false));
+			state.hasChanges = false;
+		});
+
+		it("should set step on state", () => {
+			run.diffWithUpstreamMaster(state);
+			expect(state).toHaveProperty("step");
+			expect(state.step).toEqual("diffWithUpstreamMaster");
+		});
+
+		it("should call git.diff", () => {
+			run.diffWithUpstreamMaster(state).then(() => {
+				expect(git.diff).toHaveBeenCalledTimes(1);
+				expect(git.diff).toHaveBeenCalledWith({
+					option: "upstream/master",
+					maxBuffer: undefined
+				});
+			});
+		});
+
+		it("shouldn't set hasChanges on state", () => {
+			run.diffWithUpstreamMaster(state);
+			expect(state).toHaveProperty("hasChanges");
+			expect(state.hasChanges).toEqual(false);
+		});
+
+		describe("has changes", () => {
+			it("should set hasChanges on state", () => {
+				git.diff = jest.fn(() => Promise.resolve(true));
+				run.diffWithUpstreamMaster(state).then(() => {
+					expect(state).toHaveProperty("hasChanges");
+					expect(state.hasChanges).toEqual(true);
+				});
+			});
+		});
+	});
+
+	describe("checkoutl10nBranch", () => {
+		beforeEach(() => {
+			command.branchExists = jest.fn(() => Promise.resolve(true));
+			command.checkoutAndCreateBranch = jest.fn(() => Promise.resolve());
+			command.checkoutBranch = jest.fn(() => Promise.resolve());
+
+			global.Date = jest.fn(() => ({
+				toLocaleString: () => "Feb",
+				getDate: () => "15"
+			}));
+		});
+
+		it("should set step on state", () => {
+			run.checkoutl10nBranch(state).then(() => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("checkoutl10nBranch");
+			});
+		});
+
+		describe("branch exists", () => {
+			it("should call command.checkoutBranch", () => {
+				run.checkoutl10nBranch(state).then(() => {
+					expect(command.checkoutBranch).toHaveBeenCalledTimes(1);
+					expect(command.checkoutBranch).toHaveBeenCalledWith({
+						branch: "feature-localization-feb-15"
+					});
+				});
+			});
+
+			it("should set status on state", () => {
+				run.checkoutl10nBranch(state).then(() => {
+					expect(state).toHaveProperty("status");
+					expect(state.status).toEqual("skipped");
+				});
+			});
+		});
+
+		describe("branch doesn't exist", () => {
+			it("should call command.checkoutAndCreateBranch", () => {
+				command.branchExists = jest.fn(() => Promise.resolve(false));
+				run.checkoutl10nBranch(state).then(() => {
+					expect(
+						command.checkoutAndCreateBranch
+					).toHaveBeenCalledTimes(1);
+					expect(
+						command.checkoutAndCreateBranch
+					).toHaveBeenCalledWith({
+						branch: "feature-localization-feb-15"
+					});
+				});
+			});
 		});
 	});
 });

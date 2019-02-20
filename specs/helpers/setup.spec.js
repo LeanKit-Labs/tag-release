@@ -51,6 +51,15 @@ describe("setup", () => {
 		});
 	});
 
+	describe("branch provided", () => {
+		it("should use provided branch", () => {
+			state = { branch: "provided-branch" };
+			return setup(state).then(() => {
+				expect(state).toMatchObject({ branch: "provided-branch" });
+			});
+		});
+	});
+
 	describe("when configPath doesn't exist", () => {
 		it("should advise", () => {
 			utils.fileExists = jest.fn(() => false);

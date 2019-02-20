@@ -10,7 +10,7 @@ const setup = async options => {
 	}
 	options.version = await utils.getCurrentVersion();
 
-	options.branch = await getCurrentBranch();
+	options.branch = options.branch ? options.branch : await getCurrentBranch();
 	options.workingBranch = options.branch;
 
 	await checkHasDevelopBranch(options);
@@ -22,7 +22,7 @@ const setup = async options => {
 
 	options.configPath = options.config || "./package.json";
 
-	if (!utils.fileExists(options.configPath)) {
+	if (!utils.fileExists(options.configPath) && options.command !== "l10n") {
 		utils.advise("updateVersion");
 	}
 
