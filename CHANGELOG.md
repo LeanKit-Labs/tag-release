@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.6.0
+
+* Added l10n command and --check command flag
+
 ### 6.5.0
 
 * Updated README.md
