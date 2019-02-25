@@ -4581,35 +4581,61 @@ feature-last-branch`)
 			state.hasChanges = false;
 		});
 
-		it("should set step on state", () => {
-			run.diffWithUpstreamMaster(state);
+		it("should set step on state", async () => {
+			await run.diffWithUpstreamMaster(state);
 			expect(state).toHaveProperty("step");
 			expect(state.step).toEqual("diffWithUpstreamMaster");
 		});
 
-		it("should call git.diff", () => {
-			run.diffWithUpstreamMaster(state).then(() => {
-				expect(git.diff).toHaveBeenCalledTimes(1);
-				expect(git.diff).toHaveBeenCalledWith({
-					option: "upstream/master",
-					maxBuffer: undefined
-				});
+		it("should call git.diff", async () => {
+			await run.diffWithUpstreamMaster(state);
+			expect(git.diff).toHaveBeenCalledTimes(1);
+			expect(git.diff).toHaveBeenCalledWith({
+				option: "--word-diff",
+				branch: "master",
+				glob: "*.yaml",
+				maxBuffer: undefined
 			});
 		});
 
-		it("shouldn't set hasChanges on state", () => {
-			run.diffWithUpstreamMaster(state);
+		it("shouldn't set hasChanges on state", async () => {
+			await run.diffWithUpstreamMaster(state);
 			expect(state).toHaveProperty("hasChanges");
 			expect(state.hasChanges).toEqual(false);
 		});
 
-		describe("has changes", () => {
-			it("should set hasChanges on state", () => {
-				git.diff = jest.fn(() => Promise.resolve(true));
-				run.diffWithUpstreamMaster(state).then(() => {
-					expect(state).toHaveProperty("hasChanges");
-					expect(state.hasChanges).toEqual(true);
-				});
+		describe("when setting changes", () => {
+			beforeEach(() => {
+				git.diff = jest.fn(() =>
+					Promise.resolve(`diff --git a/src/components/Filter/Filter.i18n.yaml b/src/components/Filter/Filter.i18n.yaml
+index 8e8e57a..545983d 100644
+--- a/src/components/Filter/Filter.i18n.yaml
++++ b/src/components/Filter/Filter.i18n.yaml
+@@ -48,9 +48,8 @@ common.filter.savedFilters.label: Saved Filters
+common.filter.savedFilters.saveOptions.save: Save {+Me+}
+common.filter.savedFilters.saveOptions.saveAs: Save As…
+common.filter.savedFilters.saveOptions.newSaved: New Saved Filter
+common.filter.savedFilters.saveOptions.rename: [-Rename and Sharing…-]{+Rename…+}
+common.filter.savedFilters.saveOptions.delete: Delete
+common.filter.savedFilters.saveOptions.rename: {+Rename…+}[-Rename and Sharing…-]
+common.filter.savedFilters.saveOptions.discard: Discard Changes
+common.filter.savedFilters.more: More Actions
+common.filter.savedFilters.new: "<New>"
+[-common.filter.savedFilters.sharedHeader: Shared Filters-]
+`)
+				);
+			});
+
+			it("should handle additions", async () => {
+				await run.diffWithUpstreamMaster(state);
+				expect(state.changes).toHaveProperty("locale");
+				expect(state.changes.locale).toEqual(true);
+			});
+
+			it("should handle deletions", async () => {
+				await run.diffWithUpstreamMaster(state);
+				expect(state.changes).toHaveProperty("dev");
+				expect(state.changes.dev).toEqual(true);
 			});
 		});
 	});
@@ -4663,6 +4689,54 @@ feature-last-branch`)
 					).toHaveBeenCalledWith({
 						branch: "feature-localization-feb-15"
 					});
+				});
+			});
+		});
+	});
+
+	describe("commitDiffWithUpstreamMaster", () => {
+		beforeEach(() => {
+			git.log = jest.fn(() => Promise.resolve(""));
+			state.branch = "feature-branch";
+			state.changes = {
+				diff: 0
+			};
+		});
+
+		it("should set step on state", () => {
+			run.commitDiffWithUpstreamMaster(state).then(() => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("commitDiffWithUpstreamMaster");
+			});
+		});
+
+		it("should call git.log with appropriate args", () => {
+			run.commitDiffWithUpstreamMaster(state).then(() => {
+				expect(git.log).toHaveBeenCalledTimes(1);
+				expect(git.log).toHaveBeenCalledWith({
+					option: "--no-merges --oneline",
+					branch: "feature-branch",
+					remote: "upstream/master"
+				});
+			});
+		});
+
+		describe("diff", () => {
+			describe("exists", async () => {
+				it("should set diff on state when commits exist", async () => {
+					git.log = jest.fn(() => Promise.resolve("some commit"));
+					await run.commitDiffWithUpstreamMaster(state);
+					expect(state.changes).toHaveProperty("diff");
+					expect(state.changes.diff).toEqual(1);
+				});
+			});
+
+			describe("doesn't exist", () => {
+				it("should set diff on state when commits exist", async () => {
+					git.log = jest.fn(() => Promise.resolve(""));
+					await run.commitDiffWithUpstreamMaster(state);
+					expect(state.changes).toHaveProperty("diff");
+					expect(state.changes.diff).toEqual(0);
 				});
 			});
 		});

@@ -2,8 +2,7 @@
 /* eslint-disable max-statements */
 const commander = require("commander");
 const api = require("../src/index.js");
-const workflow = require("../src/workflows/l10n");
-const l10nDry = require("../src/workflows/l10n-dry");
+const { sync, check: checkFlow } = require("../src/workflows/l10n");
 const qaAuto = require("../src/workflows/qa-automated");
 const utils = require("../src/utils.js");
 const steps = require("../src/workflows/steps/index");
@@ -31,74 +30,71 @@ commander.parse(process.argv);
 
 const { verbose, maxbuffer, check } = commander;
 
-const outputResults = arr => {
-	const table = new Table({
-		head: ["repo", "branch", "tag", "status"]
-	});
-	forEach(arr, ({ repo, branch, tag, status }) => {
-		table.push([repo, branch, tag, status]);
-	});
-	console.log(table.toString()); // eslint-disable-line no-console
-};
+const hasChanges = options => options.changes.locale || options.changes.dev;
 
 const saveState = (options, item) => {
 	const [repo] = Object.keys(item.value);
 	// if we are doing a dry-run we only care if there were changes or not.
 	if (check) {
-		options.status = options.hasChanges ? "changes" : "no changes";
-	} else {
-		options.status =
-			options.status === "skipped" ? options.status : "completed";
+		options.status = hasChanges(options) ? "changes" : "no changes";
+	} else if (options.status !== "skipped") {
+		options.status = options.private ? "qa bumped" : "pre-released";
 	}
 	options.l10n.push({
 		repo,
 		branch: options.branch,
 		tag: options.tag,
 		status: options.status,
-		private: options.private
+		private: options.private,
+		changes: options.changes
 	});
 };
 
-const getNextState = (options, item) => {
+const getNextState = (options, item, callback) => {
 	const [repo] = Object.keys(item.value);
 
 	options.branch = item.value[repo];
 	options.cwd = `${rootDirectory}/${repo}`;
 	options.spinner = ora(repo);
 	options.tag = "";
-	options.hasChanges = false;
+	options.status = "pending";
+	options.changes = {
+		locale: false,
+		dev: false
+	};
+	options.callback = callback;
 };
 
-let iterator = repos[Symbol.iterator]();
+const iterator = repos[Symbol.iterator]();
 let item = iterator.next();
 const callback = async options => {
 	let flow;
-	if (options.hasChanges) {
+	if (hasChanges(options)) {
 		await steps.checkoutl10nBranch(options);
 
 		// if the branch already existed, we need to just skip the release.
 		if (options.status !== "skipped") {
-			options.hasChanges = false;
-
 			// check if we are dealing with a private repo (host project)
 			if (utils.isPackagePrivate(options.configPath)) {
 				options.private = true;
 				options.status = "skipped";
-				return callback(options);
+			} else {
+				// remove steps that aren't required for automated run
+				preReleaseFlow = remove(preReleaseFlow, step => {
+					return (
+						step !== steps.previewLog &&
+						step !== steps.gitDiff &&
+						step !== steps.gitMergeUpstreamBranch
+					);
+				});
+
+				options.callback = () => Promise.resolve();
+				flow = filterFlowBasedOnDevelopBranch(options, preReleaseFlow);
+				await runWorkflow(flow, options);
 			}
-
-			// remove steps that aren't required for automated run
-			preReleaseFlow = remove(preReleaseFlow, step => {
-				return (
-					step !== steps.previewLog &&
-					step !== steps.gitDiff &&
-					step !== steps.gitMergeUpstreamBranch
-				);
-			});
-
-			flow = filterFlowBasedOnDevelopBranch(options, preReleaseFlow);
-			return runWorkflow(flow, options);
 		}
+	} else {
+		options.status = "skipped";
 	}
 
 	saveState(options, item);
@@ -133,18 +129,24 @@ const callback = async options => {
 			options.callback = () => {};
 
 			await runWorkflow(qaAuto, options);
-			options.l10n[privateIndex].status = "completed";
+			options.l10n[privateIndex].status = "qa bumped";
 			options.spinner.succeed();
 		}
 
-		outputResults(options.l10n);
+		const table = new Table({
+			head: ["repo", "branch", "tag", "status"]
+		});
+		forEach(options.l10n, ({ repo, branch, tag, status }) => {
+			table.push([repo, branch, tag, status]);
+		});
+		console.log(table.toString()); // eslint-disable-line no-console
 
 		return Promise.resolve();
 	}
 
-	getNextState(options, item);
+	getNextState(options, item, callback);
 	options.spinner.start();
-	flow = filterFlowBasedOnDevelopBranch(options, workflow);
+	flow = filterFlowBasedOnDevelopBranch(options, sync);
 
 	return runWorkflow(flow, options);
 };
@@ -155,15 +157,27 @@ const dry = options => {
 
 	item = iterator.next();
 	if (item.done) {
-		outputResults(options.l10n);
+		const table = new Table({
+			head: ["repo", "branch", "dev keys", "locale keys", "log diff"]
+		});
+		forEach(
+			options.l10n,
+			({ repo, branch, changes: { locale, dev, diff } }) => {
+				const message = `${diff ? `${diff} commit(s)` : "up-to-date"}`;
+				const devChanges = dev ? "changes" : "no changes";
+				const localeChanges = locale ? "changes" : "no changes";
+				table.push([repo, branch, devChanges, localeChanges, message]);
+			}
+		);
+		console.log(table.toString()); // eslint-disable-line no-console
 
 		return Promise.resolve();
 	}
 
-	getNextState(options, item);
+	getNextState(options, item, dry);
 	options.spinner.start();
 
-	return runWorkflow(l10nDry, options);
+	return runWorkflow(checkFlow, options);
 };
 
 const [repo] = Object.keys(item.value);
@@ -174,7 +188,7 @@ const currentMonth = today
 const options = {
 	verbose,
 	maxbuffer,
-	workflow: check ? l10nDry : workflow,
+	workflow: check ? checkFlow : sync,
 	cwd: `${rootDirectory}/${repo}`, // directory to be running tag-release in (cwd-current working directory)
 	branch: item.value[repo],
 	callback: check ? dry : callback,
@@ -185,8 +199,16 @@ const options = {
 	status: "pending",
 	private: false,
 	spinner: ora(repo),
-	l10n: []
+	l10n: [],
+	changes: {
+		locale: false,
+		dev: false,
+		diff: 0
+	}
 };
 
 options.spinner.start();
 api.cli(options);
+
+// TODO: What happens if there is a host repo change and no library repo changes?
+// TODO: What do we do if the library project isn't in package.json? (should always be there)

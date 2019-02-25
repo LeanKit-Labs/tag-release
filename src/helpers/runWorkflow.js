@@ -18,6 +18,9 @@ const runWorkflow = (workflow, options) => {
 	return sequence(workflow, options)
 		.then(() => options.callback(options))
 		.catch(error => {
+			if (options.spinner) {
+				options.spinner.fail();
+			}
 			const table = new Table();
 			table.push(
 				["version", options.version],

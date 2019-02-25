@@ -1550,6 +1550,8 @@ ${chalk.green(log)}`);
 								tracking: branch
 							});
 						}
+						// TODO: Should we advise here if we can't find branch locally
+						// or on the upstream?
 						return command.checkoutBranch({ branch });
 					});
 			}
@@ -1561,10 +1563,33 @@ ${chalk.green(log)}`);
 		const { maxbuffer } = state;
 
 		return git
-			.diff({ option: "upstream/master", maxBuffer: maxbuffer })
+			.diff({
+				option: "--word-diff",
+				branch: "master",
+				glob: "*.yaml",
+				maxBuffer: maxbuffer
+			})
 			.then(diff => {
 				if (diff) {
-					state.hasChanges = true;
+					const regex = /((?:\[-.+-\])|(?:\{\+.+\+\})).*[^\r]/g;
+					const items = diff.match(regex);
+					const { ins, del } = items.reduce(
+						(memo, item) => {
+							if (item.match(/\+}\[-/g) || item.match(/-\]{+/g)) {
+								return memo;
+							} else if (item.match(/{+/g)) {
+								memo.ins++;
+							} else {
+								memo.del++;
+							}
+							return memo;
+						},
+						{ ins: 0, del: 0 }
+					);
+					state.changes = {
+						locale: !!ins,
+						dev: !!del
+					};
 				}
 			});
 	},
@@ -1586,6 +1611,21 @@ ${chalk.green(log)}`);
 				return Promise.resolve();
 			});
 		});
+	},
+	commitDiffWithUpstreamMaster(state) {
+		state.step = "commitDiffWithUpstreamMaster";
+		const { branch } = state;
+		return git
+			.log({
+				option: "--no-merges --oneline",
+				branch,
+				remote: "upstream/master"
+			})
+			.then(commits => {
+				if (commits) {
+					state.changes.diff = commits.trim().split("\n").length;
+				}
+			});
 	}
 };
 

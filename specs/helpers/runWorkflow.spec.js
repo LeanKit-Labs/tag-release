@@ -59,6 +59,30 @@ Tag-release encountered a problem:`);
 			});
 		});
 
+		describe("spinner", () => {
+			describe("exists", () => {
+				it("should call fail on spinner", () => {
+					const fail = jest.fn();
+					state.spinner = {
+						fail
+					};
+					return runWorkflow(workflow, state).then(() => {
+						expect(fail).toHaveBeenCalledTimes(1);
+					});
+				});
+			});
+
+			describe("doesn't exist", () => {
+				it("shouldn't call fail on spinner", () => {
+					const fail = jest.fn();
+					state.spinner = undefined;
+					return runWorkflow(workflow, state).then(() => {
+						expect(fail).toHaveBeenCalledTimes(0);
+					});
+				});
+			});
+		});
+
 		describe("logging error to file", () => {
 			it("should write error", () => {
 				return runWorkflow(workflow, state).then(() => {
