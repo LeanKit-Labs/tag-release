@@ -51,19 +51,21 @@ const saveState = (options, item) => {
 };
 
 const getNextState = (options, item, callback) => {
-	const { branch, repo, host } = item.value;
-
-	options.branch = branch;
-	options.cwd = `${rootDirectory}/${repo}`;
-	options.spinner = ora(repo);
 	options.tag = "";
 	options.status = "pending";
 	options.changes = {
 		locale: false,
 		dev: false
 	};
-	options.host = host === "true";
 	options.callback = callback;
+
+	if (!item.done) {
+		const { branch, repo, host } = item.value;
+		options.branch = branch;
+		options.cwd = `${rootDirectory}/${repo}`;
+		options.spinner = ora(repo);
+		options.host = host;
+	}
 };
 
 const iterator = l10n[Symbol.iterator]();
@@ -101,6 +103,7 @@ const callback = async options => {
 	options.spinner.succeed();
 
 	item = iterator.next();
+	getNextState(options, item, callback);
 	if (item.done) {
 		// check if any repos were private
 		const privateIndex = findIndex(options.l10n, { host: true });
@@ -147,7 +150,6 @@ const callback = async options => {
 		return Promise.resolve();
 	}
 
-	getNextState(options, item, callback);
 	options.spinner.start();
 	flow = filterFlowBasedOnDevelopBranch(options, sync);
 
@@ -159,6 +161,7 @@ const dry = options => {
 	options.spinner.succeed();
 
 	item = iterator.next();
+	getNextState(options, item, dry);
 	if (item.done) {
 		const table = new Table({
 			head: ["repo", "branch", "dev keys", "locale keys", "log diff"]
@@ -177,9 +180,7 @@ const dry = options => {
 		return Promise.resolve();
 	}
 
-	getNextState(options, item, dry);
 	options.spinner.start();
-
 	return runWorkflow(checkFlow, options);
 };
 
@@ -200,7 +201,7 @@ const options = {
 	release: "preminor", // used for release type,
 	releaseName: "Updated l10n translations", // name to be used for pre-release,
 	status: "pending",
-	host: host === "true",
+	host,
 	spinner: ora(repo),
 	l10n: [],
 	changes: {
