@@ -483,7 +483,6 @@ ${chalk.green(log)}`);
 			: publishCommand;
 
 		if (!util.isPackagePrivate(configPath)) {
-			state.private = false;
 			util.log.begin(publishCommand);
 			return util
 				.exec(publishCommand)

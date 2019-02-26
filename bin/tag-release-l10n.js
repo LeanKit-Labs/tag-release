@@ -9,7 +9,7 @@ const steps = require("../src/workflows/steps/index");
 const { remove, findIndex, clone, map, filter, forEach } = require("lodash");
 const Table = require("cli-table2");
 const path = require("path");
-const { rootDirectory, repos } = require(path.join(
+const { rootDirectory, l10n = [] } = require(path.join(
 	process.env.TR_DIRECTORY,
 	"./.tag-releaserc.json"
 ));
@@ -33,27 +33,27 @@ const { verbose, maxbuffer, check } = commander;
 const hasChanges = options => options.changes.locale || options.changes.dev;
 
 const saveState = (options, item) => {
-	const [repo] = Object.keys(item.value);
+	const { repo } = item.value;
 	// if we are doing a dry-run we only care if there were changes or not.
 	if (check) {
 		options.status = hasChanges(options) ? "changes" : "no changes";
-	} else if (options.status !== "skipped") {
-		options.status = options.private ? "qa bumped" : "pre-released";
+	} else if (options.status !== "skipped" && options.status !== "private") {
+		options.status = options.host ? "qa bumped" : "pre-released";
 	}
 	options.l10n.push({
 		repo,
 		branch: options.branch,
 		tag: options.tag,
 		status: options.status,
-		private: options.private,
+		host: options.host,
 		changes: options.changes
 	});
 };
 
 const getNextState = (options, item, callback) => {
-	const [repo] = Object.keys(item.value);
+	const { branch, repo, host } = item.value;
 
-	options.branch = item.value[repo];
+	options.branch = branch;
 	options.cwd = `${rootDirectory}/${repo}`;
 	options.spinner = ora(repo);
 	options.tag = "";
@@ -62,10 +62,11 @@ const getNextState = (options, item, callback) => {
 		locale: false,
 		dev: false
 	};
+	options.host = host === "true";
 	options.callback = callback;
 };
 
-const iterator = repos[Symbol.iterator]();
+const iterator = l10n[Symbol.iterator]();
 let item = iterator.next();
 const callback = async options => {
 	let flow;
@@ -76,8 +77,7 @@ const callback = async options => {
 		if (options.status !== "skipped") {
 			// check if we are dealing with a private repo (host project)
 			if (utils.isPackagePrivate(options.configPath)) {
-				options.private = true;
-				options.status = "skipped";
+				options.status = "private";
 			} else {
 				// remove steps that aren't required for automated run
 				preReleaseFlow = remove(preReleaseFlow, step => {
@@ -103,15 +103,18 @@ const callback = async options => {
 	item = iterator.next();
 	if (item.done) {
 		// check if any repos were private
-		const privateIndex = findIndex(options.l10n, { private: true });
-		if (privateIndex !== -1) {
+		const privateIndex = findIndex(options.l10n, { host: true });
+		if (
+			privateIndex !== -1 &&
+			options.l10n[privateIndex].status !== "skipped"
+		) {
 			options.spinner = ora("creating qa branch").start();
 			const { repo: pRepo } = options.l10n[privateIndex];
 			let l10nClone = clone(options.l10n);
 
 			options.cwd = `${rootDirectory}/${pRepo}`;
 			l10nClone = filter(l10nClone, i => {
-				return !i.private && i.tag;
+				return !i.host && i.tag;
 			});
 			options.dependencies = map(l10nClone, dep => {
 				return {
@@ -180,7 +183,7 @@ const dry = options => {
 	return runWorkflow(checkFlow, options);
 };
 
-const [repo] = Object.keys(item.value);
+const { branch, repo, host } = item.value;
 const today = new Date();
 const currentMonth = today
 	.toLocaleString("en-us", { month: "short" })
@@ -190,14 +193,14 @@ const options = {
 	maxbuffer,
 	workflow: check ? checkFlow : sync,
 	cwd: `${rootDirectory}/${repo}`, // directory to be running tag-release in (cwd-current working directory)
-	branch: item.value[repo],
+	branch,
 	callback: check ? dry : callback,
 	command: "l10n",
 	prerelease: `l10n-${currentMonth}-${today.getDate()}`, // used for pre-release identifier
 	release: "preminor", // used for release type,
 	releaseName: "Updated l10n translations", // name to be used for pre-release,
 	status: "pending",
-	private: false,
+	host: host === "true",
 	spinner: ora(repo),
 	l10n: [],
 	changes: {
@@ -209,6 +212,3 @@ const options = {
 
 options.spinner.start();
 api.cli(options);
-
-// TODO: What happens if there is a host repo change and no library repo changes?
-// TODO: What do we do if the library project isn't in package.json? (should always be there)
