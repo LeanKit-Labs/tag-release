@@ -1,5 +1,12 @@
 ## 6.x
 
+### 6.7.0
+
+* Updated statuses to be more accurate
+* Fixed state not resetting after last index
+* Changed structure of config l10n repos
+* Fixed issue with commit modifications, insertions, and deletions as well as a few logistic bugs
+
 ### 6.6.0
 
 * Added l10n command and --check command flag
