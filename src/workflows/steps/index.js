@@ -106,11 +106,17 @@ const api = {
 	},
 	gitMergeUpstreamMasterNoFF(state) {
 		state.step = "gitMergeUpstreamMasterNoFF";
-		return git.merge({
-			branch: "master",
-			remote: "upstream",
-			fastForwardOnly: false
-		});
+		return git
+			.merge({
+				branch: "master",
+				remote: "upstream",
+				fastForwardOnly: false
+			})
+			.then(result => {
+				state.status = result.includes("Already up-to-date.")
+					? "up-to-date"
+					: "merged";
+			});
 	},
 	gitMergeUpstreamDevelop(state) {
 		state.step = "gitMergeUpstreamDevelop";

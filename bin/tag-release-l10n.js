@@ -34,12 +34,6 @@ const hasChanges = options => options.changes.locale || options.changes.dev;
 
 const saveState = (options, item) => {
 	const { repo } = item.value;
-	// if we are doing a dry-run we only care if there were changes or not.
-	if (check) {
-		options.status = hasChanges(options) ? "changes" : "no changes";
-	} else if (options.status !== "skipped" && options.status !== "private") {
-		options.status = options.host ? "qa bumped" : "pre-released";
-	}
 	options.l10n.push({
 		repo,
 		branch: options.branch,
@@ -78,9 +72,7 @@ const callback = async options => {
 		// if the branch already existed, we need to just skip the release.
 		if (options.status !== "skipped") {
 			// check if we are dealing with a private repo (host project)
-			if (utils.isPackagePrivate(options.configPath)) {
-				options.status = "private";
-			} else {
+			if (!utils.isPackagePrivate(options.configPath)) {
 				// remove steps that aren't required for automated run
 				preReleaseFlow = remove(preReleaseFlow, step => {
 					return (
@@ -93,10 +85,9 @@ const callback = async options => {
 				options.callback = () => Promise.resolve();
 				flow = filterFlowBasedOnDevelopBranch(options, preReleaseFlow);
 				await runWorkflow(flow, options);
+				options.status = "pre-released";
 			}
 		}
-	} else {
-		options.status = "skipped";
 	}
 
 	saveState(options, item);
