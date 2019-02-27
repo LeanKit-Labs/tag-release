@@ -56,6 +56,9 @@ const git = {
 	diff({
 		option = "--color",
 		files,
+		branch = "",
+		remote = "upstream",
+		glob,
 		maxBuffer,
 		logMessage,
 		failHelpKey,
@@ -63,7 +66,9 @@ const git = {
 		showError,
 		onError
 	}) {
-		const args = `diff ${option}${files ? ` ${files.join(" ")}` : ""}`;
+		const args = `diff ${option}${files ? ` ${files.join(" ")}` : ""}${
+			branch ? ` ${remote}/${branch}` : `${branch}`
+		}${glob ? ` -- ${glob}` : ""}`;
 		return runCommand({
 			args,
 			maxBuffer,
@@ -80,6 +85,13 @@ const git = {
 		return runCommand(
 			failHelpKey && failHelpKey.length ? { args, failHelpKey } : { args }
 		);
+	},
+
+	log({ option, branch, remote }) {
+		const args = `log${option ? ` ${option}` : ""}${
+			branch ? ` ${branch}` : ""
+		}${remote ? `..${remote}` : ""}`;
+		return runCommand({ args });
 	},
 
 	merge({ branch, remote, fastForwardOnly = true, failHelpKey }) {
