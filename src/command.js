@@ -8,12 +8,14 @@ const getBranchList = require("./helpers/getBranchList");
 const DEFAULT_PRERELEASE_TAG_LIST_LIMIT = 10;
 
 const command = {
-	branchExists(branch) {
+	branchExists(branch, spinner, repo) {
 		return git
 			.branch({
 				branch,
 				option: "--list",
-				logMessage: `verifying "${branch}" exists`
+				logMessage: `verifying "${branch}" exists`,
+				spinner,
+				repo
 			})
 			.then(result => {
 				const branches = result.split("\n").filter(b => !!b);
@@ -21,11 +23,13 @@ const command = {
 			});
 	},
 
-	branchExistsRemote({ branch, remote }) {
+	branchExistsRemote({ branch, remote, spinner, repo }) {
 		const args = `ls-remote ${remote} ${branch}`;
 		return runCommand({
 			args,
-			logMessage: `checking if "${branch}" exists on ${remote}`
+			logMessage: `checking if "${branch}" exists on ${remote}`,
+			spinner,
+			repo
 		}).then(result => {
 			const branches = result.split("\n").filter(String);
 			return Promise.resolve(!!branches.length);
@@ -49,9 +53,11 @@ const command = {
 		});
 	},
 
-	checkoutBranch({ branch }) {
+	checkoutBranch({ branch, spinner, repo }) {
 		return git.checkout({
-			branch
+			branch,
+			spinner,
+			repo
 		});
 	},
 
@@ -111,8 +117,8 @@ const command = {
 		});
 	},
 
-	fetchUpstream() {
-		return git.fetch({ failHelpKey: "fetchUpstream" });
+	fetchUpstream({ spinner, repo }) {
+		return git.fetch({ spinner, repo, failHelpKey: "fetchUpstream" });
 	},
 
 	generateRebaseCommitLog() {
@@ -155,15 +161,18 @@ const command = {
 		});
 	},
 
-	getTagList() {
+	getTagList(spinner, repo) {
 		const args = "tag --sort=v:refname";
-		return runCommand({ args, logMessage: "getting list of tags" }).then(
-			tags => {
-				tags = tags.trim();
-				tags = tags.split("\n");
-				return Promise.resolve(tags);
-			}
-		);
+		return runCommand({
+			args,
+			logMessage: "getting list of tags",
+			spinner,
+			repo
+		}).then(tags => {
+			tags = tags.trim();
+			tags = tags.split("\n");
+			return Promise.resolve(tags);
+		});
 	},
 
 	getPrereleaseTagList(limit = DEFAULT_PRERELEASE_TAG_LIST_LIMIT) {
@@ -347,10 +356,15 @@ const command = {
 		});
 	},
 
-	shortLog(tag) {
+	shortLog(tag, spinner, repo) {
 		let args = `--no-pager log --no-merges --date-order --pretty=format:"%s"`;
 		args = tag && tag.length ? `${args} ${tag}..` : args;
-		return runCommand({ args, logMessage: "parsing git log" });
+		return runCommand({
+			args,
+			logMessage: "parsing git log",
+			spinner,
+			repo
+		});
 	},
 
 	stageFiles() {
@@ -359,10 +373,12 @@ const command = {
 		});
 	},
 
-	uncommittedChangesExist() {
+	uncommittedChangesExist({ spinner, repo }) {
 		const args = "diff-index HEAD --";
 		return runCommand({
 			args,
+			spinner,
+			repo,
 			logMessage: "checking for uncommitted changes"
 		});
 	}

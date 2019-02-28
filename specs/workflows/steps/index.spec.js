@@ -117,8 +117,12 @@ describe("shared workflow steps", () => {
 	});
 
 	describe("gitMergeUpstreamMasterNoFF", () => {
-		it("should call git.merge with appropriate args", () => {
-			run.gitMergeUpstreamMasterNoFF(state);
+		beforeEach(() => {
+			git.merge = jest.fn(() => Promise.resolve(""));
+		});
+
+		it("should call git.merge with appropriate args", async () => {
+			await run.gitMergeUpstreamMasterNoFF(state);
 			expect(git.merge).toHaveBeenCalledTimes(1);
 			expect(git.merge).toHaveBeenCalledWith({
 				branch: "master",
@@ -127,10 +131,28 @@ describe("shared workflow steps", () => {
 			});
 		});
 
-		it("should set step on state", () => {
-			run.gitMergeUpstreamMasterNoFF(state);
+		it("should set step on state", async () => {
+			await run.gitMergeUpstreamMasterNoFF(state);
 			expect(state).toHaveProperty("step");
 			expect(state.step).toEqual("gitMergeUpstreamMasterNoFF");
+		});
+
+		describe("status", () => {
+			it("should set up-to-date status", async () => {
+				git.merge = jest.fn(() =>
+					Promise.resolve("Already up-to-date.")
+				);
+				await run.gitMergeUpstreamMasterNoFF(state);
+				expect(state).toHaveProperty("status");
+				expect(state.status).toEqual("up-to-date");
+			});
+
+			it("should set merged status", async () => {
+				git.merge = jest.fn(() => Promise.resolve(""));
+				await run.gitMergeUpstreamMasterNoFF(state);
+				expect(state).toHaveProperty("status");
+				expect(state.status).toEqual("merged");
+			});
 		});
 	});
 
@@ -461,7 +483,11 @@ describe("shared workflow steps", () => {
 				it("should get a git log with the latest release from the list of tags returned", () => {
 					return run.gitShortLog(state).then(() => {
 						expect(command.shortLog).toHaveBeenCalledTimes(1);
-						expect(command.shortLog).toHaveBeenCalledWith("v0.9.1");
+						expect(command.shortLog).toHaveBeenCalledWith(
+							"v0.9.1",
+							undefined,
+							undefined
+						);
 					});
 				});
 
@@ -470,7 +496,11 @@ describe("shared workflow steps", () => {
 
 					return run.gitShortLog(state).then(() => {
 						expect(command.shortLog).toHaveBeenCalledTimes(1);
-						expect(command.shortLog).toHaveBeenCalledWith("v1.2.3");
+						expect(command.shortLog).toHaveBeenCalledWith(
+							"v1.2.3",
+							undefined,
+							undefined
+						);
 					});
 				});
 
@@ -502,7 +532,11 @@ describe("shared workflow steps", () => {
 				it("should use the current version when fetching log data", () => {
 					return run.gitShortLog(state).then(() => {
 						expect(command.shortLog).toHaveBeenCalledTimes(1);
-						expect(command.shortLog).toHaveBeenCalledWith("v1.2.3");
+						expect(command.shortLog).toHaveBeenCalledWith(
+							"v1.2.3",
+							undefined,
+							undefined
+						);
 					});
 				});
 			});
@@ -4722,7 +4756,7 @@ common.filter.savedFilters.new: "<New>"
 		});
 
 		describe("diff", () => {
-			describe("exists", async () => {
+			describe("exists", () => {
 				it("should set diff on state when commits exist", async () => {
 					git.log = jest.fn(() => Promise.resolve("some commit"));
 					await run.commitDiffWithUpstreamMaster(state);

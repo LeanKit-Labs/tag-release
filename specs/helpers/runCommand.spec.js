@@ -57,6 +57,47 @@ describe("runCommand", () => {
 		});
 	});
 
+	describe("spinner", () => {
+		let spinner;
+		beforeEach(() => {
+			spinner = {
+				text: "text"
+			};
+		});
+
+		it("should update spinner when provided", () => {
+			return runCommand({
+				args: "--version",
+				repo: "demo_repo",
+				spinner
+			}).then(() => {
+				expect(spinner.text).toEqual("demo_repo: git --version");
+			});
+		});
+
+		it("should respect fullCommand flag", () => {
+			return runCommand({
+				args: "git log",
+				repo: "demo_repo",
+				spinner,
+				fullCommand: true
+			}).then(() => {
+				expect(spinner.text).toEqual("demo_repo: git log");
+			});
+		});
+
+		it("should respect logMessage", () => {
+			return runCommand({
+				args: "--version",
+				repo: "demo_repo",
+				spinner,
+				logMessage: "demo log message"
+			}).then(() => {
+				expect(spinner.text).toEqual("demo_repo: demo log message");
+			});
+		});
+	});
+
 	describe("showOutput is false", () => {
 		it("should not log output", () => {
 			return runCommand({ args: "--version", showOutput: false }).then(
