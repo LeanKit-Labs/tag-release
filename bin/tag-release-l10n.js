@@ -70,10 +70,15 @@ const statusColors = {
 	"pre-released": status => chalk.yellow(status),
 	"qa bumped": status => chalk.yellow(status),
 	"up-to-date": status => chalk.green(status),
-	skipped: status => chalk.red(status)
+	skipped: status => chalk.red(status),
+	default: status => chalk.yellow(status)
 };
 const getStatusColor = status => {
-	return statusColors[status](status);
+	let color = statusColors[status];
+	if (!color) {
+		color = statusColors.default;
+	}
+	return color(status);
 };
 
 const iterator = l10n[Symbol.iterator]();
@@ -120,6 +125,7 @@ const callback = async options => {
 			const { repo: pRepo } = options.l10n[privateIndex];
 			let l10nClone = clone(options.l10n);
 
+			options.repo = pRepo;
 			options.cwd = `${rootDirectory}/${pRepo}`;
 			l10nClone = filter(l10nClone, i => {
 				return !i.host && i.tag;
