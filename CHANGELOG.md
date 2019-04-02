@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.8.0
+
+* Added default for l10n status colors
+* Updated output to include more information and added status colors
+
 ### 6.7.0
 
 * Updated statuses to be more accurate
