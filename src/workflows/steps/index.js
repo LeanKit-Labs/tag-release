@@ -89,15 +89,17 @@ const api = {
 	},
 	fetchUpstream(state) {
 		state.step = "fetchUpstream";
-		return command.fetchUpstream();
+		return command.fetchUpstream(state);
 	},
 	gitMergeUpstreamBranch(state) {
 		state.step = "gitMergeUpstreamBranch";
-		const { branch } = state;
+		const { branch, spinner, repo } = state;
 		return git.merge({
 			branch,
 			remote: "upstream",
-			failHelpKey: "gitMergeUpstreamBranch"
+			failHelpKey: "gitMergeUpstreamBranch",
+			spinner,
+			repo
 		});
 	},
 	gitMergeUpstreamMaster(state) {
@@ -106,11 +108,14 @@ const api = {
 	},
 	gitMergeUpstreamMasterNoFF(state) {
 		state.step = "gitMergeUpstreamMasterNoFF";
+		const { spinner, repo } = state;
 		return git
 			.merge({
 				branch: "master",
 				remote: "upstream",
-				fastForwardOnly: false
+				fastForwardOnly: false,
+				spinner,
+				repo
 			})
 			.then(result => {
 				state.status = result.includes("Already up-to-date.")
@@ -219,7 +224,7 @@ const api = {
 	},
 	gitShortLog(state) {
 		state.step = "gitShortLog";
-		const { currentVersion, prerelease } = state;
+		const { currentVersion, prerelease, spinner, repo } = state;
 
 		let contents = util.readFile(CHANGELOG_PATH);
 
@@ -234,7 +239,7 @@ const api = {
 
 			util.writeFile(CHANGELOG_PATH, contents);
 		} else {
-			return command.getTagList().then(tags => {
+			return command.getTagList(spinner, repo).then(tags => {
 				let latestRelease = `v${currentVersion}`;
 				if (tags.length) {
 					if (!prerelease) {
@@ -243,14 +248,16 @@ const api = {
 					}
 				}
 
-				return command.shortLog(latestRelease).then(data => {
-					data = data.trim().replace(/^(.+)$/gm, "* $1");
-					if (!data.length) {
-						util.advise("gitLog.log");
-					}
+				return command
+					.shortLog(latestRelease, spinner, repo)
+					.then(data => {
+						data = data.trim().replace(/^(.+)$/gm, "* $1");
+						if (!data.length) {
+							util.advise("gitLog.log");
+						}
 
-					state.log = data;
-				});
+						state.log = data;
+					});
 			});
 		}
 	},
@@ -452,22 +459,22 @@ ${chalk.green(log)}`);
 	},
 	gitStageConfigFile(state) {
 		state.step = "gitStageConfigFile";
-		const { configPath } = state;
+		const { configPath, spinner, repo } = state;
 
-		return git.add({ files: [configPath] });
+		return git.add({ files: [configPath], spinner, repo });
 	},
 	gitCommit(state) {
 		state.step = "gitCommit";
-		const { versions: { newVersion } } = state;
+		const { versions: { newVersion }, spinner, repo } = state;
 
-		return git.commit({ comment: newVersion });
+		return git.commit({ comment: newVersion, spinner, repo });
 	},
 	gitTag(state) {
 		state.step = "gitTag";
-		const { versions: { newVersion } } = state;
+		const { versions: { newVersion }, spinner, repo } = state;
 		const tag = `v${newVersion}`;
 
-		return git.tag({ tag }).then(() => {
+		return git.tag({ tag, spinner, repo }).then(() => {
 			state.tag = tag;
 		});
 	},
@@ -506,13 +513,15 @@ ${chalk.green(log)}`);
 	},
 	gitPushUpstreamFeatureBranch(state) {
 		state.step = "gitPushUpstreamFeatureBranch";
-		const { branch, tag } = state;
+		const { branch, tag, spinner, repo } = state;
 		if (branch && branch.length) {
 			return git.push({
 				branch,
 				remote: "upstream",
 				option: "-u",
-				tag
+				tag,
+				spinner,
+				repo
 			});
 		}
 	},
@@ -533,9 +542,10 @@ ${chalk.green(log)}`);
 	},
 	githubUpstream(state) {
 		state.step = "githubUpstream";
+		const { spinner, repo } = state;
 		const remote = "upstream";
 		return git
-			.config({ remote })
+			.config({ remote, spinner, repo })
 			.then(response => {
 				set(state, `remotes.${remote}.url`, response.trim());
 				const [, owner, name] =
@@ -648,7 +658,7 @@ ${chalk.green(log)}`);
 	},
 	stashChanges(state) {
 		state.step = "stashChanges";
-		return command.uncommittedChangesExist().then(results => {
+		return command.uncommittedChangesExist(state).then(results => {
 			if (results.length) {
 				return git.stash();
 			}
@@ -1541,38 +1551,51 @@ ${chalk.green(log)}`);
 	},
 	createOrCheckoutBranch(state) {
 		state.step = "createOrCheckoutBranch";
-		const { branch } = state;
+		const { branch, spinner, repo } = state;
 
-		return command.branchExists(branch).then(exists => {
+		return command.branchExists(branch, spinner, repo).then(exists => {
 			if (!exists) {
 				return command
-					.branchExistsRemote({ branch, remote: "upstream" })
+					.branchExistsRemote({
+						branch,
+						remote: "upstream",
+						spinner,
+						repo
+					})
 					.then(existsRemote => {
 						if (existsRemote) {
 							return git.checkout({
 								branch,
 								option: "-b",
-								tracking: branch
+								tracking: branch,
+								spinner,
+								repo
 							});
 						}
 						// TODO: Should we advise here if we can't find branch locally
 						// or on the upstream?
-						return command.checkoutBranch({ branch });
+						return command.checkoutBranch({
+							branch,
+							spinner,
+							repo
+						});
 					});
 			}
-			return command.checkoutBranch({ branch });
+			return command.checkoutBranch({ branch, spinner, repo });
 		});
 	},
 	diffWithUpstreamMaster(state) {
 		state.step = "diffWithUpstreamMaster";
-		const { maxbuffer } = state;
+		const { maxbuffer, spinner, repo } = state;
 
 		return git
 			.diff({
 				option: "--word-diff",
 				branch: "master",
 				glob: "*.yaml",
-				maxBuffer: maxbuffer
+				maxBuffer: maxbuffer,
+				spinner,
+				repo
 			})
 			.then(diff => {
 				if (diff) {
@@ -1619,12 +1642,14 @@ ${chalk.green(log)}`);
 	},
 	commitDiffWithUpstreamMaster(state) {
 		state.step = "commitDiffWithUpstreamMaster";
-		const { branch } = state;
+		const { branch, spinner, repo } = state;
 		return git
 			.log({
 				option: "--no-merges --oneline",
 				branch,
-				remote: "upstream/master"
+				remote: "upstream/master",
+				spinner,
+				repo
 			})
 			.then(commits => {
 				if (commits) {

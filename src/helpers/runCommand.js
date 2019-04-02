@@ -4,6 +4,8 @@ const runCommand = ({
 	args,
 	showOutput = true,
 	logMessage,
+	spinner,
+	repo,
 	failHelpKey = "gitCommandFailed",
 	exitOnFail = false,
 	showError = true,
@@ -12,6 +14,11 @@ const runCommand = ({
 	onError
 }) => {
 	const command = fullCommand ? `${args}` : `git ${args}`;
+
+	if (spinner) {
+		const action = logMessage || command;
+		spinner.text = `${repo}: ${action}`;
+	}
 
 	if (!showOutput || process.env.NO_OUTPUT) {
 		return utils.exec(command, maxBuffer ? maxBuffer : undefined);

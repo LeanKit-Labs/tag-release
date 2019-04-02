@@ -113,7 +113,7 @@ describe("command", () => {
 
 	describe("fetchUpstream", () => {
 		it("should call fetch with appropriate args", () => {
-			command.fetchUpstream();
+			command.fetchUpstream({});
 			expect(git.fetch).toHaveBeenCalledTimes(1);
 			expect(git.fetch).toHaveBeenCalledWith({
 				failHelpKey: "fetchUpstream"
@@ -310,7 +310,7 @@ v17.11.2`)
 				it(`should call "command.${comm}" with the appropriate args`, () => {
 					const result = data.args
 						? command[comm].bind(null, data.args)
-						: command[comm];
+						: command[comm].bind(null, {});
 					result();
 
 					expect(git.checkout).toHaveBeenCalledTimes(1);
@@ -584,6 +584,7 @@ v17.11.2`)
 				}
 			},
 			uncommittedChangesExist: {
+				args: {},
 				expected: {
 					args: "diff-index HEAD --",
 					logMessage: "checking for uncommitted changes"

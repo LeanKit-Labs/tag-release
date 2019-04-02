@@ -2,12 +2,22 @@ const runCommand = require("./helpers/runCommand");
 const getCurrentBranch = require("./helpers/getCurrentBranch");
 
 const git = {
-	add({ option, files = [] }) {
+	add({ option, files = [], spinner, repo }) {
 		const args = `add${option ? ` ${option}` : ""} ${files.join(" ")}`;
-		return runCommand({ args });
+		return runCommand({ args, spinner, repo });
 	},
 
-	branch({ branch, option, tag, tracking, showOutput, logMessage, onError }) {
+	branch({
+		branch,
+		option,
+		tag,
+		tracking,
+		showOutput,
+		logMessage,
+		spinner,
+		repo,
+		onError
+	}) {
 		const args = `branch${option ? ` ${option}` : ""}${
 			branch ? ` ${branch}` : ""
 		}${tag ? ` tags/${tag}` : ""}${
@@ -16,8 +26,8 @@ const git = {
 
 		return runCommand(
 			logMessage && logMessage.length
-				? { args, showOutput, logMessage, onError }
-				: { args, showOutput, onError }
+				? { args, showOutput, logMessage, spinner, repo, onError }
+				: { args, showOutput, spinner, repo, onError }
 		);
 	},
 
@@ -27,6 +37,8 @@ const git = {
 		tag,
 		tracking,
 		remote = "upstream",
+		spinner,
+		repo,
 		failHelpKey,
 		onError
 	}) {
@@ -36,21 +48,21 @@ const git = {
 
 		return runCommand(
 			failHelpKey && failHelpKey.length
-				? { args, failHelpKey, onError }
-				: { args, onError }
+				? { args, failHelpKey, spinner, repo, onError }
+				: { args, spinner, repo, onError }
 		).then(() => {
 			return getCurrentBranch();
 		});
 	},
 
-	commit({ option = "-m", comment }) {
+	commit({ option = "-m", comment, spinner, repo }) {
 		const args = `commit ${option} "${comment}"`;
-		return runCommand({ args });
+		return runCommand({ args, spinner, repo });
 	},
 
-	config({ remote, showOutput = false }) {
+	config({ remote, showOutput = false, spinner, repo }) {
 		const args = `config remote.${remote}.url`;
-		return runCommand({ args, showOutput });
+		return runCommand({ args, spinner, repo, showOutput });
 	},
 
 	diff({
@@ -61,6 +73,8 @@ const git = {
 		glob,
 		maxBuffer,
 		logMessage,
+		spinner,
+		repo,
 		failHelpKey,
 		exitOnFail,
 		showError,
@@ -72,6 +86,8 @@ const git = {
 		return runCommand({
 			args,
 			maxBuffer,
+			spinner,
+			repo,
 			logMessage,
 			failHelpKey,
 			exitOnFail,
@@ -80,26 +96,37 @@ const git = {
 		});
 	},
 
-	fetch({ failHelpKey }) {
+	fetch({ spinner, repo, failHelpKey }) {
 		const args = `fetch upstream --tags`;
 		return runCommand(
-			failHelpKey && failHelpKey.length ? { args, failHelpKey } : { args }
+			failHelpKey && failHelpKey.length
+				? { args, spinner, repo, failHelpKey }
+				: { args, spinner, repo }
 		);
 	},
 
-	log({ option, branch, remote }) {
+	log({ option, branch, remote, spinner, repo }) {
 		const args = `log${option ? ` ${option}` : ""}${
 			branch ? ` ${branch}` : ""
 		}${remote ? `..${remote}` : ""}`;
-		return runCommand({ args });
+		return runCommand({ args, spinner, repo });
 	},
 
-	merge({ branch, remote, fastForwardOnly = true, failHelpKey }) {
+	merge({
+		branch,
+		remote,
+		fastForwardOnly = true,
+		spinner,
+		repo,
+		failHelpKey
+	}) {
 		const args = `merge ${remote ? `${remote}/${branch}` : `${branch}`}${
 			fastForwardOnly ? " --ff-only" : " --no-ff"
 		}`;
 		return runCommand(
-			failHelpKey && failHelpKey.length ? { args, failHelpKey } : { args }
+			failHelpKey && failHelpKey.length
+				? { args, spinner, repo, failHelpKey }
+				: { args, spinner, repo }
 		);
 	},
 
@@ -110,6 +137,8 @@ const git = {
 		base,
 		tag,
 		logMessage,
+		spinner,
+		repo,
 		failHelpKey,
 		onError
 	}) {
@@ -118,8 +147,8 @@ const git = {
 		}${tag ? ` refs/tags/${tag}` : ""}`;
 		return runCommand(
 			failHelpKey && failHelpKey.length
-				? { args, failHelpKey, logMessage, onError }
-				: { args, logMessage, onError }
+				? { args, failHelpKey, logMessage, spinner, repo, onError }
+				: { args, logMessage, spinner, repo, onError }
 		);
 	},
 
@@ -156,9 +185,9 @@ const git = {
 		return runCommand({ args, showOutput });
 	},
 
-	tag({ tag, annotation }) {
+	tag({ tag, annotation, spinner, repo }) {
 		const args = `tag -a ${tag} -m ${annotation || tag}`;
-		return runCommand({ args });
+		return runCommand({ args, spinner, repo });
 	}
 };
 

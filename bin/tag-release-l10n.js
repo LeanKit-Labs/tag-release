@@ -17,6 +17,7 @@ let preReleaseFlow = require("../src/workflows/pre-release");
 const filterFlowBasedOnDevelopBranch = require("../src/helpers/filterFlowBasedOnDevelopBranch");
 const runWorkflow = require("../src/helpers/runWorkflow");
 const ora = require("ora");
+const chalk = require("chalk");
 
 process.env.NO_OUTPUT = true;
 
@@ -59,7 +60,25 @@ const getNextState = (options, item, callback) => {
 		options.cwd = `${rootDirectory}/${repo}`;
 		options.spinner = ora(repo);
 		options.host = host;
+		options.repo = repo;
 	}
+};
+
+const statusColors = {
+	"no changes": status => chalk.blue(status),
+	changes: status => chalk.yellow(status),
+	"pre-released": status => chalk.yellow(status),
+	"qa bumped": status => chalk.yellow(status),
+	"up-to-date": status => chalk.green(status),
+	skipped: status => chalk.red(status),
+	default: status => chalk.yellow(status)
+};
+const getStatusColor = status => {
+	let color = statusColors[status];
+	if (!color) {
+		color = statusColors.default;
+	}
+	return color(status);
 };
 
 const iterator = l10n[Symbol.iterator]();
@@ -91,7 +110,7 @@ const callback = async options => {
 	}
 
 	saveState(options, item);
-	options.spinner.succeed();
+	options.spinner.succeed(item.value.repo);
 
 	item = iterator.next();
 	getNextState(options, item, callback);
@@ -106,6 +125,7 @@ const callback = async options => {
 			const { repo: pRepo } = options.l10n[privateIndex];
 			let l10nClone = clone(options.l10n);
 
+			options.repo = pRepo;
 			options.cwd = `${rootDirectory}/${pRepo}`;
 			l10nClone = filter(l10nClone, i => {
 				return !i.host && i.tag;
@@ -127,14 +147,14 @@ const callback = async options => {
 
 			await runWorkflow(qaAuto, options);
 			options.l10n[privateIndex].status = "qa bumped";
-			options.spinner.succeed();
+			options.spinner.succeed("creating qa branch");
 		}
 
 		const table = new Table({
 			head: ["repo", "branch", "tag", "status"]
 		});
 		forEach(options.l10n, ({ repo, branch, tag, status }) => {
-			table.push([repo, branch, tag, status]);
+			table.push([repo, branch, tag, getStatusColor(status)]);
 		});
 		console.log(table.toString()); // eslint-disable-line no-console
 
@@ -149,7 +169,7 @@ const callback = async options => {
 
 const dry = options => {
 	saveState(options, item);
-	options.spinner.succeed();
+	options.spinner.succeed(item.value.repo);
 
 	item = iterator.next();
 	getNextState(options, item, dry);
@@ -163,7 +183,13 @@ const dry = options => {
 				const message = `${diff ? `${diff} commit(s)` : "up-to-date"}`;
 				const devChanges = dev ? "changes" : "no changes";
 				const localeChanges = locale ? "changes" : "no changes";
-				table.push([repo, branch, devChanges, localeChanges, message]);
+				table.push([
+					repo,
+					branch,
+					getStatusColor(devChanges),
+					getStatusColor(localeChanges),
+					getStatusColor(message)
+				]);
 			}
 		);
 		console.log(table.toString()); // eslint-disable-line no-console
@@ -193,6 +219,7 @@ const options = {
 	releaseName: "Updated l10n translations", // name to be used for pre-release,
 	status: "pending",
 	host,
+	repo,
 	spinner: ora(repo),
 	l10n: [],
 	changes: {
