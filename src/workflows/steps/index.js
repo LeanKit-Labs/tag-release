@@ -10,6 +10,7 @@ const path = require("path");
 const removeWords = require("remove-words");
 const { set } = require("lodash");
 const { retryRebase } = require("./conflictResolution");
+const getCurrentBranch = require("../../helpers/getCurrentBranch");
 
 const CHANGELOG_PATH = "CHANGELOG.md";
 const PACKAGELOCKJSON_PATH = "package-lock.json";
@@ -636,33 +637,50 @@ ${chalk.green(log)}`);
 		});
 	},
 	checkForUncommittedChanges(state) {
+		// TODO: rethink this and stashChanges
 		state.step = "checkForUncommittedChanges";
-		return command.uncommittedChangesExist().then(results => {
+		return command.uncommittedChangesExist(state).then(results => {
 			state.uncommittedChangesExist = results.length;
 			return Promise.resolve(state.uncommittedChangesExist);
 		});
 	},
 	gitStash(state) {
+		// TODO: rethink this and stashChanges
 		state.step = "gitStash";
-		return git.stash().then(() => {
+		return git.stash({ option: "--include-untracked" }).then(() => {
 			util.advise("gitStash", { exit: false });
 			return Promise.resolve();
 		});
 	},
 	stashIfUncommittedChangesExist(state) {
+		// TODO: rethink this and stashChanges
 		state.step = "stashIfUncommittedChangesExist";
 		const { uncommittedChangesExist } = state;
 		if (uncommittedChangesExist) {
 			return api.gitStash(state);
 		}
 	},
-	stashChanges(state) {
+	async stashChanges(state) {
+		// TODO: rethink this and gitStash/stashIfUncommittedChangesExist
 		state.step = "stashChanges";
+		const current = await getCurrentBranch();
 		return command.uncommittedChangesExist(state).then(results => {
 			if (results.length) {
-				return git.stash();
+				state.stashed = current;
+				return git.stash({ option: "--include-untracked" });
 			}
 		});
+	},
+	resetIfStashed(state) {
+		state.step = "resetIfStashed";
+		const { stashed, spinner, repo } = state;
+		if (stashed) {
+			return command
+				.checkoutBranch({ branch: stashed, spinner, repo })
+				.then(() => {
+					return git.stash({ option: "pop" });
+				});
+		}
 	},
 	verifyMasterBranch(state) {
 		state.step = "verifyMasterBranch";

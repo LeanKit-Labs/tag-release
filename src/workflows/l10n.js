@@ -18,6 +18,7 @@ module.exports = {
 		run.createOrCheckoutBranch,
 		run.gitMergeUpstreamBranch,
 		run.diffWithUpstreamMaster,
-		run.commitDiffWithUpstreamMaster
+		run.commitDiffWithUpstreamMaster,
+		run.resetIfStashed
 	]
 };

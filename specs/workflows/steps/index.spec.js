@@ -1777,6 +1777,53 @@ describe("shared workflow steps", () => {
 		});
 	});
 
+	describe("resetIfStashed", () => {
+		describe("when stashed", () => {
+			beforeEach(() => {
+				command.checkoutBranch = jest.fn(() => Promise.resolve());
+				state.stashed = "feature-branch";
+				run.resetIfStashed(state);
+			});
+
+			it("should set step on state", () => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("resetIfStashed");
+			});
+
+			it("it should checkout branch with stashed changes on it", () => {
+				expect(command.checkoutBranch).toHaveBeenCalledTimes(1);
+				expect(command.checkoutBranch).toHaveBeenCalledWith({
+					branch: "feature-branch",
+					spinner: undefined,
+					repo: undefined
+				});
+			});
+
+			it("it should call git.stash", () => {
+				expect(git.stash).toHaveBeenCalledTimes(1);
+				expect(git.stash).toHaveBeenCalledWith({
+					option: "pop"
+				});
+			});
+		});
+
+		describe("when not stashed", () => {
+			beforeEach(() => {
+				command.checkoutBranch = jest.fn(() => Promise.resolve());
+				run.resetIfStashed(state);
+			});
+
+			it("should set step on state", () => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("resetIfStashed");
+			});
+
+			it("should not call git.stash", () => {
+				expect(git.stash).toHaveBeenCalledTimes(0);
+			});
+		});
+	});
+
 	describe("verifyMasterBranch", () => {
 		beforeEach(() => {
 			command.branchExists = jest.fn(() => Promise.resolve(true));

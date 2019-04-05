@@ -542,8 +542,17 @@ describe("git", () => {
 	});
 
 	describe("stash", () => {
+		it("should call stash", () => {
+			git.stash({});
+			expect(runCommand).toHaveBeenCalledTimes(1);
+			expect(runCommand).toHaveBeenCalledWith({
+				args: "stash",
+				logMessage: "stashing uncommitted changes"
+			});
+		});
+
 		it("should call stash with appropriate args", () => {
-			git.stash();
+			git.stash({ option: "--include-untracked" });
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
 				args: "stash --include-untracked",

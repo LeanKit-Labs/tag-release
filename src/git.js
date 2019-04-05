@@ -172,8 +172,8 @@ const git = {
 		return runCommand({ args });
 	},
 
-	stash() {
-		const args = "stash --include-untracked";
+	stash({ option }) {
+		const args = `stash${option ? ` ${option}` : ""}`;
 		return runCommand({
 			args,
 			logMessage: "stashing uncommitted changes"

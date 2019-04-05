@@ -5,6 +5,7 @@ describe("qa-automated workflow", () => {
 	it("should have all of the required steps", () => {
 		expect(qaAuto).toEqual([
 			run.changeDirectory,
+			run.stashChanges,
 			run.checkoutl10nBranch,
 			run.getCurrentBranchVersion,
 			run.checkNewCommits,
@@ -13,7 +14,8 @@ describe("qa-automated workflow", () => {
 			run.updateDependencies,
 			run.gitAdd,
 			run.gitCommitBumpMessage,
-			run.gitPushUpstreamFeatureBranch
+			run.gitPushUpstreamFeatureBranch,
+			run.resetIfStashed
 		]);
 	});
 });
