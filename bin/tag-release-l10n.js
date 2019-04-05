@@ -53,6 +53,7 @@ const getNextState = (options, item, callback) => {
 		dev: false
 	};
 	options.callback = callback;
+	options.stashed = "";
 
 	if (!item.done) {
 		const { branch, repo, host } = item.value;
@@ -109,6 +110,9 @@ const callback = async options => {
 		}
 	}
 
+	// reset if we stashed during the syncing
+	await steps.resetIfStashed(options);
+
 	saveState(options, item);
 	options.spinner.succeed(item.value.repo);
 
@@ -121,12 +125,8 @@ const callback = async options => {
 			privateIndex !== -1 &&
 			options.l10n[privateIndex].status !== "skipped"
 		) {
-			options.spinner = ora("creating qa branch").start();
 			const { repo: pRepo } = options.l10n[privateIndex];
 			let l10nClone = clone(options.l10n);
-
-			options.repo = pRepo;
-			options.cwd = `${rootDirectory}/${pRepo}`;
 			l10nClone = filter(l10nClone, i => {
 				return !i.host && i.tag;
 			});
@@ -139,15 +139,27 @@ const callback = async options => {
 					)
 				};
 			});
-			options.changeReason = "Updated l10n translations".replace(
-				/["]+/g,
-				""
-			);
-			options.callback = () => {};
 
-			await runWorkflow(qaAuto, options);
-			options.l10n[privateIndex].status = "qa bumped";
-			options.spinner.succeed("creating qa branch");
+			// if it has dependencies, then we need to QA bump
+			// else display if host project has changes or up-to-date
+			if (options.dependencies && options.dependencies.length > 0) {
+				options.spinner = ora("creating qa branch").start();
+				options.repo = pRepo;
+				options.cwd = `${rootDirectory}/${pRepo}`;
+				options.changeReason = "Updated l10n translations".replace(
+					/["]+/g,
+					""
+				);
+				options.callback = () => {};
+
+				await runWorkflow(qaAuto, options);
+				options.l10n[privateIndex].status = "qa bumped";
+				options.spinner.succeed("creating qa branch");
+			} else if (hasChanges(options.l10n[privateIndex])) {
+				options.l10n[privateIndex].status = "changes";
+			} else {
+				options.l10n[privateIndex].status = "up-to-date";
+			}
 		}
 
 		const table = new Table({
