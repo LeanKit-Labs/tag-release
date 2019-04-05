@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.8.1
+
+* Added the ability to reset to branch if stashed. Fixed qa issue with no pre-releases
+
 ### 6.8.0
 
 * Added default for l10n status colors
