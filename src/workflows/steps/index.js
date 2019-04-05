@@ -636,33 +636,8 @@ ${chalk.green(log)}`);
 				.catch(err => util.logger.log(chalk.red(err)));
 		});
 	},
-	checkForUncommittedChanges(state) {
-		// TODO: rethink this and stashChanges
-		state.step = "checkForUncommittedChanges";
-		return command.uncommittedChangesExist(state).then(results => {
-			state.uncommittedChangesExist = results.length;
-			return Promise.resolve(state.uncommittedChangesExist);
-		});
-	},
-	gitStash(state) {
-		// TODO: rethink this and stashChanges
+	async gitStash(state) {
 		state.step = "gitStash";
-		return git.stash({ option: "--include-untracked" }).then(() => {
-			util.advise("gitStash", { exit: false });
-			return Promise.resolve();
-		});
-	},
-	stashIfUncommittedChangesExist(state) {
-		// TODO: rethink this and stashChanges
-		state.step = "stashIfUncommittedChangesExist";
-		const { uncommittedChangesExist } = state;
-		if (uncommittedChangesExist) {
-			return api.gitStash(state);
-		}
-	},
-	async stashChanges(state) {
-		// TODO: rethink this and gitStash/stashIfUncommittedChangesExist
-		state.step = "stashChanges";
 		const current = await getCurrentBranch();
 		return command.uncommittedChangesExist(state).then(results => {
 			if (results.length) {
@@ -674,11 +649,20 @@ ${chalk.green(log)}`);
 	resetIfStashed(state) {
 		state.step = "resetIfStashed";
 		const { stashed, spinner, repo } = state;
+		const onError = () => {
+			util.advise("gitStashPop", { exit: false });
+			return () => Promise.resolve();
+		};
+
 		if (stashed) {
 			return command
 				.checkoutBranch({ branch: stashed, spinner, repo })
 				.then(() => {
-					return git.stash({ option: "pop" });
+					return git.stash({
+						option: "pop",
+						logMessage: "git stash pop",
+						onError
+					});
 				});
 		}
 	},

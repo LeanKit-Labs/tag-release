@@ -45,7 +45,9 @@ You might consider reseting your develop by running 'git reset --hard upstream/d
 It could be that your local environment is out of sync with your upstream or you are missing a upstream feature branch.
 
 You might consider reseting your branch by running 'git reset --hard upstream/develop' or creating a upstream feature branch.`,
-	gitStash: `It looks like you had some uncommited changes. We went ahead and stashed them so you don't lose any of your work.`,
+	gitStashPop: `It looks like there were some conflict(s) while trying to pop your most recent changes.
+
+Unfortunately, tag-release can't auto-magically fix them. Please resolve the conflict(s) to pick up where you left off.`,
 	gitUpstream: `It appears we couldn't access your remote upstream repository.
 
 tag-release needs an upstream remote in order to work correctly. You can double check by running 'git remote -v'
@@ -56,11 +58,11 @@ To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`
 To add a remote origin run 'git remote add origin https://github.com/username/repo.git'
 
 You can double check by running 'git remote -v'`,
-	gitRebaseUpstreamBase: `It looks like there was some conflict(s) while trying to rebase with the upstream base.
+	gitRebaseUpstreamBase: `It looks like there were some conflict(s) while trying to rebase with the upstream base.
 
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
 will handle adding the conflicting files and continuing with the rebase.`,
-	gitRebaseInteractive: `It looks like there was some conflict(s) while trying to rebase with upstream/master.
+	gitRebaseInteractive: `It looks like there were some conflict(s) while trying to rebase with upstream/master.
 
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
 will handle adding the conflicting files and continuing with the rebase.`,

@@ -5,7 +5,7 @@ describe("l10n workflow", () => {
 	it("should have all of the required sync steps", () => {
 		expect(sync).toEqual([
 			run.changeDirectory,
-			run.stashChanges,
+			run.gitStash,
 			run.fetchUpstream,
 			run.createOrCheckoutBranch,
 			run.gitMergeUpstreamBranch,
@@ -18,7 +18,7 @@ describe("l10n workflow", () => {
 	it("should have all of the required check steps", () => {
 		expect(check).toEqual([
 			run.changeDirectory,
-			run.stashChanges,
+			run.gitStash,
 			run.fetchUpstream,
 			run.createOrCheckoutBranch,
 			run.gitMergeUpstreamBranch,

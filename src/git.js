@@ -172,11 +172,12 @@ const git = {
 		return runCommand({ args });
 	},
 
-	stash({ option }) {
+	stash({ option, logMessage = "stashing uncommitted changes", onError }) {
 		const args = `stash${option ? ` ${option}` : ""}`;
 		return runCommand({
 			args,
-			logMessage: "stashing uncommitted changes"
+			logMessage,
+			onError
 		});
 	},
 
