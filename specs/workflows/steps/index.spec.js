@@ -469,7 +469,6 @@ describe("shared workflow steps", () => {
 			describe("and not in prerelease mode", () => {
 				beforeEach(() => {
 					state = {
-						currentVersion: "1.2.3",
 						prerelease: false
 					};
 				});
@@ -492,12 +491,12 @@ describe("shared workflow steps", () => {
 				});
 
 				it("should get all logs when there are no tags", () => {
-					command.getTagList = jest.fn(() => Promise.resolve([]));
+					command.getTagList = jest.fn(() => Promise.resolve([""]));
 
 					return run.gitShortLog(state).then(() => {
 						expect(command.shortLog).toHaveBeenCalledTimes(1);
 						expect(command.shortLog).toHaveBeenCalledWith(
-							"v1.2.3",
+							"",
 							undefined,
 							undefined
 						);
@@ -524,16 +523,15 @@ describe("shared workflow steps", () => {
 			describe("and in prerelease mode", () => {
 				beforeEach(() => {
 					state = {
-						currentVersion: "1.2.3",
 						prerelease: true
 					};
 				});
 
-				it("should use the current version when fetching log data", () => {
+				it("should use default when fetching log data", () => {
 					return run.gitShortLog(state).then(() => {
 						expect(command.shortLog).toHaveBeenCalledTimes(1);
 						expect(command.shortLog).toHaveBeenCalledWith(
-							"v1.2.3",
+							"",
 							undefined,
 							undefined
 						);
@@ -920,32 +918,34 @@ describe("shared workflow steps", () => {
 			});
 		});
 
-		describe("when package-lock.json exists", () => {
-			it(`should call "git.diff" with the appropriate arguments`, () => {
-				return run.gitDiff(state).then(() => {
-					expect(git.diff).toHaveBeenCalledTimes(1);
-					expect(git.diff).toHaveBeenCalledWith({
-						files: [
-							"CHANGELOG.md",
-							"./package.json",
-							"package-lock.json"
-						],
-						maxBuffer: undefined,
-						onError: expect.any(Function)
+		describe("files", () => {
+			describe("exists", () => {
+				it(`should call "git.diff" with the appropriate arguments`, () => {
+					return run.gitDiff(state).then(() => {
+						expect(git.diff).toHaveBeenCalledTimes(1);
+						expect(git.diff).toHaveBeenCalledWith({
+							files: [
+								"./package.json",
+								"CHANGELOG.md",
+								"package-lock.json"
+							],
+							maxBuffer: undefined,
+							onError: expect.any(Function)
+						});
 					});
 				});
 			});
-		});
 
-		describe("when package-lock.json doesn't exists", () => {
-			it(`should call "git.diff" with the appropriate arguments`, () => {
-				util.fileExists = jest.fn(() => false);
-				return run.gitDiff(state).then(() => {
-					expect(git.diff).toHaveBeenCalledTimes(1);
-					expect(git.diff).toHaveBeenCalledWith({
-						files: ["CHANGELOG.md", "./package.json"],
-						maxBuffer: undefined,
-						onError: expect.any(Function)
+			describe("don't exist", () => {
+				it(`should call "git.diff" with the appropriate arguments`, () => {
+					util.fileExists = jest.fn(() => false);
+					return run.gitDiff(state).then(() => {
+						expect(git.diff).toHaveBeenCalledTimes(1);
+						expect(git.diff).toHaveBeenCalledWith({
+							files: ["./package.json"],
+							maxBuffer: undefined,
+							onError: expect.any(Function)
+						});
 					});
 				});
 			});
@@ -3665,20 +3665,32 @@ describe("shared workflow steps", () => {
 
 	describe("checkNewCommits", () => {
 		beforeEach(() => {
-			state.currentVersion = "1.2.3";
+			command.getTagList = jest.fn(() => Promise.resolve(["v1.1.1"]));
 			command.shortLog = jest.fn(() =>
 				Promise.resolve("some random commit")
 			);
 		});
 
-		describe("when checking for new commits", () => {
-			it("should set state with returned log", () => {
+		it("should get a list of tags", () => {
+			return run.checkNewCommits(state).then(() => {
+				expect(command.getTagList).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("should call shortLog and set state", () => {
+			return run.checkNewCommits(state).then(() => {
+				expect(command.shortLog).toHaveBeenCalledTimes(1);
+				expect(command.shortLog).toHaveBeenCalledWith("v1.1.1");
+				expect(state.log).toEqual("some random commit");
+			});
+		});
+
+		describe("when there are no tags", () => {
+			it("should resolve without setting state", () => {
+				command.getTagList = jest.fn(() => Promise.resolve([]));
 				return run.checkNewCommits(state).then(() => {
-					expect(command.shortLog).toHaveBeenCalledTimes(1);
-					expect(command.shortLog).toHaveBeenCalledWith(
-						`v${state.currentVersion}`
-					);
-					expect(state.log).toEqual("some random commit");
+					expect(command.shortLog).not.toHaveBeenCalled();
+					expect(state).not.toHaveProperty("log");
 				});
 			});
 		});

@@ -225,11 +225,11 @@ const api = {
 	},
 	gitShortLog(state) {
 		state.step = "gitShortLog";
-		const { currentVersion, prerelease, spinner, repo } = state;
+		const { prerelease, spinner, repo } = state;
 
 		let contents = util.readFile(CHANGELOG_PATH);
 
-		if (contents.includes("### Next")) {
+		if (contents && contents.includes("### Next")) {
 			contents = contents.replace(
 				/### Next([^#]+)/,
 				(match, submatch) => {
@@ -241,7 +241,7 @@ const api = {
 			util.writeFile(CHANGELOG_PATH, contents);
 		} else {
 			return command.getTagList(spinner, repo).then(tags => {
-				let latestRelease = `v${currentVersion}`;
+				let latestRelease = "";
 				if (tags.length) {
 					if (!prerelease) {
 						tags = tags.filter(tag => !tag.includes("-"));
@@ -382,6 +382,7 @@ ${chalk.green(log)}`);
 
 		util.log.begin("update changelog");
 		let contents = util.readFile(CHANGELOG_PATH);
+		contents = contents ? contents : "";
 
 		if (release === "major") {
 			contents = `## ${wildcardVersion}\n\n${update}\n\n${contents}`;
@@ -397,7 +398,11 @@ ${chalk.green(log)}`);
 	gitDiff(state) {
 		state.step = "gitDiff";
 		const { configPath } = state;
-		const files = [CHANGELOG_PATH, configPath];
+		const files = [configPath];
+
+		if (util.fileExists(CHANGELOG_PATH)) {
+			files.push(CHANGELOG_PATH);
+		}
 
 		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
 			files.push(PACKAGELOCKJSON_PATH);
@@ -1263,11 +1268,16 @@ ${chalk.green(log)}`);
 	},
 	checkNewCommits(state) {
 		state.step = "checkNewCommits";
-		const { currentVersion } = state;
-		const latestRelease = `v${currentVersion}`;
+		return command.getTagList().then(tags => {
+			tags = tags.filter(tag => !tag.includes("-"));
+			if (tags && tags.length === 0) {
+				return Promise.resolve();
+			}
 
-		return command.shortLog(latestRelease).then(data => {
-			state.log = data;
+			const latestRelease = tags[tags.length - 1];
+			return command.shortLog(latestRelease).then(data => {
+				state.log = data;
+			});
 		});
 	},
 	promptKeepBranchOrCreateNew(state) {
