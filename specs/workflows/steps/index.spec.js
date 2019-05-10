@@ -648,6 +648,42 @@ describe("shared workflow steps", () => {
 			});
 		});
 
+		describe("when there are no tagged releases in the upstream", () => {
+			beforeEach(() => {
+				command.getTagList = jest.fn(() => Promise.resolve([]));
+			});
+
+			it("should use default version", () => {
+				return run.askSemverJump(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledTimes(1);
+					expect(util.prompt).toHaveBeenCalledWith([
+						{
+							type: "list",
+							name: "release",
+							message: "What type of release is this?",
+							choices: [
+								{
+									name: "Major (Breaking Change) v1.0.0",
+									value: "major",
+									short: "l"
+								},
+								{
+									name: "Minor (New Feature) v0.1.0",
+									value: "minor",
+									short: "m"
+								},
+								{
+									name: "Patch (Bug Fix) v0.0.1",
+									value: "patch",
+									short: "s"
+								}
+							]
+						}
+					]);
+				});
+			});
+		});
+
 		describe("when the release option has been provided", () => {
 			it("should not prompt the user to select a release option", () => {
 				state = {
