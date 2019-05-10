@@ -6,6 +6,10 @@
   "bin": {
     "tag-release": "./bin/tag-release.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LeanKit-Labs/tag-release"
+  },
   "scripts": {
     "lint": "eslint --fix --ignore-path .gitignore ./",
     "test": "jest --coverage",
