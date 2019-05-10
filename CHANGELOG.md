@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.9.0
+
+* add link to github on npm page
+
 ### 6.8.1
 
 * Added the ability to reset to branch if stashed. Fixed qa issue with no pre-releases
