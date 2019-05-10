@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.10.0
+
+* Made tag-release more new repo friendly
+* Consolidated stash index commands
+
 ### 6.9.0
 
 * add link to github on npm page
