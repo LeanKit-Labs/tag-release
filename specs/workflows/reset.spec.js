@@ -9,8 +9,7 @@ describe("reset workflow", () => {
 			run.githubOrigin,
 			run.verifyUpstream,
 			run.fetchUpstream,
-			run.checkForUncommittedChanges,
-			run.stashIfUncommittedChangesExist,
+			run.gitStash,
 			run.verifyMasterBranch,
 			run.checkoutMaster,
 			run.gitResetMaster,
@@ -20,7 +19,8 @@ describe("reset workflow", () => {
 			run.gitResetDevelop,
 			run.verifyPackageJson,
 			run.verifyChangelog,
-			run.cleanUpTmpFiles
+			run.cleanUpTmpFiles,
+			run.resetIfStashed
 		]);
 	});
 });

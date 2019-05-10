@@ -3,7 +3,7 @@ const run = require("./steps/index");
 module.exports = {
 	sync: [
 		run.changeDirectory,
-		run.stashChanges,
+		run.gitStash,
 		run.fetchUpstream,
 		run.createOrCheckoutBranch,
 		run.gitMergeUpstreamBranch,
@@ -13,7 +13,7 @@ module.exports = {
 	],
 	check: [
 		run.changeDirectory,
-		run.stashChanges,
+		run.gitStash,
 		run.fetchUpstream,
 		run.createOrCheckoutBranch,
 		run.gitMergeUpstreamBranch,

@@ -5,7 +5,7 @@ describe("qa-automated workflow", () => {
 	it("should have all of the required steps", () => {
 		expect(qaAuto).toEqual([
 			run.changeDirectory,
-			run.stashChanges,
+			run.gitStash,
 			run.checkoutl10nBranch,
 			run.getCurrentBranchVersion,
 			run.checkNewCommits,

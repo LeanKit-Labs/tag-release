@@ -12,7 +12,7 @@ const run = require("./steps/index");
 
 module.exports = [
 	run.changeDirectory,
-	run.stashChanges,
+	run.gitStash,
 	run.checkoutl10nBranch,
 	run.getCurrentBranchVersion,
 	run.checkNewCommits,

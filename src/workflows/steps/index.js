@@ -225,11 +225,11 @@ const api = {
 	},
 	gitShortLog(state) {
 		state.step = "gitShortLog";
-		const { currentVersion, prerelease, spinner, repo } = state;
+		const { prerelease, spinner, repo } = state;
 
 		let contents = util.readFile(CHANGELOG_PATH);
 
-		if (contents.includes("### Next")) {
+		if (contents && contents.includes("### Next")) {
 			contents = contents.replace(
 				/### Next([^#]+)/,
 				(match, submatch) => {
@@ -241,7 +241,7 @@ const api = {
 			util.writeFile(CHANGELOG_PATH, contents);
 		} else {
 			return command.getTagList(spinner, repo).then(tags => {
-				let latestRelease = `v${currentVersion}`;
+				let latestRelease = "";
 				if (tags.length) {
 					if (!prerelease) {
 						tags = tags.filter(tag => !tag.includes("-"));
@@ -382,6 +382,7 @@ ${chalk.green(log)}`);
 
 		util.log.begin("update changelog");
 		let contents = util.readFile(CHANGELOG_PATH);
+		contents = contents ? contents : "";
 
 		if (release === "major") {
 			contents = `## ${wildcardVersion}\n\n${update}\n\n${contents}`;
@@ -397,7 +398,11 @@ ${chalk.green(log)}`);
 	gitDiff(state) {
 		state.step = "gitDiff";
 		const { configPath } = state;
-		const files = [CHANGELOG_PATH, configPath];
+		const files = [configPath];
+
+		if (util.fileExists(CHANGELOG_PATH)) {
+			files.push(CHANGELOG_PATH);
+		}
 
 		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
 			files.push(PACKAGELOCKJSON_PATH);
@@ -636,33 +641,8 @@ ${chalk.green(log)}`);
 				.catch(err => util.logger.log(chalk.red(err)));
 		});
 	},
-	checkForUncommittedChanges(state) {
-		// TODO: rethink this and stashChanges
-		state.step = "checkForUncommittedChanges";
-		return command.uncommittedChangesExist(state).then(results => {
-			state.uncommittedChangesExist = results.length;
-			return Promise.resolve(state.uncommittedChangesExist);
-		});
-	},
-	gitStash(state) {
-		// TODO: rethink this and stashChanges
+	async gitStash(state) {
 		state.step = "gitStash";
-		return git.stash({ option: "--include-untracked" }).then(() => {
-			util.advise("gitStash", { exit: false });
-			return Promise.resolve();
-		});
-	},
-	stashIfUncommittedChangesExist(state) {
-		// TODO: rethink this and stashChanges
-		state.step = "stashIfUncommittedChangesExist";
-		const { uncommittedChangesExist } = state;
-		if (uncommittedChangesExist) {
-			return api.gitStash(state);
-		}
-	},
-	async stashChanges(state) {
-		// TODO: rethink this and gitStash/stashIfUncommittedChangesExist
-		state.step = "stashChanges";
 		const current = await getCurrentBranch();
 		return command.uncommittedChangesExist(state).then(results => {
 			if (results.length) {
@@ -674,11 +654,20 @@ ${chalk.green(log)}`);
 	resetIfStashed(state) {
 		state.step = "resetIfStashed";
 		const { stashed, spinner, repo } = state;
+		const onError = () => {
+			util.advise("gitStashPop", { exit: false });
+			return () => Promise.resolve();
+		};
+
 		if (stashed) {
 			return command
 				.checkoutBranch({ branch: stashed, spinner, repo })
 				.then(() => {
-					return git.stash({ option: "pop" });
+					return git.stash({
+						option: "pop",
+						logMessage: "git stash pop",
+						onError
+					});
 				});
 		}
 	},
@@ -1279,11 +1268,16 @@ ${chalk.green(log)}`);
 	},
 	checkNewCommits(state) {
 		state.step = "checkNewCommits";
-		const { currentVersion } = state;
-		const latestRelease = `v${currentVersion}`;
+		return command.getTagList().then(tags => {
+			tags = tags.filter(tag => !tag.includes("-"));
+			if (tags && tags.length === 0) {
+				return Promise.resolve();
+			}
 
-		return command.shortLog(latestRelease).then(data => {
-			state.log = data;
+			const latestRelease = tags[tags.length - 1];
+			return command.shortLog(latestRelease).then(data => {
+				state.log = data;
+			});
 		});
 	},
 	promptKeepBranchOrCreateNew(state) {
