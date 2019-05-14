@@ -268,9 +268,10 @@ const api = {
 		util.logger.log(`${chalk.bold("Here is a preview of your log:")}
 ${chalk.green(log)}`);
 	},
-	askSemverJump(state) {
+	async askSemverJump(state) {
 		state.step = "askSemverJump";
-		const { currentVersion, prerelease, release } = state;
+		let { currentVersion } = state;
+		const { prerelease, release } = state;
 
 		// don't bother prompting if this information was already provided in the CLI options
 		if (release && release.length) {
@@ -304,6 +305,13 @@ ${chalk.green(log)}`);
 
 		const choicesSource = prerelease ? prereleaseChoices : releaseChoices;
 
+		// If there are no tagged releases in repository, assumes this is the
+		// initial release. So, you can create 0.0.1, 0.1.0, 1.0.0 versions.
+		currentVersion = await command.getTagList().then(tags => {
+			tags = tags.filter(tag => !!tag && !tag.includes("-"));
+			return tags && tags.length === 0 ? "0.0.0" : currentVersion;
+		});
+
 		const choices = choicesSource.map(item => {
 			const version = `v${semver.inc(
 				currentVersion,
@@ -326,6 +334,7 @@ ${chalk.green(log)}`);
 			])
 			.then(answers => {
 				state.release = answers.release;
+				state.currentVersion = currentVersion;
 				return Promise.resolve();
 			});
 	},
