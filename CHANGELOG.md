@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.11.0
+
+* Added initial default tag version
+
 ### 6.10.0
 
 * Made tag-release more new repo friendly
