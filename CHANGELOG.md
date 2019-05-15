@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.11.1
+
+* Fixed version used when comparing to get log when in pre-release mode
+
 ### 6.11.0
 
 * Added initial default tag version
