@@ -225,7 +225,7 @@ const api = {
 	},
 	gitShortLog(state) {
 		state.step = "gitShortLog";
-		const { prerelease, spinner, repo } = state;
+		const { currentVersion, prerelease, spinner, repo } = state;
 
 		let contents = util.readFile(CHANGELOG_PATH);
 
@@ -243,6 +243,7 @@ const api = {
 			return command.getTagList(spinner, repo).then(tags => {
 				let latestRelease = "";
 				if (tags.length) {
+					latestRelease = `v${currentVersion}`;
 					if (!prerelease) {
 						tags = tags.filter(tag => !tag.includes("-"));
 						latestRelease = tags[tags.length - 1];
