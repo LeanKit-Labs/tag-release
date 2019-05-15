@@ -523,15 +523,16 @@ describe("shared workflow steps", () => {
 			describe("and in prerelease mode", () => {
 				beforeEach(() => {
 					state = {
+						currentVersion: "1.2.3",
 						prerelease: true
 					};
 				});
 
-				it("should use default when fetching log data", () => {
+				it("should use currentVersion when fetching log data", () => {
 					return run.gitShortLog(state).then(() => {
 						expect(command.shortLog).toHaveBeenCalledTimes(1);
 						expect(command.shortLog).toHaveBeenCalledWith(
-							"",
+							"v1.2.3",
 							undefined,
 							undefined
 						);
