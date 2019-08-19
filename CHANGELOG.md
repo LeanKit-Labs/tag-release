@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.12.0
+
+* Added coverage flag to l10n command
+
 ### 6.11.1
 
 * Fixed version used when comparing to get log when in pre-release mode
