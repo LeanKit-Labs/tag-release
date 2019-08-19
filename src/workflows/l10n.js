@@ -20,5 +20,16 @@ module.exports = {
 		run.diffWithUpstreamMaster,
 		run.commitDiffWithUpstreamMaster,
 		run.resetIfStashed
+	],
+	coverage: [
+		run.changeDirectory,
+		run.gitStash,
+		run.fetchUpstream,
+		run.checkoutMaster,
+		run.gitResetMaster,
+		run.buildLocale,
+		run.getLangCodes,
+		run.getl10nCoverage,
+		run.resetIfStashed
 	]
 };

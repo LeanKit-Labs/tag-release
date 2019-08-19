@@ -47,6 +47,7 @@ const util = require("../../../src/utils");
 const git = require("../../../src/git");
 const command = require("../../../src/command");
 const conflictResolution = require("../../../src/workflows/steps/conflictResolution");
+const getContentsFromYAML = require("../../../src/helpers/getContentsFromYAML"); // eslint-disable-line no-unused-vars
 
 jest.mock("../../../src/git");
 jest.mock("../../../src/command");
@@ -63,6 +64,10 @@ jest.mock("../../../src/helpers/filterFlowBasedOnDevelopBranch", flow =>
 jest.mock("../../../src/workflows/steps/conflictResolution", () => ({
 	retryRebase: jest.fn(() => Promise.resolve())
 }));
+
+jest.mock("../../../src/helpers/getContentsFromYAML", () =>
+	jest.fn(() => ({ "first.key": "one", "second.key": "two" }))
+);
 
 describe("shared workflow steps", () => {
 	let state;
@@ -4819,6 +4824,204 @@ common.filter.savedFilters.new: "<New>"
 					await run.commitDiffWithUpstreamMaster(state);
 					expect(state.changes).toHaveProperty("diff");
 					expect(state.changes.diff).toEqual(0);
+				});
+			});
+		});
+	});
+
+	describe("buildLocale", () => {
+		beforeEach(() => {
+			util.exec = jest.fn(() => Promise.resolve());
+			util.advise = jest.fn(() => Promise.resolve());
+			util.readJSONFile = jest.fn(() => ({ scripts: { test: "blah" } }));
+		});
+
+		it("should set step on state", () => {
+			run.buildLocale(state).then(() => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("buildLocale");
+			});
+		});
+
+		describe("has build script", () => {
+			beforeEach(() => {
+				util.readJSONFile = jest.fn(() => ({
+					scripts: { test: "blah", "build:locale": "npm run build" }
+				}));
+			});
+
+			it("should run build script", () => {
+				run.buildLocale(state).then(() => {
+					expect(util.exec).toHaveBeenCalledTimes(1);
+					expect(util.exec).toHaveBeenCalledWith(
+						"npm run build:locale"
+					);
+				});
+			});
+
+			describe("should handle rejection", () => {
+				beforeEach(() => {
+					util.exec = jest.fn(() => Promise.reject("Nope"));
+				});
+
+				it("should advise", () => {
+					run.buildLocale(state).then(() => {
+						expect(util.advise).toHaveBeenCalledTimes(1);
+						expect(util.advise).toHaveBeenCalledWith(
+							"buildLocale",
+							{ exit: false }
+						);
+					});
+				});
+			});
+		});
+
+		describe("no build script", () => {
+			it("should do nothing and resolve", () => {
+				run.buildLocale(state).then(() => {
+					expect(util.exec).not.toHaveBeenCalled();
+				});
+			});
+		});
+	});
+
+	describe("getLangCodes", () => {
+		beforeEach(() => {
+			state = {
+				cwd: "./path"
+			};
+			util.fileExists = jest.fn(() => true);
+			util.readDirFileNames = jest.fn(() => [
+				"all.yaml",
+				"en-US.yaml",
+				"en-US.spec.yaml",
+				"fr-FR.yaml",
+				"de-DE.yaml"
+			]);
+		});
+
+		it("should set step on state", () => {
+			run.getLangCodes(state).then(() => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("getLangCodes");
+			});
+		});
+
+		describe("when locale files are at root level", () => {
+			it("should set langCodes and localePath on state", () => {
+				run.getLangCodes(state).then(() => {
+					expect(state).toHaveProperty("langCodes");
+					expect(state.langCodes).toEqual(["fr-FR", "de-DE"]);
+					expect(state).toHaveProperty("localePath");
+					expect(state.localePath).toEqual("./path/locale");
+				});
+			});
+		});
+
+		describe("when locale files are nested", () => {
+			beforeEach(() => {
+				util.fileExists = jest
+					.fn()
+					.mockReturnValueOnce(false)
+					.mockReturnValueOnce(true);
+			});
+
+			it("should set langCodes and localePath on state", () => {
+				run.getLangCodes(state).then(() => {
+					expect(state).toHaveProperty("langCodes");
+					expect(state.langCodes).toEqual(["fr-FR", "de-DE"]);
+					expect(state).toHaveProperty("localePath");
+					expect(state.localePath).toEqual("./path/client/js/locale");
+				});
+			});
+		});
+
+		describe("when there are no locale files", () => {
+			it("should do nothing and return", () => {
+				util.fileExists = jest.fn(() => false);
+				run.getLangCodes(state).then(() => {
+					expect(util.readDirFileNames).not.toHaveBeenCalled();
+				});
+			});
+		});
+
+		describe("when file directory is empty", () => {
+			it("should set langCodes and localePath on state", () => {
+				util.readDirFileNames = jest.fn(() => []);
+				run.getLangCodes(state).then(() => {
+					expect(state).toHaveProperty("langCodes");
+					expect(state.langCodes).toEqual([]);
+					expect(state).toHaveProperty("localePath");
+					expect(state.localePath).toEqual("./path/locale");
+				});
+			});
+		});
+	});
+
+	describe("getl10nCoverage", () => {
+		it("should set step on state", () => {
+			run.getl10nCoverage(state).then(() => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("getl10nCoverage");
+			});
+		});
+
+		describe("when there is no localePath", () => {
+			it("should set coverage on state to empty", () => {
+				run.getl10nCoverage(state).then(() => {
+					expect(state).toHaveProperty("coverage");
+					expect(state.coverage).toEqual({ keyCount: 0 });
+				});
+			});
+		});
+
+		describe("when handling yaml contents", () => {
+			it("should set coverage on state", () => {
+				state = {
+					repo: "test_repo",
+					localePath: "./path/locale",
+					langCodes: ["fr-FR"]
+				};
+				getContentsFromYAML
+					.mockReturnValueOnce({ first: "one", second: "two" })
+					.mockReturnValueOnce({ first: "une", second: "deux" });
+				run.getl10nCoverage(state).then(() => {
+					expect(state).toHaveProperty("coverage");
+					expect(state.coverage).toEqual({
+						"fr-FR": {
+							diff: [],
+							same: [],
+							percent: "100.0"
+						},
+						keyCount: 2
+					});
+				});
+			});
+
+			describe("when handling l10nKeyOverrides", () => {
+				state = {
+					repo: "test-repo",
+					localePath: "./path/locale",
+					langCodes: ["fr-FR"],
+					l10nKeyOverrides: {
+						"test-repo": {
+							"fr-FR": ["first"]
+						}
+					}
+				};
+				getContentsFromYAML
+					.mockReturnValueOnce({ first: "one", second: "two" })
+					.mockReturnValueOnce({ first: "one", second: "deux" });
+				run.getl10nCoverage(state).then(() => {
+					expect(state).toHaveProperty("coverage");
+					expect(state.coverage).toEqual({
+						"fr-FR": {
+							diff: [],
+							same: [],
+							percent: "100.0"
+						},
+						keyCount: 2
+					});
 				});
 			});
 		});

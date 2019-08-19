@@ -215,6 +215,22 @@ You are required to setup the following in your `.tag-releaserc.json` file in yo
 
 > **Note**: `l10n` will automatically create a qa branch and pull in all you pre-releases if it finds a host project amoung the lists of repos you are wanting to pre-release.
 
+This command also supports a `--coverage` or `--cover` command which will provide an coverage output of localization strings that match between the `en-US` locale file and all other files.
+
+Coverage is based on `diff.length + same.length / enUSKeys.length`. `diff` is the number of keys that are in the `en-US.yaml` file but aren't represented in the current locale file. `same` is the number of keys that have the same value in the `en-US.yaml` as it does in the current locale file.
+
+If the translations between the `en-US.yaml` file and the current locale happen to be the same you can provide an override in the `.tag-releaserc.json` file in your root:
+
+```
+{
+   "l10nKeyOverrides": {
+      "repo_name": {
+         "locale_code": [ "localization.string.to.ignore" ]
+      }
+   }
+}
+```
+
 ### GitHub Integration
 
 You will only be asked for your GitHub **username** and **password** when you first

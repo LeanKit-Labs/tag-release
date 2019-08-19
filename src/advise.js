@@ -100,7 +100,10 @@ It's most likely because your base has changed so you may need to run 'git push 
 
 In order to override the maxBuffer limit run 'tag-relase maxbuffer <n>' and provide it an appropriate buffer size.
 
-The default size is 1024 * 5000. Where 5000 is <n>.`
+The default size is 1024 * 5000. Where 5000 is <n>.`,
+	buildLocale: `It appears something went wrong attempting to build locale locally.
+	
+Coverage of language translations might be not accurate for the repository in question.`
 };
 
 const MAXIMUM_WIDTH = 50;
