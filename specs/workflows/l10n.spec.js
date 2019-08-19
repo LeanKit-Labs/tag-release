@@ -1,4 +1,4 @@
-const { sync, check } = require("../../src/workflows/l10n");
+const { sync, check, coverage } = require("../../src/workflows/l10n");
 const run = require("../../src/workflows/steps");
 
 describe("l10n workflow", () => {
@@ -24,6 +24,20 @@ describe("l10n workflow", () => {
 			run.gitMergeUpstreamBranch,
 			run.diffWithUpstreamMaster,
 			run.commitDiffWithUpstreamMaster,
+			run.resetIfStashed
+		]);
+	});
+
+	it("should have all of the required coverage steps", () => {
+		expect(coverage).toEqual([
+			run.changeDirectory,
+			run.gitStash,
+			run.fetchUpstream,
+			run.checkoutMaster,
+			run.gitResetMaster,
+			run.buildLocale,
+			run.getLangCodes,
+			run.getl10nCoverage,
 			run.resetIfStashed
 		]);
 	});

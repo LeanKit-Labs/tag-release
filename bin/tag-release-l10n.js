@@ -2,14 +2,26 @@
 /* eslint-disable max-statements */
 const commander = require("commander");
 const api = require("../src/index.js");
-const { sync, check: checkFlow } = require("../src/workflows/l10n");
+const {
+	sync,
+	check: checkFlow,
+	coverage: coverageFlow
+} = require("../src/workflows/l10n");
 const qaAuto = require("../src/workflows/qa-automated");
 const utils = require("../src/utils.js");
 const steps = require("../src/workflows/steps/index");
-const { remove, findIndex, clone, map, filter, forEach } = require("lodash");
+const {
+	remove,
+	findIndex,
+	clone,
+	map,
+	filter,
+	forEach,
+	join
+} = require("lodash");
 const Table = require("cli-table2");
 const path = require("path");
-const { rootDirectory, l10n = [] } = require(path.join(
+const { rootDirectory, l10n = [], l10nKeyOverrides } = require(path.join(
 	process.env.TR_DIRECTORY,
 	"./.tag-releaserc.json"
 ));
@@ -26,10 +38,16 @@ commander.option(
 	"--check",
 	"check if there are changes in the repos before you actually run the tool"
 );
+commander.option(
+	"--cover, --coverage",
+	"percentage of how much the en-US locale is translated into other languages"
+);
 
 commander.parse(process.argv);
 
-const { verbose, maxbuffer, check } = commander;
+const AVERAGE_THRESHOLD = 80;
+const LOW_THRESHOLD = 25;
+const { verbose, maxbuffer, check, coverage, args } = commander;
 
 const hasChanges = options => options.changes.locale || options.changes.dev;
 
@@ -41,7 +59,8 @@ const saveState = (options, item) => {
 		tag: options.tag,
 		status: options.status,
 		host: options.host,
-		changes: options.changes
+		changes: options.changes,
+		coverage: options.coverage
 	});
 };
 
@@ -54,6 +73,8 @@ const getNextState = (options, item, callback) => {
 	};
 	options.callback = callback;
 	options.stashed = "";
+	options.coverage = {};
+	options.localePath = null;
 
 	if (!item.done) {
 		const { branch, repo, host } = item.value;
@@ -80,6 +101,16 @@ const getStatusColor = status => {
 		color = statusColors.default;
 	}
 	return color(status);
+};
+
+const getPercentColor = percent => {
+	const percentString = `${percent}%`;
+	if (percent >= AVERAGE_THRESHOLD) {
+		return chalk.green(percentString);
+	} else if (percent >= LOW_THRESHOLD) {
+		return chalk.yellow(percentString);
+	}
+	return chalk.red(percentString);
 };
 
 const iterator = l10n[Symbol.iterator]();
@@ -213,18 +244,95 @@ const dry = options => {
 	return runWorkflow(checkFlow, options);
 };
 
-const { branch, repo, host } = item.value;
+const coverageCallback = options => {
+	saveState(options, item);
+	options.spinner.succeed(item.value.repo);
+
+	item = iterator.next();
+	getNextState(options, item, coverageCallback);
+	if (item.done) {
+		const head = ["repo", "# of keys", ...options.langCodes];
+		const table = new Table({ head });
+		forEach(options.l10n, ({ repo, coverage: localeCoverage }) => {
+			const tableValues = [repo, localeCoverage.keyCount];
+			forEach(options.langCodes, code => {
+				const value = localeCoverage[code]
+					? getPercentColor(localeCoverage[code].percent)
+					: chalk.grey("N/A");
+				tableValues.push(value);
+			});
+			table.push(tableValues);
+		});
+		console.log(table.toString()); // eslint-disable-line no-console
+
+		return Promise.resolve();
+	}
+
+	options.spinner.start();
+	return runWorkflow(coverageFlow, options);
+};
+
+const coverageDetailsCallback = options => {
+	options.spinner.succeed(item.value.repo);
+
+	const { repo, coverage: localeCoverage } = options;
+	const head = ["repo", "# of keys", ...options.langCodes];
+	const table = new Table({ head });
+	const tableValues = [repo, localeCoverage.keyCount];
+	forEach(options.langCodes, code => {
+		const value = localeCoverage[code]
+			? getPercentColor(localeCoverage[code].percent)
+			: chalk.grey("N/A");
+		tableValues.push(value);
+	});
+	table.push(tableValues);
+	console.log(table.toString()); // eslint-disable-line no-console
+
+	const diffTable = new Table({
+		head: ["locale", "missing keys", "same as english"]
+	});
+	forEach(options.langCodes, code => {
+		if (localeCoverage[code] && localeCoverage[code].percent !== "100.0") {
+			diffTable.push([
+				code,
+				join(localeCoverage[code].diff, "\n"),
+				join(localeCoverage[code].same, "\n")
+			]);
+		}
+	});
+	console.log(diffTable.toString()); // eslint-disable-line no-console
+
+	return Promise.resolve();
+};
+
+let { repo } = item.value;
+const { branch, host } = item.value;
 const today = new Date();
 const currentMonth = today
 	.toLocaleString("en-us", { month: "short" })
 	.toLowerCase();
+
+let workflow = check ? checkFlow : sync;
+if (coverage) {
+	workflow = coverageFlow;
+}
+
+let callbackValue = check ? dry : callback;
+if (coverage) {
+	callbackValue = coverageCallback;
+
+	if (args.length) {
+		repo = args[0];
+		callbackValue = coverageDetailsCallback;
+	}
+}
 const options = {
 	verbose,
 	maxbuffer,
-	workflow: check ? checkFlow : sync,
+	workflow,
 	cwd: `${rootDirectory}/${repo}`, // directory to be running tag-release in (cwd-current working directory)
 	branch,
-	callback: check ? dry : callback,
+	callback: callbackValue,
 	command: "l10n",
 	prerelease: `l10n-${currentMonth}-${today.getDate()}`, // used for pre-release identifier
 	release: "preminor", // used for release type,
@@ -238,7 +346,8 @@ const options = {
 		locale: false,
 		dev: false,
 		diff: 0
-	}
+	},
+	l10nKeyOverrides
 };
 
 options.spinner.start();

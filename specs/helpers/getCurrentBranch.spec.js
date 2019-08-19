@@ -6,7 +6,7 @@ jest.mock("../../src/helpers/runCommand", () =>
 );
 
 describe("getCurrentBranch", () => {
-	it("should do the dew", () => {
+	it("should return the current branch", () => {
 		return getCurrentBranch().then(response => {
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({

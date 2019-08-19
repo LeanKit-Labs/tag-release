@@ -8,10 +8,12 @@ const GitHub = require("github-api");
 const sequence = require("when/sequence");
 const path = require("path");
 const removeWords = require("remove-words");
-const { set } = require("lodash");
+const { get, set, difference, union } = require("lodash");
 const { retryRebase } = require("./conflictResolution");
 const getCurrentBranch = require("../../helpers/getCurrentBranch");
+const getContentsFromYAML = require("../../helpers/getContentsFromYAML");
 
+const MAX_PERCENT = 100;
 const CHANGELOG_PATH = "CHANGELOG.md";
 const PACKAGELOCKJSON_PATH = "package-lock.json";
 const GIT_IGNORE_PATH = ".gitignore";
@@ -1678,6 +1680,97 @@ ${chalk.green(log)}`);
 					state.changes.diff = commits.trim().split("\n").length;
 				}
 			});
+	},
+	buildLocale(state) {
+		state.step = "buildLocale";
+		const { configPath } = state;
+		const { scripts } = util.readJSONFile(configPath);
+
+		const buildLocaleCommand = "npm run build:locale";
+		if (scripts.hasOwnProperty("build:locale")) {
+			util.log.begin(buildLocaleCommand);
+			return util
+				.exec(buildLocaleCommand)
+				.then(() => util.log.end())
+				.catch(() => util.advise("buildLocale", { exit: false }));
+		}
+		return Promise.resolve();
+	},
+	getLangCodes(state) {
+		state.step = "getLangCodes";
+		const { cwd } = state;
+
+		// Find path to translation files
+		let localePath;
+		if (util.fileExists(`${cwd}/locale/en-US.yaml`)) {
+			localePath = `${cwd}/locale`;
+		} else if (util.fileExists(`${cwd}/client/js/locale/en-US.yaml`)) {
+			localePath = `${cwd}/client/js/locale`;
+		} else {
+			return Promise.resolve();
+		}
+
+		let files = util.readDirFileNames(localePath);
+		files = files.filter(
+			file =>
+				!file.includes("spec") &&
+				!file.includes("all") &&
+				!file.includes("en-US") &&
+				file.includes("yaml")
+		);
+		const langRegex = /^(.*-?[A-Z]?).yaml/;
+		const codes = files.map(file => {
+			const [, code] = langRegex.exec(file);
+			return code;
+		});
+
+		state.langCodes = union(state.langCodes, codes);
+		state.localePath = localePath;
+		return Promise.resolve();
+	},
+	getl10nCoverage(state) {
+		state.step = "getl10nCoverage";
+		const { repo, langCodes, localePath, l10nKeyOverrides } = state;
+
+		if (!localePath) {
+			state.coverage = { keyCount: 0 };
+			return Promise.resolve();
+		}
+
+		const enUSContents = getContentsFromYAML(localePath, "en-US");
+		const enUSKeys = Object.keys(enUSContents);
+		const coverage = {};
+		langCodes.forEach(code => {
+			const contents = getContentsFromYAML(localePath, code);
+			const docKeys = Object.keys(contents);
+			const diff = difference(enUSKeys, docKeys);
+			let same;
+			if (get(l10nKeyOverrides, `${repo}.${code}`)) {
+				same = enUSKeys.filter(
+					k =>
+						!diff.includes(k) &&
+						!l10nKeyOverrides[repo][code].includes(k) &&
+						contents[k] === enUSContents[k]
+				);
+			} else {
+				same = enUSKeys.filter(
+					k => !diff.includes(k) && contents[k] === enUSContents[k]
+				);
+			}
+
+			coverage[code] = {
+				percent: (
+					MAX_PERCENT -
+					(diff.length + same.length) / enUSKeys.length * MAX_PERCENT
+				).toFixed(1),
+				diff,
+				same
+			};
+		});
+
+		coverage.keyCount = enUSKeys.length;
+		state.coverage = coverage;
+		return Promise.resolve();
 	}
 };
 
