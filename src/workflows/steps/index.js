@@ -1624,7 +1624,7 @@ ${chalk.green(log)}`);
 			.then(diff => {
 				if (diff) {
 					const regex = /((?:\[-.+-\])|(?:\{\+.+\+\})).*[^\r]/g;
-					const items = diff.match(regex);
+					const items = diff.match(regex) || [];
 					const { ins, del } = items.reduce(
 						(memo, item) => {
 							if (item.match(/\+}\[-/g) || item.match(/-\]{+/g)) {

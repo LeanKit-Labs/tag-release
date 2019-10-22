@@ -4725,6 +4725,16 @@ common.filter.savedFilters.new: "<New>"
 				expect(state.changes.dev).toEqual(true);
 			});
 		});
+
+		it("should handle empty change set", async () => {
+			git.diff = jest.fn(() =>
+				Promise.resolve("no matches found *.yaml")
+			);
+			await run.diffWithUpstreamMaster(state);
+			expect(state.changes).toHaveProperty("dev");
+			expect(state.changes.locale).toEqual(false);
+			expect(state.changes.dev).toEqual(false);
+		});
 	});
 
 	describe("checkoutl10nBranch", () => {
