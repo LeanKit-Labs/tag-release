@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.12.1
+
+* Handle when there is an empty change set for l10n
+
 ### 6.12.0
 
 * Added coverage flag to l10n command
