@@ -117,6 +117,11 @@ jest.mock("../package.json", () => ({
 	version: "1.1.1"
 }));
 
+jest.mock("path", () => ({
+	join: jest.fn(() => "some/path"),
+	resolve: jest.fn(() => "clippy.cow")
+}));
+
 jest.mock("rcfile", () => {
 	return jest.fn(() => ({ username: "rc@file.com", token: "token12345" }));
 });
@@ -138,6 +143,7 @@ const currentPackage = require("../package.json");
 const util = require("../src/utils");
 const { isPromise } = require("./helpers");
 const rcfile = require("rcfile"); // eslint-disable-line no-unused-vars
+const pathUtils = require("path"); // eslint-disable-line no-unused-vars
 const yaml = require("js-yaml"); // eslint-disable-line no-unused-vars
 
 jest.mock("js-yaml");
@@ -681,8 +687,8 @@ describe("utils", () => {
 			util.setConfig("username", "monkey");
 		});
 
-		it("should read from rcfile", () => {
-			expect(rcfile).toHaveBeenCalledTimes(1);
+		it("should read from the .rc file", () => {
+			expect(util.readJSONFile).toHaveBeenCalledTimes(1);
 		});
 
 		it("should write rcfile", () => {
@@ -739,6 +745,12 @@ describe("utils", () => {
 	});
 
 	describe("getOverrides", () => {
+		beforeEach(() => {
+			util.readJSONFile = jest.fn(() => {
+				return { username: "rc@file.com", token: "token12345" };
+			});
+		});
+
 		it("should read overrides from rcfile", () => {
 			const overrides = util.getOverrides();
 			expect(overrides).toEqual({
@@ -810,17 +822,6 @@ describe("utils", () => {
 							"token",
 							"blah"
 						);
-						expect(util.removeGitConfig).toHaveBeenCalledTimes(2);
-						expect(util.removeGitConfig).toHaveBeenCalledWith(
-							"tag-release.username"
-						);
-						expect(util.removeGitConfig).toHaveBeenCalledWith(
-							"tag-release.token"
-						);
-						expect(util.removeGitConfigSection).toHaveBeenCalled();
-						expect(
-							util.removeGitConfigSection
-						).toHaveBeenCalledWith("tag-release");
 					});
 				});
 			});
@@ -858,17 +859,6 @@ describe("utils", () => {
 							"token",
 							undefined
 						);
-						expect(util.removeGitConfig).toHaveBeenCalledTimes(2);
-						expect(util.removeGitConfig).toHaveBeenCalledWith(
-							"tag-release.username"
-						);
-						expect(util.removeGitConfig).toHaveBeenCalledWith(
-							"tag-release.token"
-						);
-						expect(util.removeGitConfigSection).toHaveBeenCalled();
-						expect(
-							util.removeGitConfigSection
-						).toHaveBeenCalledWith("tag-release");
 					});
 				});
 			});
@@ -891,17 +881,6 @@ describe("utils", () => {
 							"token",
 							"token12345"
 						);
-						expect(util.removeGitConfig).toHaveBeenCalledTimes(2);
-						expect(util.removeGitConfig).toHaveBeenCalledWith(
-							"tag-release.username"
-						);
-						expect(util.removeGitConfig).toHaveBeenCalledWith(
-							"tag-release.token"
-						);
-						expect(util.removeGitConfigSection).toHaveBeenCalled();
-						expect(
-							util.removeGitConfigSection
-						).toHaveBeenCalledWith("tag-release");
 					});
 				});
 			});
@@ -1502,6 +1481,38 @@ describe("utils", () => {
 				"path to json configuration file (defaults to './package.json')",
 				/^.*\.json$/
 			);
+		});
+	});
+
+	describe("getScripts", () => {
+		beforeEach(() => {
+			rcfile.mockReturnValue({
+				preqa: "node ./preqa.js",
+				prepr: "node ./prepr.js",
+				postpr: "node ./postpr.js"
+			});
+		});
+
+		it("should read from rcfile", () => {
+			util.getScripts("pr");
+			expect(rcfile).toHaveBeenCalledTimes(1);
+		});
+
+		describe("has scripts for command", () => {
+			it("should return scripts", () => {
+				const scripts = util.getScripts("pr");
+				expect(scripts).toEqual({
+					prepr: "node ./prepr.js",
+					postpr: "node ./postpr.js"
+				});
+			});
+		});
+
+		describe("no scripts for command", () => {
+			it("should return empty object for scripts", () => {
+				const scripts = util.getScripts("start");
+				expect(scripts).toEqual({});
+			});
 		});
 	});
 });
