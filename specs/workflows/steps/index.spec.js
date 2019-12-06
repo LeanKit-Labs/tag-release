@@ -5036,4 +5036,76 @@ common.filter.savedFilters.new: "<New>"
 			});
 		});
 	});
+
+	describe("runPreScript", () => {
+		beforeEach(() => {
+			state = {
+				command: "pr",
+				scripts: {
+					prepr: "node ./prepr.js"
+				}
+			};
+			util.exec = jest.fn(() => Promise.resolve());
+		});
+
+		it("should set step on state", () => {
+			return run.runPreScript(state).then(() => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("runPreScript");
+			});
+		});
+
+		it("should exec the script", () => {
+			return run.runPreScript(state).then(() => {
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith("node ./prepr.js");
+			});
+		});
+
+		it("should log the action to the console", () => {
+			return run.runPreScript(state).then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(1);
+				expect(util.log.begin).toHaveBeenCalledWith(
+					"running pre script: node ./prepr.js"
+				);
+				expect(util.log.end).toHaveBeenCalledTimes(1);
+			});
+		});
+	});
+
+	describe("runPostScript", () => {
+		beforeEach(() => {
+			state = {
+				command: "pr",
+				scripts: {
+					postpr: "node ./postpr.js"
+				}
+			};
+			util.exec = jest.fn(() => Promise.resolve());
+		});
+
+		it("should set step on state", () => {
+			return run.runPostScript(state).then(() => {
+				expect(state).toHaveProperty("step");
+				expect(state.step).toEqual("runPostScript");
+			});
+		});
+
+		it("should exec the script", () => {
+			return run.runPostScript(state).then(() => {
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith("node ./postpr.js");
+			});
+		});
+
+		it("should log the action to the console", () => {
+			return run.runPostScript(state).then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(1);
+				expect(util.log.begin).toHaveBeenCalledWith(
+					"running post script: node ./postpr.js"
+				);
+				expect(util.log.end).toHaveBeenCalledTimes(1);
+			});
+		});
+	});
 });

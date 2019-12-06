@@ -1771,6 +1771,20 @@ ${chalk.green(log)}`);
 		coverage.keyCount = enUSKeys.length;
 		state.coverage = coverage;
 		return Promise.resolve();
+	},
+	runPreScript(state) {
+		state.step = "runPreScript";
+		const { command: cmd, scripts } = state;
+		const script = scripts[`pre${cmd}`];
+		util.log.begin(`running pre script: ${script}`);
+		return util.exec(script).then(() => util.log.end());
+	},
+	runPostScript(state) {
+		state.step = "runPostScript";
+		const { command: cmd, scripts } = state;
+		const script = scripts[`post${cmd}`];
+		util.log.begin(`running post script: ${script}`);
+		return util.exec(script).then(() => util.log.end());
 	}
 };
 

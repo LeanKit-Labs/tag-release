@@ -5,14 +5,18 @@ const filterFlowBasedOnDevelopBranch = require("../../src/helpers/filterFlowBase
 const utils = require("../../src/utils"); // eslint-disable-line no-unused-vars
 
 jest.mock("../../src/workflows/steps/index.js", () => ({
-	checkHasDevelopBranch: jest.fn(() => true)
+	checkHasDevelopBranch: jest.fn(() => true),
+	runPreScript: "preScript",
+	runPostScript: "postScript"
 }));
 
 jest.mock("../../src/utils", () => ({
-	exec: jest.fn(() => Promise.resolve()),
 	getCurrentVersion: jest.fn(() => Promise.resolve("1.1.1")),
 	fileExists: jest.fn(() => true),
-	advise: jest.fn()
+	advise: jest.fn(),
+	getScripts: jest.fn(() => {
+		return {};
+	})
 }));
 
 jest.mock("../../src/helpers/filterFlowBasedOnDevelopBranch", () =>
@@ -26,7 +30,7 @@ describe("setup", () => {
 	let state;
 
 	beforeEach(() => {
-		state = {};
+		state = { command: "start" };
 	});
 
 	it("should transform state", () => {
@@ -56,6 +60,50 @@ describe("setup", () => {
 			state = { branch: "provided-branch" };
 			return setup(state).then(() => {
 				expect(state).toMatchObject({ branch: "provided-branch" });
+			});
+		});
+	});
+
+	describe("scripts", () => {
+		describe("provided", () => {
+			beforeEach(() => {
+				state = { command: "pr" };
+			});
+
+			describe("pre", () => {
+				it("should add script to workflow", () => {
+					utils.getScripts = jest.fn(() => {
+						return { prepr: "node ./preTest.js" };
+					});
+					return setup(state).then(() => {
+						expect(state).toMatchObject({
+							workflow: ["preScript", "one", "two", "three"]
+						});
+					});
+				});
+			});
+
+			describe("post", () => {
+				it("should add script to workflow", () => {
+					utils.getScripts = jest.fn(() => {
+						return { postpr: "node ./postTest.js" };
+					});
+					return setup(state).then(() => {
+						expect(state).toMatchObject({
+							workflow: ["one", "two", "three", "postScript"]
+						});
+					});
+				});
+			});
+		});
+
+		describe("not provided", () => {
+			it("should not add script to workflow", () => {
+				return setup(state).then(() => {
+					expect(state).toMatchObject({
+						workflow: ["one", "two", "three"]
+					});
+				});
 			});
 		});
 	});

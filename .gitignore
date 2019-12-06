@@ -4,6 +4,7 @@ coverage
 npm-debug.log
 src/.commits-to-rebase.txt
 src/workflows/.state.json
+src/workflows/steps/.state.json
 src/workflows/.dependencies.json
 .tag-releaserc.json
 .log.txt

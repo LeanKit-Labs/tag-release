@@ -157,13 +157,11 @@ const api = {
 			.catch(() => undefined);
 	},
 	setConfig(name, value) {
-		const contents = rcfile("tag-release");
+		const path = pathUtils.join(process.env.HOME, ".tag-releaserc.json");
+		const contents = api.readJSONFile(path);
 		contents[name] = value;
 
-		return api.writeJSONFile(
-			pathUtils.join(process.env.HOME, ".tag-releaserc.json"),
-			contents
-		);
+		return api.writeJSONFile(path, contents);
 	},
 	removeGitConfig(name) {
 		return api
@@ -174,7 +172,8 @@ const api = {
 		return api.exec(`${GIT_CONFIG_REMOVE_SECTION_COMMAND} ${name}`);
 	},
 	getOverrides() {
-		let overrides = rcfile("tag-release");
+		const path = pathUtils.join(process.env.HOME, ".tag-releaserc.json");
+		let overrides = api.readJSONFile(path);
 
 		// check if there are ENV variables for username/token
 		if (process.env.LKR_GITHUB_USER && process.env.LKR_GITHUB_TOKEN) {
@@ -195,10 +194,7 @@ const api = {
 		if (username || token) {
 			await Promise.all([
 				api.setConfig("username", username),
-				api.setConfig("token", token),
-				api.removeGitConfig("tag-release.username"),
-				api.removeGitConfig("tag-release.token"),
-				api.removeGitConfigSection("tag-release")
+				api.setConfig("token", token)
 			]);
 		}
 		({ username, token } = api.getOverrides());
@@ -463,6 +459,15 @@ const api = {
 			"path to json configuration file (defaults to './package.json')",
 			/^.*\.json$/
 		);
+	},
+	getScripts(command) {
+		const content = rcfile("tag-release");
+		return Object.keys(content)
+			.filter(key => key === `pre${command}` || key === `post${command}`)
+			.reduce(
+				(res, key) => Object.assign(res, { [key]: content[key] }),
+				{}
+			);
 	}
 };
 
