@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.12.2
+
+* Log output from pre and post scripts
+* Added ability to to read pre and post scripts for commands from package.json
+
 ### 6.12.1
 
 * Handle when there is an empty change set for l10n
