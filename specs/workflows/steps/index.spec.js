@@ -5071,6 +5071,17 @@ common.filter.savedFilters.new: "<New>"
 				expect(util.log.end).toHaveBeenCalledTimes(1);
 			});
 		});
+
+		it("should log the script output to the console", () => {
+			util.exec = jest.fn(() => Promise.resolve("this is my output.  "));
+			return run.runPreScript(state).then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(2);
+				expect(util.log.begin).toHaveBeenCalledWith(
+					"this is my output."
+				);
+				expect(util.log.end).toHaveBeenCalledTimes(2);
+			});
+		});
 	});
 
 	describe("runPostScript", () => {
@@ -5105,6 +5116,17 @@ common.filter.savedFilters.new: "<New>"
 					"running post script: node ./postpr.js"
 				);
 				expect(util.log.end).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("should log the script output to the console", () => {
+			util.exec = jest.fn(() => Promise.resolve("this is my output.  "));
+			return run.runPostScript(state).then(() => {
+				expect(util.log.begin).toHaveBeenCalledTimes(2);
+				expect(util.log.begin).toHaveBeenCalledWith(
+					"this is my output."
+				);
+				expect(util.log.end).toHaveBeenCalledTimes(2);
 			});
 		});
 	});
