@@ -264,7 +264,7 @@ token                : a92282731316b2d4f2313ff64b1350b78a5d4cf6
 
 ### `tag-release` rc File and Environment Variables
 
-`tag-release` will attempt to read from the rc file `.tag-releaserc.json` or the environment variables, 
+`tag-release` will attempt to read from the rc file `.tag-releaserc.json` or the environment variables,
 `LKR_GITHUB_USER` and `LKR_GITHUB_TOKEN`.
 
 example rc file:
@@ -301,6 +301,39 @@ patch
 ```
 
 `cwd` is the current working directory of the repository that `tag-release` will run on.
+
+### Pre and Post Scripts
+
+`tag-release` supports the idea of `pre` and `post` scripts. In order to take advantage
+of thie feature you will need to add a `tag-release` section to your `package.json`.
+
+## Usage
+
+The following will create `pre` and `post` script hooks for the `start` command of `tag-release`.
+
+```
+"tag-release": {
+   "preStart": node ./preStart.js,
+   "postStart": node ./postStart.js
+}
+```
+
+As you can see from the example your script name will need to be `pre` followed by the `tag-release` command capitalized. For example, if I wanted to hook into the `dev` command
+my script names would be `preDev` and `postDev`.
+
+Here is a chart of all the commands `tag-release` offers:
+```
+start
+dev
+pr
+prerelease
+promote
+qa
+reset
+```
+
+> **Note**: You will need to use the full name of the command, not just an alias. For instance, you couldn't do `prePro`. Instead, it would be `prePromote`.
+
 
 ## Release Workflow
 
