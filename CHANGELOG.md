@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.13.0
+
+* Updated README.md with pre and post script documentation
+
 ### 6.12.2
 
 * Log output from pre and post scripts
