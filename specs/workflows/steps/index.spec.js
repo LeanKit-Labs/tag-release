@@ -2854,6 +2854,7 @@ describe("shared workflow steps", () => {
 				},
 				token: "z8259r",
 				prerelease: false,
+				bump: true,
 				branch: "feature-branch",
 				bumpComment:
 					"Bumped my-package to 1.1.1: This is my reason for the change"
@@ -2945,6 +2946,35 @@ describe("shared workflow steps", () => {
 			return run.createGithubPullRequestAganistBase(state).then(() => {
 				expect(util.logger.log).toHaveBeenCalledTimes(1);
 				expect(util.logger.log).toHaveBeenCalledWith("editIssues fail");
+			});
+		});
+
+		describe("when handling bump flag", () => {
+			it("should call `editIssue` with issue number and label", () => {
+				state.bump = false;
+				return run
+					.createGithubPullRequestAganistBase(state)
+					.then(() => {
+						expect(editIssue).toHaveBeenCalledTimes(1);
+						expect(editIssue).toHaveBeenCalledWith(47, {
+							labels: ["Ready to Merge Into Develop"]
+						});
+					});
+			});
+
+			describe("when there is a develop branch", () => {
+				it("should call `editIssue` with issue number and label", () => {
+					state.hasDevelopBranch = true;
+					state.bump = false;
+					return run
+						.createGithubPullRequestAganistBase(state)
+						.then(() => {
+							expect(editIssue).toHaveBeenCalledTimes(1);
+							expect(editIssue).toHaveBeenCalledWith(47, {
+								labels: ["Ready to Merge Into Develop"]
+							});
+						});
+				});
 			});
 		});
 	});

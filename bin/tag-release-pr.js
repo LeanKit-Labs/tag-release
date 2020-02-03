@@ -3,6 +3,7 @@ const commander = require("commander");
 const api = require("../src/index.js");
 const {
 	prWorkflow: workflow,
+	prNoBump,
 	prRebaseSuccess,
 	prRebaseConflict
 } = require("../src/workflows/pr");
@@ -11,6 +12,8 @@ const filterFlowBasedOnDevelopBranch = require("../src/helpers/filterFlowBasedOn
 const runWorkflow = require("../src/helpers/runWorkflow");
 
 utils.applyCommanderOptions(commander);
+
+commander.option("--no-bump", "used to pr branch without packages to bump");
 
 commander.parse(process.argv);
 
@@ -29,8 +32,27 @@ const callback = options => {
 };
 
 let options = {};
-const { verbose, maxbuffer, args } = commander;
+const { verbose, maxbuffer, args, bump } = commander;
 const pr = args.length ? args[0] : true;
-options = { pr, verbose, maxbuffer, callback, workflow, command: "pr" };
+if (bump) {
+	options = {
+		pr,
+		verbose,
+		maxbuffer,
+		callback,
+		workflow,
+		command: "pr",
+		bump
+	};
+} else {
+	options = {
+		pr,
+		verbose,
+		maxbuffer,
+		workflow: prNoBump,
+		command: "pr",
+		bump
+	};
+}
 
 api.cli(options);

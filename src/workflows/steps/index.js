@@ -1016,6 +1016,7 @@ ${chalk.green(log)}`);
 			},
 			token,
 			branch,
+			bump,
 			hasDevelopBranch
 		} = state;
 		const github = new GitHub({ token });
@@ -1023,13 +1024,22 @@ ${chalk.green(log)}`);
 
 		const repository = github.getRepo(repositoryOwner, repositoryName);
 
-		const [, , reason = ""] =
-			state.bumpComment.match(/Bumped (.*): (.*)/) || [];
-		const options = {
-			title: reason,
-			head: `${repositoryOwner}:${branch}`,
-			base: hasDevelopBranch ? "develop" : "master"
-		};
+		let options = {};
+		if (bump) {
+			const [, , reason = ""] =
+				state.bumpComment.match(/Bumped (.*): (.*)/) || [];
+			options = {
+				title: reason,
+				head: `${repositoryOwner}:${branch}`,
+				base: hasDevelopBranch ? "develop" : "master"
+			};
+		} else {
+			options = {
+				title: "Updating localization strings",
+				head: `${repositoryOwner}:${branch}`,
+				base: hasDevelopBranch ? "develop" : "master"
+			};
+		}
 
 		return repository
 			.createPullRequest(options)
