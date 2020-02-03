@@ -18,6 +18,14 @@ module.exports = {
 		run.saveDependencies,
 		gitRebaseUpstreamBaseWithConflictFlag
 	],
+	prl10n: [
+		run.fetchUpstream,
+		run.gitRebaseUpstreamBranch,
+		run.githubUpstream,
+		run.updatePullRequestTitle,
+		run.updatePullRequestBody,
+		run.createGithubPullRequestAganistBase
+	],
 	prRebaseConflict: [
 		resolvePackageJSONConflicts,
 		verifyConflictResolution,

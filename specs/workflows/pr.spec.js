@@ -1,5 +1,6 @@
 const {
 	prWorkflow,
+	prl10n,
 	prRebaseConflict,
 	prRebaseSuccess,
 	prContinue
@@ -24,6 +25,19 @@ describe("pr workflows", () => {
 				run.getCurrentDependencyVersions,
 				run.saveDependencies,
 				gitRebaseUpstreamBaseWithConflictFlag
+			]);
+		});
+	});
+
+	describe("prl10n", () => {
+		it("should have all of the required steps", () => {
+			expect(prl10n).toEqual([
+				run.fetchUpstream,
+				run.gitRebaseUpstreamBranch,
+				run.githubUpstream,
+				run.updatePullRequestTitle,
+				run.updatePullRequestBody,
+				run.createGithubPullRequestAganistBase
 			]);
 		});
 	});

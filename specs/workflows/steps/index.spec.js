@@ -2947,6 +2947,35 @@ describe("shared workflow steps", () => {
 				expect(util.logger.log).toHaveBeenCalledWith("editIssues fail");
 			});
 		});
+
+		describe("when handling l10n flag", () => {
+			it("should call `editIssue` with issue number and label", () => {
+				state.l10n = true;
+				return run
+					.createGithubPullRequestAganistBase(state)
+					.then(() => {
+						expect(editIssue).toHaveBeenCalledTimes(1);
+						expect(editIssue).toHaveBeenCalledWith(47, {
+							labels: ["Ready to Merge Into Develop"]
+						});
+					});
+			});
+
+			describe("when there is a develop branch", () => {
+				it("should call `editIssue` with issue number and label", () => {
+					state.hasDevelopBranch = true;
+					state.l10n = true;
+					return run
+						.createGithubPullRequestAganistBase(state)
+						.then(() => {
+							expect(editIssue).toHaveBeenCalledTimes(1);
+							expect(editIssue).toHaveBeenCalledWith(47, {
+								labels: ["Ready to Merge Into Develop"]
+							});
+						});
+				});
+			});
+		});
 	});
 
 	describe("createGithubPullRequestAganistBranch", () => {

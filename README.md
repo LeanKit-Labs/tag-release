@@ -197,6 +197,9 @@ Example:
 
 > **Note**: `pr` will automatically create the GitHub PR for you and add the appropriate `Ready to Merge into Develop` label
 
+You can also provide a `--l10n` flag to the command and it will create a PR against your base branch
+without the need of a bump commit.
+
 ### l10n
 
 This command is used when you want to create pre-releases of all updated consumer project's localization branches.
