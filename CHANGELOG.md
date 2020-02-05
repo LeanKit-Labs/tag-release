@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.14.0
+
+* Added --no-bump flag to pr command to enable opening a PR without the bump commit requirement
+
 ### 6.13.0
 
 * Updated README.md with pre and post script documentation
