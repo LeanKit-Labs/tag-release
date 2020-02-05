@@ -70,7 +70,7 @@ will handle adding the conflicting files and continuing with the rebase.`,
 
 Please fix all conflict markers with the current conflict and then run 'tag-release continue'.`,
 	noPackagesInScope: `It appears there are no packages under the current scope. Please verify the scope or that you are running 'tag-release qa' from a valid repository.`,
-	noPackages: `It appears that there are no packages to promote. Please make a selection using the spacebar and finalizing your selection with enter.`,
+	noPackages: `It appears that there are no packages to promote. To make a PR without promoting a package, please use 'tag-release pr --no-bump'`,
 	saveState: `It appears something went wrong attempting to save state.
 
 You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
@@ -102,7 +102,7 @@ In order to override the maxBuffer limit run 'tag-relase maxbuffer <n>' and prov
 
 The default size is 1024 * 5000. Where 5000 is <n>.`,
 	buildLocale: `It appears something went wrong attempting to build locale locally.
-	
+
 Coverage of language translations might be not accurate for the repository in question.`
 };
 
