@@ -8,6 +8,7 @@ const utils = require("../src/utils.js");
 const filterFlowBasedOnDevelopBranch = require("../src/helpers/filterFlowBasedOnDevelopBranch");
 const getCurrentBranch = require("../src/helpers/getCurrentBranch");
 const runWorkflow = require("../src/helpers/runWorkflow");
+const { runPostScript } = require("../src/workflows/steps/index.js");
 
 utils.applyCommanderOptions(commander);
 
@@ -24,11 +25,17 @@ const callback = async options => {
 	if (options.branch.includes("promote-release")) {
 		flow = filterFlowBasedOnDevelopBranch(options, promoteContinue);
 
+		if (options.scripts.postpromote) {
+			flow.push(runPostScript);
+		}
 		return runWorkflow(flow, options);
 	}
 
 	flow = filterFlowBasedOnDevelopBranch(options, prContinue);
 
+	if (options.scripts.postpr) {
+		flow.push(runPostScript);
+	}
 	return runWorkflow(flow, options);
 };
 

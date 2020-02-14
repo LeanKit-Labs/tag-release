@@ -316,13 +316,13 @@ The following will create `pre` and `post` script hooks for the `start` command 
 
 ```
 "tag-release": {
-   "preStart": node ./preStart.js,
-   "postStart": node ./postStart.js
+   "prestart": "node ./preStart.js",
+   "poststart": "node ./postStart.js"
 }
 ```
 
-As you can see from the example your script name will need to be `pre` followed by the `tag-release` command capitalized. For example, if I wanted to hook into the `dev` command
-my script names would be `preDev` and `postDev`.
+As you can see from the example your script name will need to be `pre` followed by the `tag-release` command. For example, if I wanted to hook into the `dev` command
+my script names would be `predev` and `postdev`.
 
 Here is a chart of all the commands `tag-release` offers:
 ```
@@ -335,7 +335,7 @@ qa
 reset
 ```
 
-> **Note**: You will need to use the full name of the command, not just an alias. For instance, you couldn't do `prePro`. Instead, it would be `prePromote`.
+> **Note**: You will need to use the full name of the command, not just an alias. For instance, you couldn't do `prepro`. Instead, it would be `prepromote`.
 
 
 ## Release Workflow

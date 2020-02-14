@@ -10,6 +10,7 @@ const {
 const utils = require("../src/utils.js");
 const filterFlowBasedOnDevelopBranch = require("../src/helpers/filterFlowBasedOnDevelopBranch");
 const runWorkflow = require("../src/helpers/runWorkflow");
+const { runPostScript } = require("../src/workflows/steps/index.js");
 
 utils.applyCommanderOptions(commander);
 
@@ -23,11 +24,17 @@ const callback = options => {
 	if (options.conflict) {
 		flow = filterFlowBasedOnDevelopBranch(options, prRebaseConflict);
 
+		if (options.scripts[`post${options.command}`]) {
+			flow.push(runPostScript);
+		}
 		return runWorkflow(flow, options);
 	}
 
 	flow = filterFlowBasedOnDevelopBranch(options, prRebaseSuccess);
 
+	if (options.scripts[`post${options.command}`]) {
+		flow.push(runPostScript);
+	}
 	return runWorkflow(flow, options);
 };
 
