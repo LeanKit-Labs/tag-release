@@ -21,15 +21,21 @@ const setup = async options => {
 		options.workflow
 	);
 
-	options.scripts = await utils.getScripts(options.command);
-	if (options.scripts[`pre${options.command}`]) {
+	options.scripts = utils.getScripts(options.command);
+	if (
+		options.command !== "continue" &&
+		options.scripts[`pre${options.command}`]
+	) {
 		options.workflow.unshift(runPreScript);
 	}
 
 	if (!options.callback) {
 		/* istanbul ignore next */
 		options.callback = () => console.log("Finished"); // eslint-disable-line no-console
-		if (options.scripts[`post${options.command}`]) {
+		if (
+			options.command !== "continue" &&
+			options.scripts[`post${options.command}`]
+		) {
 			options.workflow.push(runPostScript);
 		}
 	}

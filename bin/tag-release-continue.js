@@ -25,6 +25,8 @@ const callback = async options => {
 	if (options.branch.includes("promote-release")) {
 		flow = filterFlowBasedOnDevelopBranch(options, promoteContinue);
 
+		options.scripts = utils.getScripts("promote");
+		options.command = "promote";
 		if (options.scripts.postpromote) {
 			flow.push(runPostScript);
 		}
@@ -33,6 +35,8 @@ const callback = async options => {
 
 	flow = filterFlowBasedOnDevelopBranch(options, prContinue);
 
+	options.scripts = utils.getScripts("pr");
+	options.command = "pr";
 	if (options.scripts.postpr) {
 		flow.push(runPostScript);
 	}
