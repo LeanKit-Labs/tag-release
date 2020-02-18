@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.14.1
+
+* Addressed issues with continue workflow and conflicts with scripts
+* Fixed scripts running at incorrect times during workflow
+
 ### 6.14.0
 
 * Added --no-bump flag to pr command to enable opening a PR without the bump commit requirement
