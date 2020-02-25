@@ -100,7 +100,7 @@ describe("command", () => {
 
 		it("should call 'runCommand' with appropriate arguments", () => {
 			return command.cleanUp().then(() => {
-				expect(deleteSpy).toHaveBeenCalledTimes(1);
+				expect(deleteSpy).toHaveBeenCalledTimes(2);
 				expect(deleteSpy).toHaveBeenCalledWith(`my_path/`);
 			});
 		});
@@ -175,6 +175,43 @@ pick 23ae89c this is commit 2
 		});
 	});
 
+	describe("reOrderLatestCommits", () => {
+		let writeSpy;
+		beforeEach(() => {
+			writeSpy = jest
+				.spyOn(util, "writeFile")
+				.mockImplementation(() => "");
+		});
+
+		it("should reorder localization and bump commit", () => {
+			runCommand.mockImplementation(() =>
+				Promise.resolve(`0987654 Updated en-US.yaml translation file
+18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.0: a change
+`)
+			);
+			return command.reOrderLatestCommits().then(() => {
+				expect(writeSpy.mock.calls[0][1])
+					.toEqual(`pick 0987654 Updated en-US.yaml translation file
+pick 18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.0: a change
+`);
+			});
+		});
+
+		it("should not write to file", () => {
+			// This code path should never get executed.
+			// Only writing test for branch coverage
+			runCommand.mockImplementation(() =>
+				Promise.resolve(`0987654 some random commit
+18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.0: a change
+`)
+			);
+			return command.reOrderLatestCommits().then(() => {
+				expect(writeSpy.mock.calls[0][1]).toEqual(`
+`);
+			});
+		});
+	});
+
 	describe("getPrereleaseTagList", () => {
 		beforeEach(() => {
 			runCommand.mockImplementation(() =>
@@ -241,6 +278,50 @@ v17.11.2`)
 					onError
 				});
 			});
+		});
+
+		afterEach(() => {
+			joinSpy.mockRestore();
+		});
+	});
+
+	describe("reOrderBumpAndLocalizationCommits", () => {
+		let joinSpy;
+		beforeEach(() => {
+			joinSpy = jest
+				.spyOn(path, "join")
+				.mockImplementation(() => "my_path/");
+		});
+
+		it("should call 'runCommand' with appropriate arguments", () => {
+			return command.reOrderBumpAndLocalizationCommits().then(() => {
+				expect(runCommand).toHaveBeenCalledTimes(1);
+				expect(runCommand).toHaveBeenCalledWith({
+					args:
+						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i HEAD~2',
+					failHelpKey: "gitRebaseInteractive",
+					fullCommand: true,
+					logMessage: "Reordering localization and bump commit",
+					exitOnFail: true
+				});
+			});
+		});
+
+		it("should pass onError to 'runCommand'", () => {
+			return command
+				.reOrderBumpAndLocalizationCommits({ onError })
+				.then(() => {
+					expect(runCommand).toHaveBeenCalledTimes(1);
+					expect(runCommand).toHaveBeenCalledWith({
+						args:
+							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i HEAD~2',
+						failHelpKey: "gitRebaseInteractive",
+						fullCommand: true,
+						logMessage: "Reordering localization and bump commit",
+						exitOnFail: true,
+						onError
+					});
+				});
 		});
 
 		afterEach(() => {

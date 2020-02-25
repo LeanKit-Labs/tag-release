@@ -1969,6 +1969,90 @@ describe("shared workflow steps", () => {
 		});
 	});
 
+	describe("checkIfReOrderNeeded", () => {
+		beforeEach(() => {
+			command.getLatestCommitMessage = jest.fn(() => {
+				return Promise.resolve(
+					"Bumped web-board-slice to 3.1.0, web-card-slice to 13.1.0, web-common-ui to 15.7.0: Users needed a change"
+				);
+			});
+		});
+
+		it("should call `command.getLatestCommitMessage`", () => {
+			return run.checkIfReOrderNeeded(state).then(() => {
+				expect(command.getLatestCommitMessage).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("should set state to false if latest commit is bump commit", () => {
+			return run.checkIfReOrderNeeded(state).then(() => {
+				expect(state).toHaveProperty("reOrder");
+				expect(state.reOrder).toEqual(false);
+			});
+		});
+
+		it("shouldn't set state if bump commit isn't the lastest", () => {
+			command.getLatestCommitMessage = jest.fn(() => {
+				return Promise.resolve("Updated en-US.yaml translation file");
+			});
+			return run.checkIfReOrderNeeded(state).then(() => {
+				expect(state).toHaveProperty("reOrder");
+				expect(state.reOrder).toEqual(true);
+			});
+		});
+	});
+
+	describe("reOrderLatestCommits", () => {
+		it("should resolve if reOrder is false", () => {
+			state.reOrder = false;
+			return run.reOrderLatestCommits(state).then(() => {
+				expect(command.reOrderLatestCommits).not.toHaveBeenCalled();
+			});
+		});
+
+		it("should call 'command.reOrderLatestCommits' if reOrder is true", () => {
+			state.reOrder = true;
+			command.reOrderLatestCommits = jest.fn(() => Promise.resolve());
+			return run.reOrderLatestCommits(state).then(() => {
+				expect(command.reOrderLatestCommits).toHaveBeenCalledTimes(1);
+			});
+		});
+	});
+
+	describe("reOrderBumpAndLocalizationCommits", () => {
+		it("should resolve if reOrder is false", () => {
+			state.reOrder = false;
+			return run.reOrderBumpAndLocalizationCommits(state).then(() => {
+				expect(
+					command.reOrderBumpAndLocalizationCommits
+				).not.toHaveBeenCalled();
+			});
+		});
+
+		it("should call 'command.reOrderBumpAndLocalizationCommits' if reOrder is true", () => {
+			state.reOrder = true;
+			command.reOrderBumpAndLocalizationCommits = jest.fn(() =>
+				Promise.resolve()
+			);
+			return run.reOrderBumpAndLocalizationCommits(state).then(() => {
+				expect(
+					command.reOrderBumpAndLocalizationCommits
+				).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("should call onError when `command.reOrderBumpAndLocalizationCommits` fails", () => {
+			state.reOrder = true;
+			command.reOrderBumpAndLocalizationCommits = jest.fn(args => {
+				return args.onError();
+			});
+			return run.reOrderBumpAndLocalizationCommits(state).catch(() => {
+				expect(util.advise).toHaveBeenCalledTimes(1);
+				expect(util.advise).toHaveBeenCalledWith("reOrderFail");
+			});
+		});
+	});
+
 	describe("gitRebaseUpstreamMaster", () => {
 		it("should call `command.rebaseUpstreamMaster`", () => {
 			command.rebaseUpstreamMaster = jest.fn(() => Promise.resolve());
