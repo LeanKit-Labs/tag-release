@@ -197,7 +197,7 @@ pick 18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.
 			});
 		});
 
-		it("should not write to file", () => {
+		it("should write empty file", () => {
 			// This code path should never get executed.
 			// Only writing test for branch coverage
 			runCommand.mockImplementation(() =>

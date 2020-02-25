@@ -164,7 +164,10 @@ const command = {
 					bumpCommit = commit;
 				}
 
-				if (commitMsg === "Updated en-US.yaml translation file") {
+				if (
+					commitMsg &&
+					commitMsg.startsWith("Updated en-US.yaml translation file")
+				) {
 					l10nCommit = commit;
 				}
 
