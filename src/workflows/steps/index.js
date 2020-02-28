@@ -741,7 +741,9 @@ ${chalk.green(log)}`);
 			return Promise.resolve();
 		}
 
-		return command.reOrderLatestCommits();
+		return command.reOrderLatestCommits().then(result => {
+			state.reOrder = result;
+		});
 	},
 	reOrderBumpAndLocalizationCommits(state) {
 		state.step = "reOrderBumpAndLocalizationCommits";

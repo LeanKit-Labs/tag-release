@@ -197,17 +197,16 @@ pick 18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.
 			});
 		});
 
-		it("should write empty file", () => {
-			// This code path should never get executed.
-			// Only writing test for branch coverage
+		it("should write file but return false", () => {
 			runCommand.mockImplementation(() =>
 				Promise.resolve(`0987654 some random commit
-18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.0: a change
 `)
 			);
-			return command.reOrderLatestCommits().then(() => {
-				expect(writeSpy.mock.calls[0][1]).toEqual(`
+			return command.reOrderLatestCommits().then(result => {
+				expect(writeSpy.mock.calls[0][1])
+					.toEqual(`pick 0987654 some random commit
 `);
+				expect(result).toEqual(false);
 			});
 		});
 	});
@@ -298,10 +297,10 @@ v17.11.2`)
 				expect(runCommand).toHaveBeenCalledTimes(1);
 				expect(runCommand).toHaveBeenCalledWith({
 					args:
-						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i HEAD~2',
+						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/master',
 					failHelpKey: "gitRebaseInteractive",
 					fullCommand: true,
-					logMessage: "Reordering localization and bump commit",
+					logMessage: "Reordering bump commit",
 					exitOnFail: true
 				});
 			});
@@ -314,10 +313,10 @@ v17.11.2`)
 					expect(runCommand).toHaveBeenCalledTimes(1);
 					expect(runCommand).toHaveBeenCalledWith({
 						args:
-							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i HEAD~2',
+							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/master',
 						failHelpKey: "gitRebaseInteractive",
 						fullCommand: true,
-						logMessage: "Reordering localization and bump commit",
+						logMessage: "Reordering bump commit",
 						exitOnFail: true,
 						onError
 					});
