@@ -2019,34 +2019,28 @@ describe("shared workflow steps", () => {
 		});
 	});
 
-	describe("reOrderBumpAndLocalizationCommits", () => {
+	describe("reOrderBumpCommit", () => {
 		it("should resolve if reOrder is false", () => {
 			state.reOrder = false;
-			return run.reOrderBumpAndLocalizationCommits(state).then(() => {
-				expect(
-					command.reOrderBumpAndLocalizationCommits
-				).not.toHaveBeenCalled();
+			return run.reOrderBumpCommit(state).then(() => {
+				expect(command.reOrderBumpCommit).not.toHaveBeenCalled();
 			});
 		});
 
-		it("should call 'command.reOrderBumpAndLocalizationCommits' if reOrder is true", () => {
+		it("should call 'command.reOrderBumpCommit' if reOrder is true", () => {
 			state.reOrder = true;
-			command.reOrderBumpAndLocalizationCommits = jest.fn(() =>
-				Promise.resolve()
-			);
-			return run.reOrderBumpAndLocalizationCommits(state).then(() => {
-				expect(
-					command.reOrderBumpAndLocalizationCommits
-				).toHaveBeenCalledTimes(1);
+			command.reOrderBumpCommit = jest.fn(() => Promise.resolve());
+			return run.reOrderBumpCommit(state).then(() => {
+				expect(command.reOrderBumpCommit).toHaveBeenCalledTimes(1);
 			});
 		});
 
-		it("should call onError when `command.reOrderBumpAndLocalizationCommits` fails", () => {
+		it("should call onError when `command.reOrderBumpCommit` fails", () => {
 			state.reOrder = true;
-			command.reOrderBumpAndLocalizationCommits = jest.fn(args => {
+			command.reOrderBumpCommit = jest.fn(args => {
 				return args.onError();
 			});
-			return run.reOrderBumpAndLocalizationCommits(state).catch(() => {
+			return run.reOrderBumpCommit(state).catch(() => {
 				expect(util.advise).toHaveBeenCalledTimes(1);
 				expect(util.advise).toHaveBeenCalledWith("reOrderFail");
 			});

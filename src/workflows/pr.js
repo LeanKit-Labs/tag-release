@@ -14,7 +14,7 @@ module.exports = {
 		run.saveState,
 		run.checkIfReOrderNeeded,
 		run.reOrderLatestCommits,
-		run.reOrderBumpAndLocalizationCommits,
+		run.reOrderBumpCommit,
 		run.getReposFromBumpCommit,
 		run.verifyPackagesToPromote,
 		run.getCurrentDependencyVersions,

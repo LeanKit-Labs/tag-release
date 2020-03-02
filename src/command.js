@@ -338,7 +338,7 @@ const command = {
 		});
 	},
 
-	reOrderBumpAndLocalizationCommits({ onError } = {}) {
+	reOrderBumpCommit({ onError } = {}) {
 		const args = `GIT_SEQUENCE_EDITOR="cat ${path.join(
 			__dirname,
 			".reordered-commits.txt"

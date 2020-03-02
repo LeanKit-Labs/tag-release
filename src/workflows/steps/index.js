@@ -745,8 +745,8 @@ ${chalk.green(log)}`);
 			state.reOrder = result;
 		});
 	},
-	reOrderBumpAndLocalizationCommits(state) {
-		state.step = "reOrderBumpAndLocalizationCommits";
+	reOrderBumpCommit(state) {
+		state.step = "reOrderBumpCommit";
 
 		if (!state.reOrder) {
 			return Promise.resolve();
@@ -757,7 +757,7 @@ ${chalk.green(log)}`);
 			return Promise.reject();
 		};
 
-		return command.reOrderBumpAndLocalizationCommits({ onError });
+		return command.reOrderBumpCommit({ onError });
 	},
 	gitRebaseUpstreamMaster(state) {
 		state.step = "gitRebaseUpstreamMaster";

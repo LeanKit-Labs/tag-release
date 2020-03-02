@@ -284,7 +284,7 @@ v17.11.2`)
 		});
 	});
 
-	describe("reOrderBumpAndLocalizationCommits", () => {
+	describe("reOrderBumpCommit", () => {
 		let joinSpy;
 		beforeEach(() => {
 			joinSpy = jest
@@ -293,7 +293,7 @@ v17.11.2`)
 		});
 
 		it("should call 'runCommand' with appropriate arguments", () => {
-			return command.reOrderBumpAndLocalizationCommits().then(() => {
+			return command.reOrderBumpCommit().then(() => {
 				expect(runCommand).toHaveBeenCalledTimes(1);
 				expect(runCommand).toHaveBeenCalledWith({
 					args:
@@ -307,20 +307,18 @@ v17.11.2`)
 		});
 
 		it("should pass onError to 'runCommand'", () => {
-			return command
-				.reOrderBumpAndLocalizationCommits({ onError })
-				.then(() => {
-					expect(runCommand).toHaveBeenCalledTimes(1);
-					expect(runCommand).toHaveBeenCalledWith({
-						args:
-							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/master',
-						failHelpKey: "gitRebaseInteractive",
-						fullCommand: true,
-						logMessage: "Reordering bump commit",
-						exitOnFail: true,
-						onError
-					});
+			return command.reOrderBumpCommit({ onError }).then(() => {
+				expect(runCommand).toHaveBeenCalledTimes(1);
+				expect(runCommand).toHaveBeenCalledWith({
+					args:
+						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/master',
+					failHelpKey: "gitRebaseInteractive",
+					fullCommand: true,
+					logMessage: "Reordering bump commit",
+					exitOnFail: true,
+					onError
 				});
+			});
 		});
 
 		afterEach(() => {
