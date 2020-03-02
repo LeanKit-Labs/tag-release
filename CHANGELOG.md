@@ -1,5 +1,14 @@
 ## 6.x
 
+### 6.15.0
+
+* Updated bump commit reorder advise
+* Renamed reOrderBumpAndLocalizationCommit to reOrderBumpCommit
+* Allow reorder commits no matter where bump commit is
+* Made en-US.yaml commit check or generic
+* Allow pr to work with bump commit not being latest commit. (kind of)
+* Update package-lock.json on qa flow
+
 ### 6.14.1
 
 * Addressed issues with continue workflow and conflicts with scripts
