@@ -723,6 +723,42 @@ ${chalk.green(log)}`);
 
 		return command.removePreReleaseCommits({ onError });
 	},
+	checkIfReOrderNeeded(state) {
+		state.step = "checkIfReOrderNeeded";
+		state.reOrder = true;
+
+		const bumpedRegEx = /Bumped (.*): (.*)/;
+		return command.getLatestCommitMessage().then(msg => {
+			if (bumpedRegEx.test(msg)) {
+				state.reOrder = false;
+			}
+		});
+	},
+	reOrderLatestCommits(state) {
+		state.step = "reOrderLatestComits";
+
+		if (!state.reOrder) {
+			return Promise.resolve();
+		}
+
+		return command.reOrderLatestCommits().then(result => {
+			state.reOrder = result;
+		});
+	},
+	reOrderBumpCommit(state) {
+		state.step = "reOrderBumpCommit";
+
+		if (!state.reOrder) {
+			return Promise.resolve();
+		}
+
+		const onError = () => {
+			util.advise("reOrderFail");
+			return Promise.reject();
+		};
+
+		return command.reOrderBumpCommit({ onError });
+	},
 	gitRebaseUpstreamMaster(state) {
 		state.step = "gitRebaseUpstreamMaster";
 		return command.rebaseUpstreamMaster();

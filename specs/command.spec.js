@@ -100,7 +100,7 @@ describe("command", () => {
 
 		it("should call 'runCommand' with appropriate arguments", () => {
 			return command.cleanUp().then(() => {
-				expect(deleteSpy).toHaveBeenCalledTimes(1);
+				expect(deleteSpy).toHaveBeenCalledTimes(2);
 				expect(deleteSpy).toHaveBeenCalledWith(`my_path/`);
 			});
 		});
@@ -175,6 +175,42 @@ pick 23ae89c this is commit 2
 		});
 	});
 
+	describe("reOrderLatestCommits", () => {
+		let writeSpy;
+		beforeEach(() => {
+			writeSpy = jest
+				.spyOn(util, "writeFile")
+				.mockImplementation(() => "");
+		});
+
+		it("should reorder localization and bump commit", () => {
+			runCommand.mockImplementation(() =>
+				Promise.resolve(`0987654 Updated en-US.yaml translation file
+18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.0: a change
+`)
+			);
+			return command.reOrderLatestCommits().then(() => {
+				expect(writeSpy.mock.calls[0][1])
+					.toEqual(`pick 0987654 Updated en-US.yaml translation file
+pick 18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.0: a change
+`);
+			});
+		});
+
+		it("should write file but return false", () => {
+			runCommand.mockImplementation(() =>
+				Promise.resolve(`0987654 some random commit
+`)
+			);
+			return command.reOrderLatestCommits().then(result => {
+				expect(writeSpy.mock.calls[0][1])
+					.toEqual(`pick 0987654 some random commit
+`);
+				expect(result).toEqual(false);
+			});
+		});
+	});
+
 	describe("getPrereleaseTagList", () => {
 		beforeEach(() => {
 			runCommand.mockImplementation(() =>
@@ -237,6 +273,48 @@ v17.11.2`)
 					failHelpKey: "gitRebaseInteractive",
 					fullCommand: true,
 					logMessage: "Removing pre-release commit history",
+					exitOnFail: true,
+					onError
+				});
+			});
+		});
+
+		afterEach(() => {
+			joinSpy.mockRestore();
+		});
+	});
+
+	describe("reOrderBumpCommit", () => {
+		let joinSpy;
+		beforeEach(() => {
+			joinSpy = jest
+				.spyOn(path, "join")
+				.mockImplementation(() => "my_path/");
+		});
+
+		it("should call 'runCommand' with appropriate arguments", () => {
+			return command.reOrderBumpCommit().then(() => {
+				expect(runCommand).toHaveBeenCalledTimes(1);
+				expect(runCommand).toHaveBeenCalledWith({
+					args:
+						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/master',
+					failHelpKey: "gitRebaseInteractive",
+					fullCommand: true,
+					logMessage: "Reordering bump commit",
+					exitOnFail: true
+				});
+			});
+		});
+
+		it("should pass onError to 'runCommand'", () => {
+			return command.reOrderBumpCommit({ onError }).then(() => {
+				expect(runCommand).toHaveBeenCalledTimes(1);
+				expect(runCommand).toHaveBeenCalledWith({
+					args:
+						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/master',
+					failHelpKey: "gitRebaseInteractive",
+					fullCommand: true,
+					logMessage: "Reordering bump commit",
 					exitOnFail: true,
 					onError
 				});

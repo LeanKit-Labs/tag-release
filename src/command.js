@@ -86,6 +86,7 @@ const command = {
 
 	cleanUp() {
 		util.deleteFile(path.join(__dirname, ".commits-to-rebase.txt"));
+		util.deleteFile(path.join(__dirname, ".reordered-commits.txt"));
 
 		return Promise.resolve();
 	},
@@ -144,6 +145,41 @@ const command = {
 				path.join(__dirname, ".commits-to-rebase.txt"),
 				`${commits.reverse().join("\n")}\n`
 			);
+		});
+	},
+
+	reOrderLatestCommits() {
+		const bumpedRegEx = /Bumped (.*): (.*)/;
+		const gitLogMsgRegEx = /^[0-9a-f]{5,40} (.*)/;
+
+		const args = `log upstream/master..HEAD --pretty=format:"%h %s"`;
+		return runCommand({ args }).then(result => {
+			let commits = result.split("\n");
+
+			let bumpCommit;
+			commits = commits.reduce((memo, commit) => {
+				const [, commitMsg] = gitLogMsgRegEx.exec(commit) || [];
+
+				if (bumpedRegEx.test(commitMsg)) {
+					bumpCommit = commit;
+				} else if (commitMsg && !commitMsg.startsWith("Merge")) {
+					memo.push(`pick ${commit}`.trim());
+				}
+
+				return memo;
+			}, []);
+
+			if (bumpCommit) {
+				commits.unshift(`pick ${bumpCommit}`.trim());
+			}
+
+			// adding a '\n' at the end of the .reverse().join() statement is required as the rebase -i file requires it to be there or
+			// it will remove the last line in the file, which would be a whole commit potentially.
+			util.writeFile(
+				path.join(__dirname, ".reordered-commits.txt"),
+				`${commits.reverse().join("\n")}\n`
+			);
+			return !!bumpCommit;
 		});
 	},
 
@@ -295,6 +331,21 @@ const command = {
 		return runCommand({
 			args,
 			logMessage: "Removing pre-release commit history",
+			failHelpKey: "gitRebaseInteractive",
+			exitOnFail: true,
+			fullCommand: true,
+			onError
+		});
+	},
+
+	reOrderBumpCommit({ onError } = {}) {
+		const args = `GIT_SEQUENCE_EDITOR="cat ${path.join(
+			__dirname,
+			".reordered-commits.txt"
+		)} >" git rebase -i upstream/master`;
+		return runCommand({
+			args,
+			logMessage: "Reordering bump commit",
 			failHelpKey: "gitRebaseInteractive",
 			exitOnFail: true,
 			fullCommand: true,

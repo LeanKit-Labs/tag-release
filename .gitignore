@@ -3,6 +3,7 @@ node_modules
 coverage
 npm-debug.log
 src/.commits-to-rebase.txt
+src/.reordered-commits.txt
 src/workflows/.state.json
 src/workflows/steps/.state.json
 src/workflows/.dependencies.json

@@ -103,7 +103,10 @@ In order to override the maxBuffer limit run 'tag-relase maxbuffer <n>' and prov
 The default size is 1024 * 5000. Where 5000 is <n>.`,
 	buildLocale: `It appears something went wrong attempting to build locale locally.
 
-Coverage of language translations might be not accurate for the repository in question.`
+Coverage of language translations might be not accurate for the repository in question.`,
+	reOrderFail: `It appears something went wrong with the reordering of the bump commit.
+
+You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`
 };
 
 const MAXIMUM_WIDTH = 50;
