@@ -104,9 +104,9 @@ The default size is 1024 * 5000. Where 5000 is <n>.`,
 	buildLocale: `It appears something went wrong attempting to build locale locally.
 
 Coverage of language translations might be not accurate for the repository in question.`,
-	reOrderFail: `It appears the latest two commits aren't what tag-release was expecting.
+	reOrderFail: `It appears something went wrong with the reordering of the bump commit.
 
-Please verify the 'Bump' commit is the latest, followed by the 'Updated en-US.yaml translation file' commit. (if there is one)`
+You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`
 };
 
 const MAXIMUM_WIDTH = 50;
