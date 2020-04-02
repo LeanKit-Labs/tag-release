@@ -40,7 +40,7 @@ const setup = async options => {
 		}
 	}
 
-	if (!utils.fileExists(options.configPath) && options.command !== "l10n") {
+	if (!utils.fileExists(options.configPath)) {
 		utils.advise("updateVersion");
 	}
 

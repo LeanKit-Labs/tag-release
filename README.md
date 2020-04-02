@@ -42,7 +42,6 @@ verify, modify, or cancel the `tag-release` process.
     promote|pro [tag]            promote a pre-release tag previously created by tag-release
     qa [scope]                   create initial upstream feature branch for consumer project
     reset                        reset repo to upstream master/develop branches
-    l10n                         update and prerelease updated localization branches
     help [cmd]                   display help for [cmd]
 ```
 
@@ -199,40 +198,6 @@ Example:
 
 You can also provide a `--no-bump` flag to the command and it will create a PR against your base branch
 without the need of a bump commit.
-
-### l10n
-
-This command is used when you want to create pre-releases of all updated consumer project's localization branches.
-
-You are required to setup the following in your `.tag-releaserc.json` file in your root:
-
-```
-{
-   "rootDirectory": "/path/to/root/of/repos",
-   "repos": [
-       { "repo_name": "localization-branch-name" },
-       { "another_repo_name": "another-localization-branch-name" }
-   ]
-}
-```
-
-> **Note**: `l10n` will automatically create a qa branch and pull in all you pre-releases if it finds a host project amoung the lists of repos you are wanting to pre-release.
-
-This command also supports a `--coverage` or `--cover` command which will provide an coverage output of localization strings that match between the `en-US` locale file and all other files.
-
-Coverage is based on `diff.length + same.length / enUSKeys.length`. `diff` is the number of keys that are in the `en-US.yaml` file but aren't represented in the current locale file. `same` is the number of keys that have the same value in the `en-US.yaml` as it does in the current locale file.
-
-If the translations between the `en-US.yaml` file and the current locale happen to be the same you can provide an override in the `.tag-releaserc.json` file in your root:
-
-```
-{
-   "l10nKeyOverrides": {
-      "repo_name": {
-         "locale_code": [ "localization.string.to.ignore" ]
-      }
-   }
-}
-```
 
 ### GitHub Integration
 

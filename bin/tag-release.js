@@ -35,10 +35,6 @@ commander
 		"create initial upstream feature branch for consumer project"
 	)
 	.command("reset", "reset repo to upstream master/develop branches")
-	.command(
-		"l10n [repo]",
-		"update and prerelease updated localization branches"
-	)
 	.command("config", "open the tag-release config in your default editor");
 
 commander.on("--help", () => {

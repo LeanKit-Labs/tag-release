@@ -8,12 +8,10 @@ const GitHub = require("github-api");
 const sequence = require("when/sequence");
 const path = require("path");
 const removeWords = require("remove-words");
-const { get, set, difference, union } = require("lodash");
+const { set } = require("lodash");
 const { retryRebase } = require("./conflictResolution");
 const getCurrentBranch = require("../../helpers/getCurrentBranch");
-const getContentsFromYAML = require("../../helpers/getContentsFromYAML");
 
-const MAX_PERCENT = 100;
 const CHANGELOG_PATH = "CHANGELOG.md";
 const PACKAGELOCKJSON_PATH = "package-lock.json";
 const GIT_IGNORE_PATH = ".gitignore";
@@ -108,23 +106,6 @@ const api = {
 	gitMergeUpstreamMaster(state) {
 		state.step = "gitMergeUpstreamMaster";
 		return command.mergeUpstreamMaster();
-	},
-	gitMergeUpstreamMasterNoFF(state) {
-		state.step = "gitMergeUpstreamMasterNoFF";
-		const { spinner, repo } = state;
-		return git
-			.merge({
-				branch: "master",
-				remote: "upstream",
-				fastForwardOnly: false,
-				spinner,
-				repo
-			})
-			.then(result => {
-				state.status = result.includes("Already up-to-date.")
-					? "up-to-date"
-					: "merged";
-			});
 	},
 	gitMergeUpstreamDevelop(state) {
 		state.step = "gitMergeUpstreamDevelop";
@@ -1617,205 +1598,6 @@ ${chalk.green(log)}`);
 			return Promise.reject(`Unable to cwd to provided: ${state.cwd}`);
 		}
 
-		return Promise.resolve();
-	},
-	createOrCheckoutBranch(state) {
-		state.step = "createOrCheckoutBranch";
-		const { branch, spinner, repo } = state;
-
-		return command.branchExists(branch, spinner, repo).then(exists => {
-			if (!exists) {
-				return command
-					.branchExistsRemote({
-						branch,
-						remote: "upstream",
-						spinner,
-						repo
-					})
-					.then(existsRemote => {
-						if (existsRemote) {
-							return git.checkout({
-								branch,
-								option: "-b",
-								tracking: branch,
-								spinner,
-								repo
-							});
-						}
-						// TODO: Should we advise here if we can't find branch locally
-						// or on the upstream?
-						return command.checkoutBranch({
-							branch,
-							spinner,
-							repo
-						});
-					});
-			}
-			return command.checkoutBranch({ branch, spinner, repo });
-		});
-	},
-	diffWithUpstreamMaster(state) {
-		state.step = "diffWithUpstreamMaster";
-		const { maxbuffer, spinner, repo } = state;
-
-		return git
-			.diff({
-				option: "--word-diff",
-				branch: "master",
-				glob: "*.yaml",
-				maxBuffer: maxbuffer,
-				spinner,
-				repo
-			})
-			.then(diff => {
-				if (diff) {
-					const regex = /((?:\[-.+-\])|(?:\{\+.+\+\})).*[^\r]/g;
-					const items = diff.match(regex) || [];
-					const { ins, del } = items.reduce(
-						(memo, item) => {
-							if (item.match(/\+}\[-/g) || item.match(/-\]{+/g)) {
-								return memo;
-							} else if (item.match(/{+/g)) {
-								memo.ins++;
-							} else {
-								memo.del++;
-							}
-							return memo;
-						},
-						{ ins: 0, del: 0 }
-					);
-					state.changes = {
-						locale: !!ins,
-						dev: !!del
-					};
-				}
-			});
-	},
-	checkoutl10nBranch(state) {
-		state.step = "checkoutl10nBranch";
-		const today = new Date();
-		const currentMonth = today
-			.toLocaleString("en-us", { month: "short" })
-			.toLowerCase();
-		const branch = `feature-localization-${currentMonth}-${today.getDate()}`;
-
-		return command.branchExists(branch).then(exists => {
-			state.branch = branch;
-			if (!exists) {
-				return command.checkoutAndCreateBranch({ branch });
-			}
-			state.status = "skipped";
-			return command.checkoutBranch({ branch }).then(() => {
-				return Promise.resolve();
-			});
-		});
-	},
-	commitDiffWithUpstreamMaster(state) {
-		state.step = "commitDiffWithUpstreamMaster";
-		const { branch, spinner, repo } = state;
-		return git
-			.log({
-				option: "--no-merges --oneline",
-				branch,
-				remote: "upstream/master",
-				spinner,
-				repo
-			})
-			.then(commits => {
-				if (commits) {
-					state.changes.diff = commits.trim().split("\n").length;
-				}
-			});
-	},
-	buildLocale(state) {
-		state.step = "buildLocale";
-		const { configPath } = state;
-		const { scripts } = util.readJSONFile(configPath);
-
-		const buildLocaleCommand = "npm run build:locale";
-		if (scripts.hasOwnProperty("build:locale")) {
-			util.log.begin(buildLocaleCommand);
-			return util
-				.exec(buildLocaleCommand)
-				.then(() => util.log.end())
-				.catch(() => util.advise("buildLocale", { exit: false }));
-		}
-		return Promise.resolve();
-	},
-	getLangCodes(state) {
-		state.step = "getLangCodes";
-		const { cwd } = state;
-
-		// Find path to translation files
-		let localePath;
-		if (util.fileExists(`${cwd}/locale/en-US.yaml`)) {
-			localePath = `${cwd}/locale`;
-		} else if (util.fileExists(`${cwd}/client/js/locale/en-US.yaml`)) {
-			localePath = `${cwd}/client/js/locale`;
-		} else {
-			return Promise.resolve();
-		}
-
-		let files = util.readDirFileNames(localePath);
-		files = files.filter(
-			file =>
-				!file.includes("spec") &&
-				!file.includes("all") &&
-				!file.includes("en-US") &&
-				file.includes("yaml")
-		);
-		const langRegex = /^(.*-?[A-Z]?).yaml/;
-		const codes = files.map(file => {
-			const [, code] = langRegex.exec(file);
-			return code;
-		});
-
-		state.langCodes = union(state.langCodes, codes);
-		state.localePath = localePath;
-		return Promise.resolve();
-	},
-	getl10nCoverage(state) {
-		state.step = "getl10nCoverage";
-		const { repo, langCodes, localePath, l10nKeyOverrides } = state;
-
-		if (!localePath) {
-			state.coverage = { keyCount: 0 };
-			return Promise.resolve();
-		}
-
-		const enUSContents = getContentsFromYAML(localePath, "en-US");
-		const enUSKeys = Object.keys(enUSContents);
-		const coverage = {};
-		langCodes.forEach(code => {
-			const contents = getContentsFromYAML(localePath, code);
-			const docKeys = Object.keys(contents);
-			const diff = difference(enUSKeys, docKeys);
-			let same;
-			if (get(l10nKeyOverrides, `${repo}.${code}`)) {
-				same = enUSKeys.filter(
-					k =>
-						!diff.includes(k) &&
-						!l10nKeyOverrides[repo][code].includes(k) &&
-						contents[k] === enUSContents[k]
-				);
-			} else {
-				same = enUSKeys.filter(
-					k => !diff.includes(k) && contents[k] === enUSContents[k]
-				);
-			}
-
-			coverage[code] = {
-				percent: (
-					MAX_PERCENT -
-					(diff.length + same.length) / enUSKeys.length * MAX_PERCENT
-				).toFixed(1),
-				diff,
-				same
-			};
-		});
-
-		coverage.keyCount = enUSKeys.length;
-		state.coverage = coverage;
 		return Promise.resolve();
 	},
 	runPreScript(state) {
