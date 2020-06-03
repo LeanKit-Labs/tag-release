@@ -1,6 +1,7 @@
 const setup = require("../../src/helpers/setup");
 const api = require("../../src/workflows/steps/index.js"); // eslint-disable-line no-unused-vars
 const getCurrentBranch = require("../../src/helpers/getCurrentBranch"); // eslint-disable-line no-unused-vars
+const getRootDirectory = require("../../src/helpers/getRootDirectory"); // eslint-disable-line no-unused-vars
 const filterFlowBasedOnDevelopBranch = require("../../src/helpers/filterFlowBasedOnDevelopBranch"); // eslint-disable-line no-unused-vars
 const utils = require("../../src/utils"); // eslint-disable-line no-unused-vars
 
@@ -25,6 +26,9 @@ jest.mock("../../src/helpers/filterFlowBasedOnDevelopBranch", () =>
 jest.mock("../../src/helpers/getCurrentBranch", () =>
 	jest.fn(() => Promise.resolve("current-branch"))
 );
+jest.mock("../../src/helpers/getRootDirectory", () =>
+	jest.fn(() => Promise.resolve("/some/root/path"))
+);
 
 describe("setup", () => {
 	let state;
@@ -38,9 +42,17 @@ describe("setup", () => {
 			expect(state).toMatchObject({
 				branch: "current-branch",
 				workingBranch: "current-branch",
-				configPath: "./package.json",
 				version: "1.1.1",
-				workflow: ["one", "two", "three"]
+				workflow: ["one", "two", "three"],
+				filePaths: {
+					rootPath: "/some/root/path",
+					configPath: "/some/root/path/package.json",
+					changeLogPath: "/some/root/path/CHANGELOG.md",
+					packageLockJsonPath: "/some/root/path/package-lock.json",
+					gitIgnorePath: "/some/root/path/.gitignore",
+					pullRequestTemplatePath:
+						"/some/root/path/.github/PULL_REQUEST_TEMPLATE.md"
+				}
 			});
 		});
 	});
@@ -60,6 +72,26 @@ describe("setup", () => {
 			state = { branch: "provided-branch" };
 			return setup(state).then(() => {
 				expect(state).toMatchObject({ branch: "provided-branch" });
+			});
+		});
+	});
+
+	describe("config provided", () => {
+		it("should use provided config", () => {
+			state = { config: "another-config.json" };
+			return setup(state).then(() => {
+				expect(state).toMatchObject({
+					filePaths: {
+						rootPath: "/some/root/path",
+						configPath: "/some/root/path/another-config.json",
+						changeLogPath: "/some/root/path/CHANGELOG.md",
+						packageLockJsonPath:
+							"/some/root/path/package-lock.json",
+						gitIgnorePath: "/some/root/path/.gitignore",
+						pullRequestTemplatePath:
+							"/some/root/path/.github/PULL_REQUEST_TEMPLATE.md"
+					}
+				});
 			});
 		});
 	});
@@ -111,7 +143,6 @@ describe("setup", () => {
 	describe("when configPath doesn't exist", () => {
 		it("should advise", () => {
 			utils.fileExists = jest.fn(() => false);
-			state = { configPath: "blah.txt" };
 			return setup(state).then(() => {
 				expect(utils.advise).toHaveBeenCalledTimes(1);
 				expect(utils.advise).toHaveBeenCalledWith("updateVersion");
