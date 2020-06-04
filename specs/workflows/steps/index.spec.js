@@ -78,8 +78,17 @@ describe("shared workflow steps", () => {
 		command.runCommand = jest.fn(() =>
 			Promise.resolve("command.runCommand")
 		);
+		const rootDir = "/some/root/dir";
 		state = {
-			step: ""
+			step: "",
+			filePaths: {
+				rootPath: rootDir,
+				configPath: `${rootDir}/package.json`,
+				changeLogPath: `${rootDir}/CHANGELOG.md`,
+				packageLockJsonPath: `${rootDir}/package-lock.json`,
+				gitIgnorePath: `${rootDir}/.gitignore`,
+				pullRequestTemplatePath: `${rootDir}/.github/PULL_REQUEST_TEMPLATE.md`
+			}
 		};
 	});
 
@@ -220,9 +229,7 @@ describe("shared workflow steps", () => {
 
 	describe("checkExistingPrereleaseIdentifier", () => {
 		beforeEach(() => {
-			state = {
-				currentVersion: "1.0.0-some-other-identifier.0"
-			};
+			state.currentVersion = "1.0.0-some-other-identifier.0";
 		});
 
 		it("should not modify state with existing identifier", () => {
@@ -260,7 +267,7 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should not prompt if an identifier was provided at the command line", () => {
-			state = { prerelease: "test" };
+			state.prerelease = "test";
 			return run.setPrereleaseIdentifier(state).then(() => {
 				expect(util.prompt).not.toHaveBeenCalled();
 			});
@@ -288,9 +295,7 @@ describe("shared workflow steps", () => {
 
 		["defect", "feature", "rework"].forEach(redundantIdentifierPrefix => {
 			it(`should strip "${redundantIdentifierPrefix}-" from the beginning of the identifier when it is present`, () => {
-				state = {
-					prerelease: `${redundantIdentifierPrefix}-test-prerelease-identifier`
-				};
+				state.prerelease = `${redundantIdentifierPrefix}-test-prerelease-identifier`;
 				return run.setPrereleaseIdentifier(state).then(() => {
 					expect(state.prerelease).toEqual(
 						"test-prerelease-identifier"
@@ -317,14 +322,14 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should not prompt if tag was provided at the command line", () => {
-			state = { promote: "v1.1.1-feature.0" };
+			state.promote = "v1.1.1-feature.0";
 			return run.selectPrereleaseToPromote(state).then(() => {
 				expect(util.prompt).not.toHaveBeenCalled();
 			});
 		});
 
 		it("should prompt with the latest tags for promotion", () => {
-			state = { promote: true };
+			state.promote = true;
 			return run.selectPrereleaseToPromote(state).then(() => {
 				expect(util.prompt).toHaveBeenCalledTimes(1);
 				expect(util.prompt).toHaveBeenCalledWith([
@@ -355,7 +360,7 @@ describe("shared workflow steps", () => {
 
 			prereleases.forEach(prereleaseToPromote => {
 				it(`when "${prereleaseToPromote}" is selected`, () => {
-					state = { promote: true };
+					state.promote = true;
 					command.getPrereleaseTagList = jest.fn(() =>
 						Promise.resolve(prereleases)
 					);
@@ -386,7 +391,6 @@ describe("shared workflow steps", () => {
 
 	describe("getCurrentBranchVersion", () => {
 		beforeEach(() => {
-			state.configPath = "./package.json";
 			util.readJSONFile = jest.fn(() => ({ version: "1.2.3" }));
 		});
 
@@ -394,7 +398,7 @@ describe("shared workflow steps", () => {
 			return run.getCurrentBranchVersion(state).then(() => {
 				expect(util.readJSONFile).toHaveBeenCalledTimes(1);
 				expect(util.readJSONFile).toHaveBeenCalledWith(
-					"./package.json"
+					state.filePaths.configPath
 				);
 			});
 		});
@@ -417,9 +421,11 @@ describe("shared workflow steps", () => {
 			command.shortLog = jest.fn(() => Promise.resolve(""));
 			command.getTagList = jest.fn(() => Promise.resolve([]));
 			util.readFile = jest.fn(() => "sample content");
-			run.gitShortLog({});
+			run.gitShortLog(state);
 			expect(util.readFile).toHaveBeenCalledTimes(1);
-			expect(util.readFile).toHaveBeenCalledWith("CHANGELOG.md");
+			expect(util.readFile).toHaveBeenCalledWith(
+				state.filePaths.changeLogPath
+			);
 		});
 
 		describe("when a line containing `### Next` exists in the CHANGELOG.md contents", () => {
@@ -440,7 +446,10 @@ describe("shared workflow steps", () => {
 
 				run.gitShortLog(state);
 				expect(util.writeFile).toHaveBeenCalledTimes(1);
-				expect(util.writeFile).toHaveBeenCalledWith("CHANGELOG.md", "");
+				expect(util.writeFile).toHaveBeenCalledWith(
+					state.filePaths.changeLogPath,
+					""
+				);
 			});
 		});
 
@@ -473,9 +482,13 @@ describe("shared workflow steps", () => {
 
 			describe("and not in prerelease mode", () => {
 				beforeEach(() => {
-					state = {
-						prerelease: false
-					};
+					state = Object.assign(
+						{
+							currentVersion: "",
+							prerelease: false
+						},
+						state
+					);
 				});
 
 				it("should get a list of tags", () => {
@@ -527,10 +540,13 @@ describe("shared workflow steps", () => {
 
 			describe("and in prerelease mode", () => {
 				beforeEach(() => {
-					state = {
-						currentVersion: "1.2.3",
-						prerelease: true
-					};
+					state = Object.assign(
+						{
+							currentVersion: "1.2.3",
+							prerelease: true
+						},
+						state
+					);
 				});
 
 				it("should use currentVersion when fetching log data", () => {
@@ -611,10 +627,13 @@ describe("shared workflow steps", () => {
 
 		describe("when the prerelease option is true", () => {
 			it("should prompt the user with choices for Pre-major, Pre-minor, Pre-patch and Pre-release releases", () => {
-				state = {
-					currentVersion: "1.2.3",
-					prerelease: "test"
-				};
+				state = Object.assign(
+					{
+						currentVersion: "1.2.3",
+						prerelease: "test"
+					},
+					state
+				);
 
 				return run.askSemverJump(state).then(() => {
 					expect(util.prompt).toHaveBeenCalledTimes(1);
@@ -692,10 +711,13 @@ describe("shared workflow steps", () => {
 
 		describe("when the release option has been provided", () => {
 			it("should not prompt the user to select a release option", () => {
-				state = {
-					currentVersion: "1.2.3",
-					release: "prepatch"
-				};
+				state = Object.assign(
+					{
+						currentVersion: "1.2.3",
+						release: "prepatch"
+					},
+					state
+				);
 
 				return run.askSemverJump(state).then(() => {
 					expect(util.prompt).not.toHaveBeenCalled();
@@ -791,19 +813,23 @@ describe("shared workflow steps", () => {
 
 	describe("updateVersion", () => {
 		beforeEach(() => {
-			state = {
-				configPath: "./package.json",
-				currentVersion: "1.2.3",
-				prerelease: undefined,
-				release: "minor"
-			};
+			state = Object.assign(
+				{
+					currentVersion: "1.2.3",
+					prerelease: undefined,
+					release: "minor"
+				},
+				state
+			);
 			util.readJSONFile = jest.fn(() => ({ version: "1.2.3" }));
 		});
 
 		it("should read from the given configuration file", () => {
 			run.updateVersion(state);
 			expect(util.readJSONFile).toHaveBeenCalledTimes(1);
-			expect(util.readJSONFile).toHaveBeenCalledWith("./package.json");
+			expect(util.readJSONFile).toHaveBeenCalledWith(
+				state.filePaths.configPath
+			);
 		});
 
 		it("should call `semver.inc` with the selected release", () => {
@@ -823,39 +849,12 @@ describe("shared workflow steps", () => {
 			util.writeJSONFile = jest.fn(() => {});
 			run.updateVersion(state);
 			expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
-			expect(util.writeJSONFile).toHaveBeenCalledWith("./package.json", {
-				version: "1.3.0"
-			});
-		});
-
-		it("should use alternate configuration file when provided", () => {
-			state = {
-				configPath: "./manifest.json",
-				currentVersion: "1.2.3",
-				prerelease: undefined,
-				release: "minor"
-			};
-
-			run.updateVersion(state);
-			expect(util.readJSONFile).toHaveBeenCalledTimes(1);
-			expect(util.readJSONFile).toHaveBeenCalledWith("./manifest.json");
-		});
-
-		it("should update alternate configuration file when provided", () => {
-			state = {
-				configPath: "./manifest.json",
-				currentVersion: "1.2.3",
-				prerelease: undefined,
-				release: "minor"
-			};
-
-			util.writeJSOnFile = jest.fn(() => {});
-
-			run.updateVersion(state);
-			expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
-			expect(util.writeJSONFile).toHaveBeenCalledWith("./manifest.json", {
-				version: "1.3.0"
-			});
+			expect(util.writeJSONFile).toHaveBeenCalledWith(
+				state.filePaths.configPath,
+				{
+					version: "1.3.0"
+				}
+			);
 		});
 	});
 
@@ -863,13 +862,16 @@ describe("shared workflow steps", () => {
 		const originalConsoleLog = console.log; // eslint-disable-line no-console
 
 		beforeEach(() => {
-			state = {
-				versions: {
-					newVersion: "1.3.0"
+			state = Object.assign(
+				{
+					versions: {
+						newVersion: "1.3.0"
+					},
+					log: "* commit message",
+					release: "minor"
 				},
-				log: "* commit message",
-				release: "minor"
-			};
+				state
+			);
 
 			util.readFile = jest.fn(
 				() => "## 1.x\n\n### 1.2.3\n\n* update to v1.2.3"
@@ -891,7 +893,9 @@ describe("shared workflow steps", () => {
 		it("should read the current contents of CHANGELOG.md", () => {
 			run.updateChangelog(state);
 			expect(util.readFile).toHaveBeenCalledTimes(1);
-			expect(util.readFile).toHaveBeenCalledWith("CHANGELOG.md");
+			expect(util.readFile).toHaveBeenCalledWith(
+				state.filePaths.changeLogPath
+			);
 		});
 
 		it("should insert an H3 header for minor and patch changes", () => {
@@ -900,7 +904,7 @@ describe("shared workflow steps", () => {
 				"## 1.x\n\n### 1.3.0\n\n* commit message\n\n### 1.2.3\n\n* update to v1.2.3";
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
 			expect(util.writeFile).toHaveBeenCalledWith(
-				"CHANGELOG.md",
+				state.filePaths.changeLogPath,
 				contents
 			);
 		});
@@ -913,26 +917,18 @@ describe("shared workflow steps", () => {
 				"## 2.x\n\n### 2.0.0\n\n* commit message\n\n## 1.x\n\n### 1.2.3\n\n* update to v1.2.3";
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
 			expect(util.writeFile).toHaveBeenCalledWith(
-				"CHANGELOG.md",
+				state.filePaths.changeLogPath,
 				contents
 			);
 		});
 
 		it("should create a new entry in CHANGELOG.md for minor/defect changes", () => {
 			util.readFile = jest.fn(() => "");
-			state = {
-				release: "minor",
-				log: "* just little stuff",
-				versions: {
-					newVersion: "2.0.1"
-				}
-			};
-
 			run.updateChangelog(state);
-			const contents = "## 2.x\n\n### 2.0.1\n\n* just little stuff\n";
+			const contents = "## 1.x\n\n### 1.3.0\n\n* commit message\n";
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
 			expect(util.writeFile).toHaveBeenCalledWith(
-				"CHANGELOG.md",
+				state.filePaths.changeLogPath,
 				contents
 			);
 		});
@@ -942,7 +938,6 @@ describe("shared workflow steps", () => {
 		const originalProcessExit = process.exit;
 
 		beforeEach(() => {
-			state.configPath = "./package.json";
 			process.exit = jest.fn(() => {});
 			util.fileExists = jest.fn(() => true);
 			git.diff = jest.fn(() => Promise.resolve(""));
@@ -967,9 +962,9 @@ describe("shared workflow steps", () => {
 						expect(git.diff).toHaveBeenCalledTimes(1);
 						expect(git.diff).toHaveBeenCalledWith({
 							files: [
-								"./package.json",
-								"CHANGELOG.md",
-								"package-lock.json"
+								state.filePaths.configPath,
+								state.filePaths.changeLogPath,
+								state.filePaths.packageLockJsonPath
 							],
 							maxBuffer: undefined,
 							onError: expect.any(Function)
@@ -984,7 +979,7 @@ describe("shared workflow steps", () => {
 					return run.gitDiff(state).then(() => {
 						expect(git.diff).toHaveBeenCalledTimes(1);
 						expect(git.diff).toHaveBeenCalledWith({
-							files: ["./package.json"],
+							files: [state.filePaths.configPath],
 							maxBuffer: undefined,
 							onError: expect.any(Function)
 						});
@@ -1054,7 +1049,6 @@ describe("shared workflow steps", () => {
 
 	describe("gitAdd", () => {
 		beforeEach(() => {
-			state.configPath = "./manifest.json";
 			git.add = jest.fn(() => Promise.resolve());
 			util.fileExists
 				.mockReturnValueOnce(true)
@@ -1066,9 +1060,9 @@ describe("shared workflow steps", () => {
 				expect(git.add).toHaveBeenCalledTimes(1);
 				expect(git.add).toHaveBeenCalledWith({
 					files: [
-						"CHANGELOG.md",
-						"./manifest.json",
-						"package-lock.json"
+						state.filePaths.changeLogPath,
+						state.filePaths.configPath,
+						state.filePaths.packageLockJsonPath
 					]
 				});
 			});
@@ -1080,7 +1074,10 @@ describe("shared workflow steps", () => {
 				return run.gitAdd(state).then(() => {
 					expect(git.add).toHaveBeenCalledTimes(1);
 					expect(git.add).toHaveBeenCalledWith({
-						files: ["CHANGELOG.md", "./manifest.json"]
+						files: [
+							state.filePaths.changeLogPath,
+							state.filePaths.configPath
+						]
 					});
 				});
 			});
@@ -1098,7 +1095,10 @@ describe("shared workflow steps", () => {
 						return run.gitAdd(state).then(() => {
 							expect(git.add).toHaveBeenCalledTimes(1);
 							expect(git.add).toHaveBeenCalledWith({
-								files: ["CHANGELOG.md", "./manifest.json"]
+								files: [
+									state.filePaths.changeLogPath,
+									state.filePaths.configPath
+								]
 							});
 						});
 					});
@@ -1111,9 +1111,9 @@ describe("shared workflow steps", () => {
 							expect(git.add).toHaveBeenCalledTimes(1);
 							expect(git.add).toHaveBeenCalledWith({
 								files: [
-									"CHANGELOG.md",
-									"./manifest.json",
-									"package-lock.json"
+									state.filePaths.changeLogPath,
+									state.filePaths.configPath,
+									state.filePaths.packageLockJsonPath
 								]
 							});
 						});
@@ -1125,7 +1125,6 @@ describe("shared workflow steps", () => {
 
 	describe("gitStageConfigFile", () => {
 		beforeEach(() => {
-			state.configPath = "./package.json";
 			git.add = jest.fn(() => Promise.resolve());
 		});
 
@@ -1133,7 +1132,7 @@ describe("shared workflow steps", () => {
 			return run.gitStageConfigFile(state).then(() => {
 				expect(git.add).toHaveBeenCalledTimes(1);
 				expect(git.add).toHaveBeenCalledWith({
-					files: ["./package.json"]
+					files: ["/some/root/dir/package.json"]
 				});
 			});
 		});
@@ -1141,7 +1140,12 @@ describe("shared workflow steps", () => {
 
 	describe("gitCommit", () => {
 		it(`should call "git.commit" with the appropriate arguments`, () => {
-			state = { versions: { newVersion: "1.2.3" } };
+			state = Object.assign(
+				{
+					versions: { newVersion: "1.2.3" }
+				},
+				state
+			);
 			git.commit = jest.fn(() => Promise.resolve());
 			return run.gitCommit(state).then(() => {
 				expect(git.commit).toHaveBeenCalledTimes(1);
@@ -1154,7 +1158,12 @@ describe("shared workflow steps", () => {
 
 	describe("gitTag", () => {
 		it(`should call "git.tag" with the appropriate options`, () => {
-			state = { versions: { newVersion: "1.2.3" } };
+			state = Object.assign(
+				{
+					versions: { newVersion: "1.2.3" }
+				},
+				state
+			);
 			git.tag = jest.fn(() => Promise.resolve());
 			return run.gitTag(state).then(() => {
 				expect(git.tag).toHaveBeenCalledTimes(1);
@@ -1174,7 +1183,6 @@ describe("shared workflow steps", () => {
 
 	describe("npmPublish", () => {
 		beforeEach(() => {
-			state = { configPath: "./package.json" };
 			util.prompt = jest.fn(() => Promise.resolve({ publish: true }));
 			util.exec = jest.fn(() => Promise.resolve("data"));
 			util.isPackagePrivate = jest.fn(() => false);
@@ -1197,10 +1205,7 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should publish with identifier for pre-releases", () => {
-			state = {
-				configPath: "./package.json",
-				prerelease: "my-identifier"
-			};
+			state.prerelease = "my-identifier";
 			util.prompt = jest.fn(() => Promise.resolve({ publish: true }));
 			return run.npmPublish(state).then(() => {
 				expect(util.log.begin).toHaveBeenCalledWith(
@@ -1213,7 +1218,7 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should publish for releases", () => {
-			state = { configPath: "./package.json", prerelease: false };
+			state.prerelease = false;
 			util.prompt = jest.fn(() => Promise.resolve({ publish: true }));
 			return run.npmPublish(state).then(() => {
 				expect(util.log.begin).toHaveBeenCalledWith("npm publish");
@@ -1240,7 +1245,7 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should do nothing when the given configuration file is not `package.json`", () => {
-			state = { configPath: "./manifest.json" };
+			state.filePaths.configPath = "./manifest.json";
 			util.isPackagePrivate = jest.fn(() => Promise.resolve());
 			run.npmPublish(state);
 			expect(util.isPackagePrivate).not.toHaveBeenCalled();
@@ -1270,7 +1275,13 @@ describe("shared workflow steps", () => {
 
 	describe("gitPushUpstreamFeatureBranch", () => {
 		it(`should call "git.push" with the appropriate options`, () => {
-			state = { branch: "feature-branch", tag: "v1.0.0" };
+			state = Object.assign(
+				{
+					branch: "feature-branch",
+					tag: "v1.0.0"
+				},
+				state
+			);
 			run.gitPushUpstreamFeatureBranch(state);
 			expect(git.push).toHaveBeenCalledTimes(1);
 			expect(git.push).toHaveBeenCalledWith({
@@ -1289,7 +1300,7 @@ describe("shared workflow steps", () => {
 
 	describe("gitForcePushUpstreamFeatureBranch", () => {
 		it(`should call "git.push" with the appropriate options`, () => {
-			state = { branch: "feature-branch" };
+			state.branch = "feature-branch";
 			run.gitForcePushUpstreamFeatureBranch(state);
 			expect(git.push).toHaveBeenCalledTimes(1);
 			expect(git.push).toHaveBeenCalledWith({
@@ -1335,7 +1346,7 @@ describe("shared workflow steps", () => {
 
 			it("should extract repository owner and name", () => {
 				return run.githubUpstream(state).then(() => {
-					expect(state).toEqual({
+					expect(state).toMatchObject({
 						github: {
 							upstream: {
 								owner: "JohnDoe",
@@ -1356,7 +1367,7 @@ describe("shared workflow steps", () => {
 		describe("when an ssh uri is returned", () => {
 			it("should extract repository owner and name", () => {
 				return run.githubUpstream(state).then(() => {
-					expect(state).toEqual({
+					expect(state).toMatchObject({
 						github: {
 							upstream: {
 								owner: "JohnDoe",
@@ -1381,7 +1392,7 @@ describe("shared workflow steps", () => {
 
 			it("should set the github object on state to an empty object", () => {
 				return run.githubUpstream(state).then(() => {
-					expect(state).toEqual({
+					expect(state).toMatchObject({
 						github: {
 							upstream: {
 								name: undefined,
@@ -1410,7 +1421,6 @@ describe("shared workflow steps", () => {
 
 	describe("githubOrigin", () => {
 		beforeEach(() => {
-			state = {};
 			git.config = jest.fn(() =>
 				Promise.resolve("git@github.com:JohnDoe/test_repo.git")
 			);
@@ -1449,7 +1459,7 @@ describe("shared workflow steps", () => {
 
 			it("should extract repository owner and name", () => {
 				return run.githubOrigin(state).then(() => {
-					expect(state).toEqual({
+					expect(state).toMatchObject({
 						github: {
 							origin: {
 								owner: "JohnDoe",
@@ -1470,7 +1480,7 @@ describe("shared workflow steps", () => {
 		describe("when an ssh uri is returned", () => {
 			it("should extract the correct repository owner and name given git@github.com:leankit-labs/tag-release.git", () => {
 				return run.githubOrigin(state).then(() => {
-					expect(state).toEqual({
+					expect(state).toMatchObject({
 						github: {
 							origin: {
 								owner: "JohnDoe",
@@ -1492,7 +1502,7 @@ describe("shared workflow steps", () => {
 			it("should set the github object on state to an empty object", () => {
 				git.config = jest.fn(() => Promise.resolve(""));
 				return run.githubOrigin(state).then(() => {
-					expect(state).toEqual({
+					expect(state).toMatchObject({
 						github: {
 							origin: { owner: undefined, name: undefined }
 						},
@@ -1541,21 +1551,24 @@ describe("shared workflow steps", () => {
 		};
 
 		beforeEach(() => {
-			state = {
-				log:
-					"* Added last feature\n* Added second feature\n* Added first feature",
-				versions: {
-					newVersion: "1.2.3"
+			state = Object.assign(
+				{
+					log:
+						"* Added last feature\n* Added second feature\n* Added first feature",
+					versions: {
+						newVersion: "1.2.3"
+					},
+					github: {
+						upstream: {
+							owner: "someone-awesome",
+							name: "something-awesome"
+						}
+					},
+					token: "z8259r",
+					prerelease: false
 				},
-				github: {
-					upstream: {
-						owner: "someone-awesome",
-						name: "something-awesome"
-					}
-				},
-				token: "z8259r",
-				prerelease: false
-			};
+				state
+			);
 
 			util.prompt = jest.fn(() =>
 				Promise.resolve({ name: "Something awesome" })
@@ -2179,7 +2192,6 @@ describe("shared workflow steps", () => {
 		const originalProcessExit = process.exit;
 
 		beforeEach(() => {
-			state.configPath = "./package.json";
 			state.scope = "@lk";
 			util.readJSONFile = jest.fn(() => ({
 				devDependencies: { "@lk/over-watch": "1.1.1" },
@@ -2196,7 +2208,7 @@ describe("shared workflow steps", () => {
 			return run.getScopedRepos(state).then(() => {
 				expect(util.readJSONFile).toHaveBeenCalledTimes(1);
 				expect(util.readJSONFile).toHaveBeenCalledWith(
-					"./package.json"
+					state.filePaths.configPath
 				);
 			});
 		});
@@ -2307,15 +2319,18 @@ describe("shared workflow steps", () => {
 		};
 
 		beforeEach(() => {
-			state = {
-				github: {
-					upstream: {
-						owner: "someone-awesome",
-						name: "something-awesome"
-					}
+			state = Object.assign(
+				{
+					github: {
+						upstream: {
+							owner: "someone-awesome",
+							name: "something-awesome"
+						}
+					},
+					token: "z8259r"
 				},
-				token: "z8259r"
-			};
+				state
+			);
 			util.prompt = jest.fn(() =>
 				Promise.resolve({ pkg: "over-watch", version: "1.1.1" })
 			);
@@ -2521,10 +2536,13 @@ describe("shared workflow steps", () => {
 
 	describe("checkoutAndCreateBranch", () => {
 		beforeEach(() => {
-			state = {
-				branch: "feature-new-menu",
-				keepBranch: false
-			};
+			state = Object.assign(
+				{
+					branch: "feature-new-menu",
+					keepBranch: false
+				},
+				state
+			);
 			command.checkoutAndCreateBranch = jest.fn(() => Promise.resolve());
 		});
 
@@ -2591,20 +2609,22 @@ describe("shared workflow steps", () => {
 
 	describe("updateDependencies", () => {
 		beforeEach(() => {
-			state = {
-				configPath: "./package.json",
-				scope: "@lk",
-				dependencies: [
-					{
-						pkg: "over-watch",
-						version: "1.1.1"
-					},
-					{
-						pkg: "watch-over",
-						version: "2.2.2"
-					}
-				]
-			};
+			state = Object.assign(
+				{
+					scope: "@lk",
+					dependencies: [
+						{
+							pkg: "over-watch",
+							version: "1.1.1"
+						},
+						{
+							pkg: "watch-over",
+							version: "2.2.2"
+						}
+					]
+				},
+				state
+			);
 			util.readJSONFile = jest.fn(() => ({
 				devDependencies: { "@lk/over-watch": "1.1.1" },
 				dependencies: { "@lk/watch-over": "1.1.1" }
@@ -2616,7 +2636,7 @@ describe("shared workflow steps", () => {
 			return run.updateDependencies(state).then(() => {
 				expect(util.readJSONFile).toHaveBeenCalledTimes(1);
 				expect(util.readJSONFile).toHaveBeenCalledWith(
-					state.configPath
+					state.filePaths.configPath
 				);
 			});
 		});
@@ -2625,7 +2645,7 @@ describe("shared workflow steps", () => {
 			return run.updateDependencies(state).then(() => {
 				expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
 				expect(util.writeJSONFile).toHaveBeenCalledWith(
-					state.configPath,
+					state.filePaths.configPath,
 					{
 						dependencies: {
 							"@lk/watch-over": "2.2.2"
@@ -2784,19 +2804,22 @@ describe("shared workflow steps", () => {
 
 	describe("gitAmendCommitBumpMessage", () => {
 		beforeEach(() => {
-			state = {
-				dependencies: [
-					{
-						pkg: "web-common-ui",
-						version: "1.1.1-new.0"
-					},
-					{
-						pkg: "web-board-slice",
-						version: "2.2.2-new.1"
-					}
-				],
-				changeReason: "This is the reason"
-			};
+			state = Object.assign(
+				{
+					dependencies: [
+						{
+							pkg: "web-common-ui",
+							version: "1.1.1-new.0"
+						},
+						{
+							pkg: "web-board-slice",
+							version: "2.2.2-new.1"
+						}
+					],
+					changeReason: "This is the reason"
+				},
+				state
+			);
 			command.commitAmend = jest.fn(() => Promise.resolve());
 		});
 
@@ -2822,11 +2845,13 @@ describe("shared workflow steps", () => {
 
 	describe("getCurrentDependencyVersions", () => {
 		beforeEach(() => {
-			state = {
-				configPath: "./blah",
-				packages: ["another-ui", "my-secret-repo"],
-				scope: "@lk"
-			};
+			state = Object.assign(
+				{
+					packages: ["another-ui", "my-secret-repo"],
+					scope: "@lk"
+				},
+				state
+			);
 			util.readJSONFile = jest.fn(() => ({
 				devDependencies: {
 					"@lk/another-ui": "1.0.0",
@@ -2843,7 +2868,7 @@ describe("shared workflow steps", () => {
 			return run.getCurrentDependencyVersions(state).then(() => {
 				expect(util.readJSONFile).toHaveBeenCalledTimes(1);
 				expect(util.readJSONFile).toHaveBeenCalledWith(
-					state.configPath
+					state.filePaths.configPath
 				);
 			});
 		});
@@ -2923,20 +2948,23 @@ describe("shared workflow steps", () => {
 		};
 
 		beforeEach(() => {
-			state = {
-				github: {
-					upstream: {
-						owner: "someone-awesome",
-						name: "something-awesome"
-					}
+			state = Object.assign(
+				{
+					github: {
+						upstream: {
+							owner: "someone-awesome",
+							name: "something-awesome"
+						}
+					},
+					token: "z8259r",
+					prerelease: false,
+					bump: true,
+					branch: "feature-branch",
+					bumpComment:
+						"Bumped my-package to 1.1.1: This is my reason for the change"
 				},
-				token: "z8259r",
-				prerelease: false,
-				bump: true,
-				branch: "feature-branch",
-				bumpComment:
-					"Bumped my-package to 1.1.1: This is my reason for the change"
-			};
+				state
+			);
 
 			util.logger.log = jest.fn();
 			util.prompt = jest.fn(() =>
@@ -3115,22 +3143,25 @@ describe("shared workflow steps", () => {
 		};
 
 		beforeEach(() => {
-			state = {
-				github: {
-					upstream: {
-						owner: "someone-awesome",
-						name: "something-awesome"
+			state = Object.assign(
+				{
+					github: {
+						upstream: {
+							owner: "someone-awesome",
+							name: "something-awesome"
+						},
+						origin: { owner: "someone-awesome-origin" }
 					},
-					origin: { owner: "someone-awesome-origin" }
+					token: "z8259r",
+					prerelease: false,
+					branch: "feature-branch",
+					pullRequest: {
+						title: "This is my pull request title",
+						body: "This is my pull request body"
+					}
 				},
-				token: "z8259r",
-				prerelease: false,
-				branch: "feature-branch",
-				pullRequest: {
-					title: "This is my pull request title",
-					body: "This is my pull request body"
-				}
-			};
+				state
+			);
 
 			util.logger.log = jest.fn();
 			util.prompt = jest.fn(() =>
@@ -3227,9 +3258,7 @@ describe("shared workflow steps", () => {
 		let joinSpy;
 
 		beforeEach(() => {
-			state = {
-				scope: "@lk"
-			};
+			state.scope = "@lk";
 			util.writeJSONFile = jest.fn(() => {});
 			joinSpy = jest
 				.spyOn(path, "join")
@@ -3294,11 +3323,14 @@ describe("shared workflow steps", () => {
 
 	describe("promptBranchName", () => {
 		beforeEach(() => {
-			state = {
-				changeType: "feature",
-				prerelease: "magic",
-				keepBranch: false
-			};
+			state = Object.assign(
+				{
+					changeType: "feature",
+					prerelease: "magic",
+					keepBranch: false
+				},
+				state
+			);
 			util.prompt = jest.fn(() =>
 				Promise.resolve({ branchName: "feature-magic" })
 			);
@@ -3373,15 +3405,18 @@ describe("shared workflow steps", () => {
 		};
 
 		beforeEach(() => {
-			state = {
-				github: {
-					upstream: {
-						owner: "someone-awesome",
-						name: "something-awesome"
-					}
+			state = Object.assign(
+				{
+					github: {
+						upstream: {
+							owner: "someone-awesome",
+							name: "something-awesome"
+						}
+					},
+					token: "z8259r"
 				},
-				token: "z8259r"
-			};
+				state
+			);
 			GitHub.mockImplementation(mockGitHub());
 		});
 
@@ -3482,11 +3517,9 @@ describe("shared workflow steps", () => {
 
 	describe("verifyOrigin", () => {
 		beforeEach(() => {
-			state = {
-				remotes: {
-					origin: {
-						exists: true
-					}
+			state.remotes = {
+				origin: {
+					exists: true
 				}
 			};
 		});
@@ -3507,11 +3540,9 @@ describe("shared workflow steps", () => {
 		});
 
 		it("should advise when remote origin doesn't exists", () => {
-			state = {
-				remotes: {
-					origin: {
-						exists: false
-					}
+			state.remotes = {
+				origin: {
+					exists: false
 				}
 			};
 
@@ -3577,24 +3608,27 @@ describe("shared workflow steps", () => {
 		};
 
 		beforeEach(() => {
-			state = {
-				github: {
-					origin: {
-						owner: "someone-awesome",
-						name: "something-awesome"
+			state = Object.assign(
+				{
+					github: {
+						origin: {
+							owner: "someone-awesome",
+							name: "something-awesome"
+						}
+					},
+					token: "z8259r",
+					remotes: {
+						origin: {
+							exists: true,
+							url: "git@github.com:johnsmith/awesome-repo.git"
+						},
+						upstream: {
+							exists: false
+						}
 					}
 				},
-				token: "z8259r",
-				remotes: {
-					origin: {
-						exists: true,
-						url: "git@github.com:johnsmith/awesome-repo.git"
-					},
-					upstream: {
-						exists: false
-					}
-				}
-			};
+				state
+			);
 			util.exec = jest.fn(() => Promise.resolve(""));
 			GitHub.mockImplementation(mockGitHub());
 		});
@@ -3753,9 +3787,6 @@ describe("shared workflow steps", () => {
 
 	describe("verifyPackageJson", () => {
 		beforeEach(() => {
-			state = {
-				configPath: "./some_path"
-			};
 			util.advise = jest.fn(() => Promise.resolve());
 			util.fileExists = jest.fn(() => true);
 		});
@@ -3848,10 +3879,13 @@ describe("shared workflow steps", () => {
 
 	describe("useCurrentOrBaseBranch", () => {
 		beforeEach(() => {
-			state = {
-				log: "some random commit",
-				hasDevelopBranch: true
-			};
+			state = Object.assign(
+				{
+					log: "some random commit",
+					hasDevelopBranch: true
+				},
+				state
+			);
 			util.advise = jest.fn(() => Promise.resolve());
 		});
 
@@ -3875,10 +3909,8 @@ describe("shared workflow steps", () => {
 
 		describe("when branch has no changes nor a develop branch", () => {
 			it("should advise", () => {
-				state = {
-					log: "",
-					hasDevelopBranch: false
-				};
+				state.log = "";
+				state.hasDevelopBranch = false;
 				return run.useCurrentOrBaseBranch(state).then(() => {
 					expect(command.checkoutBranch).toHaveBeenCalledTimes(0);
 					expect(util.advise).toHaveBeenCalledTimes(1);
@@ -3892,10 +3924,13 @@ describe("shared workflow steps", () => {
 
 	describe("promptKeepBranchOrCreateNew", () => {
 		beforeEach(() => {
-			state = {
-				log: "some random commit",
-				branch: "feature-branch"
-			};
+			state = Object.assign(
+				{
+					log: "some random commit",
+					branch: "feature-branch"
+				},
+				state
+			);
 			command.branchExistsRemote = jest.fn(() => Promise.resolve(true));
 			util.prompt = jest.fn(() => Promise.resolve({ keep: true }));
 		});
@@ -3980,9 +4015,7 @@ describe("shared workflow steps", () => {
 
 	describe("findBranchByTag", () => {
 		beforeEach(() => {
-			state = {
-				promote: "v1.1.1-prerelease.0"
-			};
+			state.promote = "v1.1.1-prerelease.0";
 
 			util.prompt = jest.fn(() =>
 				Promise.resolve({ branch: "feature-branch" })
@@ -4042,9 +4075,7 @@ feature-last-branch`)
 
 	describe("deleteLocalFeatureBranch", () => {
 		beforeEach(() => {
-			state = {
-				branchToRemove: "feature-branch"
-			};
+			state.branchToRemove = "feature-branch";
 
 			command.deleteBranch = jest.fn(() => Promise.resolve());
 			util.advise = jest.fn(() => Promise.resolve());
@@ -4068,19 +4099,22 @@ feature-last-branch`)
 
 	describe("updatePackageLockJson", () => {
 		beforeEach(() => {
-			state = {
-				currentVersion: "12.1.1",
-				dependencies: [
-					{
-						pkg: "over-watch",
-						version: "1.1.1"
-					},
-					{
-						pkg: "watch-over",
-						version: "2.2.2"
-					}
-				]
-			};
+			state = Object.assign(
+				{
+					currentVersion: "12.1.1",
+					dependencies: [
+						{
+							pkg: "over-watch",
+							version: "1.1.1"
+						},
+						{
+							pkg: "watch-over",
+							version: "2.2.2"
+						}
+					]
+				},
+				state
+			);
 
 			util.fileExists = jest.fn(() => true);
 			util.readJSONFile = jest.fn(() => ({ version: "1.2.3" }));
@@ -4122,11 +4156,11 @@ feature-last-branch`)
 					return run.updatePackageLockJson(state).then(() => {
 						expect(util.readJSONFile).toHaveBeenCalledTimes(1);
 						expect(util.readJSONFile).toHaveBeenCalledWith(
-							"package-lock.json"
+							"/some/root/dir/package-lock.json"
 						);
 						expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
 						expect(util.writeJSONFile).toHaveBeenCalledWith(
-							"package-lock.json",
+							"/some/root/dir/package-lock.json",
 							{ version: "12.1.1" }
 						);
 					});
@@ -4147,9 +4181,7 @@ feature-last-branch`)
 
 	describe("deleteUpstreamFeatureBranch", () => {
 		beforeEach(() => {
-			state = {
-				branchToRemove: "feature-branch"
-			};
+			state.branchToRemove = "feature-branch";
 
 			command.deleteBranchUpstream = jest.fn(() => Promise.resolve());
 
@@ -4176,19 +4208,22 @@ feature-last-branch`)
 		let joinSpy;
 
 		beforeEach(() => {
-			state = {
-				dependencies: [
-					{
-						pkg: "my-slice-project",
-						version: "1.1.1-some-identifier.0"
-					},
-					{
-						pkg: "my-other-slice-project",
-						version: "8.15.0-some-other-identifier.2"
-					}
-				],
-				changeReason: "random reason"
-			};
+			state = Object.assign(
+				{
+					dependencies: [
+						{
+							pkg: "my-slice-project",
+							version: "1.1.1-some-identifier.0"
+						},
+						{
+							pkg: "my-other-slice-project",
+							version: "8.15.0-some-other-identifier.2"
+						}
+					],
+					changeReason: "random reason"
+				},
+				state
+			);
 
 			util.writeJSONFile = jest.fn(() => {});
 
@@ -4277,7 +4312,7 @@ feature-last-branch`)
 		it(`should use {} when no dependencies/changeReason read from ".dependencies.json"`, () => {
 			util.readJSONFile = jest.fn(() => ({}));
 			return run.getDependenciesFromFile(state).then(() => {
-				expect(state).toEqual({
+				expect(state).toMatchObject({
 					step: "getDependenciesFromFile"
 				});
 			});
@@ -4285,10 +4320,13 @@ feature-last-branch`)
 
 		it("shouldn't set state when nothing read from file", () => {
 			util.readJSONFile = jest.fn(() => undefined);
-			state = {
-				dependencies: [],
-				changeReason: "not set to null"
-			};
+			state = Object.assign(
+				{
+					dependencies: [],
+					changeReason: "not set to null"
+				},
+				state
+			);
 			return run.getDependenciesFromFile(state).then(() => {
 				expect(state).toHaveProperty("dependencies");
 				expect(state).toHaveProperty("changeReason");
@@ -4347,9 +4385,7 @@ feature-last-branch`)
 
 	describe("gitCreateBranchUpstream", () => {
 		beforeEach(() => {
-			state = {
-				branch: "feature-branch"
-			};
+			state.branch = "feature-branch";
 
 			command.branchExistsRemote = jest.fn(() => Promise.resolve(false));
 			command.createRemoteBranch = jest.fn(() => Promise.resolve());
@@ -4444,9 +4480,7 @@ feature-last-branch`)
 
 	describe("gitCreateBranchOrigin", () => {
 		beforeEach(() => {
-			state = {
-				branch: "feature-branch"
-			};
+			state.branch = "feature-branch";
 
 			command.branchExistsRemote = jest.fn(() => Promise.resolve(false));
 			command.createRemoteBranch = jest.fn(() => Promise.resolve());
@@ -5147,12 +5181,15 @@ common.filter.savedFilters.new: "<New>"
 
 	describe("runPreScript", () => {
 		beforeEach(() => {
-			state = {
-				command: "pr",
-				scripts: {
-					prepr: "node ./prepr.js"
-				}
-			};
+			state = Object.assign(
+				{
+					command: "pr",
+					scripts: {
+						prepr: "node ./prepr.js"
+					}
+				},
+				state
+			);
 			util.exec = jest.fn(() => Promise.resolve());
 		});
 
@@ -5194,12 +5231,15 @@ common.filter.savedFilters.new: "<New>"
 
 	describe("runPostScript", () => {
 		beforeEach(() => {
-			state = {
-				command: "pr",
-				scripts: {
-					postpr: "node ./postpr.js"
-				}
-			};
+			state = Object.assign(
+				{
+					command: "pr",
+					scripts: {
+						postpr: "node ./postpr.js"
+					}
+				},
+				state
+			);
 			util.exec = jest.fn(() => Promise.resolve());
 		});
 

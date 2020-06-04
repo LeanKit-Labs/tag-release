@@ -14,10 +14,6 @@ const getCurrentBranch = require("../../helpers/getCurrentBranch");
 const getContentsFromYAML = require("../../helpers/getContentsFromYAML");
 
 const MAX_PERCENT = 100;
-const CHANGELOG_PATH = "CHANGELOG.md";
-const PACKAGELOCKJSON_PATH = "package-lock.json";
-const GIT_IGNORE_PATH = ".gitignore";
-const PULL_REQUEST_TEMPLATE_PATH = "./.github/PULL_REQUEST_TEMPLATE.md";
 
 const api = {
 	checkoutWorkingBranch(state) {
@@ -219,7 +215,7 @@ const api = {
 	},
 	getCurrentBranchVersion(state) {
 		state.step = "getCurrentBranchVersion";
-		const { configPath } = state;
+		const { filePaths: { configPath } } = state;
 		const { version } = util.readJSONFile(configPath);
 
 		state.currentVersion = version;
@@ -227,9 +223,15 @@ const api = {
 	},
 	gitShortLog(state) {
 		state.step = "gitShortLog";
-		const { currentVersion, prerelease, spinner, repo } = state;
+		const {
+			currentVersion,
+			prerelease,
+			spinner,
+			repo,
+			filePaths: { changeLogPath }
+		} = state;
 
-		let contents = util.readFile(CHANGELOG_PATH);
+		let contents = util.readFile(changeLogPath);
 
 		if (contents && contents.includes("### Next")) {
 			contents = contents.replace(
@@ -240,7 +242,7 @@ const api = {
 				}
 			);
 
-			util.writeFile(CHANGELOG_PATH, contents);
+			util.writeFile(changeLogPath, contents);
 		} else {
 			return command.getTagList(spinner, repo).then(tags => {
 				let latestRelease = "";
@@ -366,7 +368,12 @@ ${chalk.green(log)}`);
 	},
 	updateVersion(state) {
 		state.step = "updateVersion";
-		const { configPath, currentVersion, prerelease, release } = state;
+		const {
+			filePaths: { rootPath, configPath },
+			currentVersion,
+			prerelease,
+			release
+		} = state;
 		const pkg = util.readJSONFile(configPath);
 
 		const oldVersion = currentVersion;
@@ -381,19 +388,27 @@ ${chalk.green(log)}`);
 		state.currentVersion = newVersion;
 		util.logger.log(
 			chalk.green(
-				`Updated ${configPath} from ${oldVersion} to ${newVersion}`
+				`Updated ${configPath.replace(
+					`${rootPath}/`,
+					""
+				)} from ${oldVersion} to ${newVersion}`
 			)
 		);
 	},
 	updateChangelog(state) {
 		state.step = "updateChangelog";
-		const { log, release, versions: { newVersion } } = state;
+		const {
+			log,
+			release,
+			versions: { newVersion },
+			filePaths: { changeLogPath }
+		} = state;
 		const version = `### ${newVersion}`;
 		const update = `${version}\n\n${log}`;
 		const wildcardVersion = newVersion.replace(/\.\d+\.\d+/, ".x");
 
 		util.log.begin("update changelog");
-		let contents = util.readFile(CHANGELOG_PATH);
+		let contents = util.readFile(changeLogPath);
 		contents = contents ? contents : "";
 
 		if (release === "major") {
@@ -404,20 +419,22 @@ ${chalk.green(log)}`);
 				: `## ${wildcardVersion}\n\n${update}\n`;
 		}
 
-		util.writeFile(CHANGELOG_PATH, contents);
+		util.writeFile(changeLogPath, contents);
 		util.log.end();
 	},
 	gitDiff(state) {
 		state.step = "gitDiff";
-		const { configPath } = state;
+		const {
+			filePaths: { configPath, changeLogPath, packageLockJsonPath }
+		} = state;
 		const files = [configPath];
 
-		if (util.fileExists(CHANGELOG_PATH)) {
-			files.push(CHANGELOG_PATH);
+		if (util.fileExists(changeLogPath)) {
+			files.push(changeLogPath);
 		}
 
-		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
-			files.push(PACKAGELOCKJSON_PATH);
+		if (util.fileExists(packageLockJsonPath)) {
+			files.push(packageLockJsonPath);
 		}
 
 		const onError = err => {
@@ -457,19 +474,31 @@ ${chalk.green(log)}`);
 	},
 	gitAdd(state) {
 		state.step = "gitAdd";
-		const { configPath } = state;
-		const files = [CHANGELOG_PATH, configPath];
+		const {
+			filePaths: {
+				rootPath,
+				configPath,
+				changeLogPath,
+				gitIgnorePath,
+				packageLockJsonPath
+			}
+		} = state;
+		const files = [changeLogPath, configPath];
 
 		let found;
-		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
-			if (util.fileExists(GIT_IGNORE_PATH)) {
+		if (util.fileExists(packageLockJsonPath)) {
+			if (util.fileExists(gitIgnorePath)) {
 				found = !!util
-					.readFile(GIT_IGNORE_PATH)
+					.readFile(gitIgnorePath)
 					.split("\n")
-					.find(line => line.includes(PACKAGELOCKJSON_PATH));
+					.find(line =>
+						line.includes(
+							packageLockJsonPath.replace(`${rootPath}/`, "")
+						)
+					);
 			}
 			if (!found) {
-				files.push(PACKAGELOCKJSON_PATH);
+				files.push(packageLockJsonPath);
 			}
 		}
 
@@ -477,7 +506,7 @@ ${chalk.green(log)}`);
 	},
 	gitStageConfigFile(state) {
 		state.step = "gitStageConfigFile";
-		const { configPath, spinner, repo } = state;
+		const { filePaths: { configPath }, spinner, repo } = state;
 
 		return git.add({ files: [configPath], spinner, repo });
 	},
@@ -503,8 +532,8 @@ ${chalk.green(log)}`);
 	},
 	npmPublish(state) {
 		state.step = "npmPublish";
-		const { configPath, prerelease } = state;
-		if (configPath !== "./package.json") {
+		const { filePaths: { configPath }, prerelease } = state;
+		if (!configPath.includes("package.json")) {
 			return null;
 		}
 
@@ -806,7 +835,7 @@ ${chalk.green(log)}`);
 	},
 	getScopedRepos(state) {
 		state.step = "getScopedRepos";
-		const { configPath, scope } = state;
+		const { filePaths: { configPath }, scope } = state;
 		const content = util.readJSONFile(configPath);
 
 		const getScopedDependencies = (dependencies = {}, packageScope) =>
@@ -940,7 +969,7 @@ ${chalk.green(log)}`);
 	},
 	updateDependencies(state) {
 		state.step = "updateDependencies";
-		const { dependencies, configPath, scope } = state;
+		const { dependencies, filePaths: { configPath }, scope } = state;
 		const content = util.readJSONFile(configPath);
 
 		dependencies.forEach(item => {
@@ -1021,7 +1050,7 @@ ${chalk.green(log)}`);
 	},
 	getCurrentDependencyVersions(state) {
 		state.step = "getCurrentDependencyVersions";
-		const { packages, configPath, scope } = state;
+		const { packages, filePaths: { configPath }, scope } = state;
 		state.dependencies = [];
 
 		const content = util.readJSONFile(configPath);
@@ -1277,8 +1306,9 @@ ${chalk.green(log)}`);
 	},
 	verifyChangelog(state) {
 		state.step = "verifyChangelog";
+		const { filePaths: { changeLogPath } } = state;
 		util.log.begin("Verifying CHANGELOG.md");
-		if (util.fileExists(CHANGELOG_PATH)) {
+		if (util.fileExists(changeLogPath)) {
 			util.log.end();
 			return Promise.resolve();
 		}
@@ -1297,7 +1327,7 @@ ${chalk.green(log)}`);
 				if (answers.changelog) {
 					util.log.begin("Creating CHANGELOG.md");
 					util.log.end();
-					return util.writeFile(CHANGELOG_PATH, "");
+					return util.writeFile(changeLogPath, "");
 				}
 
 				return Promise.resolve();
@@ -1305,7 +1335,7 @@ ${chalk.green(log)}`);
 	},
 	verifyPackageJson(state) {
 		state.step = "verifyPackageJson";
-		const { configPath } = state;
+		const { filePaths: { configPath } } = state;
 		util.log.begin("Verifying package.json");
 		util.log.end();
 
@@ -1317,7 +1347,7 @@ ${chalk.green(log)}`);
 	},
 	isPackagePrivate(state) {
 		state.step = "isPackagePrivate";
-		const { configPath } = state;
+		const { filePaths: { configPath } } = state;
 		if (util.isPackagePrivate(configPath)) {
 			util.advise("privatePackage");
 		}
@@ -1472,14 +1502,19 @@ ${chalk.green(log)}`);
 	},
 	updatePackageLockJson(state) {
 		state.step = "updatePackageLockJson";
-		const { dependencies, currentVersion, scope } = state;
+		const {
+			dependencies,
+			currentVersion,
+			scope,
+			filePaths: { packageLockJsonPath }
+		} = state;
 
-		if (util.fileExists(PACKAGELOCKJSON_PATH)) {
+		if (util.fileExists(packageLockJsonPath)) {
 			if (currentVersion) {
 				let pkg = {};
-				pkg = util.readJSONFile(PACKAGELOCKJSON_PATH);
+				pkg = util.readJSONFile(packageLockJsonPath);
 				pkg.version = currentVersion;
-				util.writeJSONFile(PACKAGELOCKJSON_PATH, pkg);
+				util.writeJSONFile(packageLockJsonPath, pkg);
 			}
 
 			if (dependencies) {
@@ -1565,6 +1600,7 @@ ${chalk.green(log)}`);
 	},
 	updatePullRequestBody(state) {
 		state.step = "updatePullRequestBody";
+		const { filePaths: { pullRequestTemplatePath } } = state;
 		return util
 			.prompt([
 				{
@@ -1577,8 +1613,8 @@ ${chalk.green(log)}`);
 			])
 			.then(answers => {
 				util.log.begin("pull request body preview");
-				const contents = util.fileExists(PULL_REQUEST_TEMPLATE_PATH)
-					? util.readFile(PULL_REQUEST_TEMPLATE_PATH)
+				const contents = util.fileExists(pullRequestTemplatePath)
+					? util.readFile(pullRequestTemplatePath)
 					: "";
 				if (answers.body) {
 					return util.editFile(contents).then(data => {
@@ -1729,7 +1765,7 @@ ${chalk.green(log)}`);
 	},
 	buildLocale(state) {
 		state.step = "buildLocale";
-		const { configPath } = state;
+		const { filePaths: { configPath } } = state;
 		const { scripts } = util.readJSONFile(configPath);
 
 		const buildLocaleCommand = "npm run build:locale";

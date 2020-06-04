@@ -4,11 +4,22 @@ const {
 	runPostScript
 } = require("../workflows/steps/index.js");
 const getCurrentBranch = require("./getCurrentBranch");
+const getRootDirectory = require("./getRootDirectory");
 const filterFlowBasedOnDevelopBranch = require("./filterFlowBasedOnDevelopBranch");
 const utils = require("../utils");
 
 const setup = async options => {
-	options.configPath = options.config || "./package.json";
+	const rootDir = await getRootDirectory();
+	const configPath = options.config || "package.json";
+	options.filePaths = {
+		rootPath: rootDir,
+		configPath: `${rootDir}/${configPath}`,
+		changeLogPath: `${rootDir}/CHANGELOG.md`,
+		packageLockJsonPath: `${rootDir}/package-lock.json`,
+		gitIgnorePath: `${rootDir}/.gitignore`,
+		pullRequestTemplatePath: `${rootDir}/.github/PULL_REQUEST_TEMPLATE.md`
+	};
+
 	options.version = await utils.getCurrentVersion();
 
 	options.branch = options.branch ? options.branch : await getCurrentBranch();
@@ -40,7 +51,10 @@ const setup = async options => {
 		}
 	}
 
-	if (!utils.fileExists(options.configPath) && options.command !== "l10n") {
+	if (
+		!utils.fileExists(options.filePaths.configPath) &&
+		options.command !== "l10n"
+	) {
 		utils.advise("updateVersion");
 	}
 
