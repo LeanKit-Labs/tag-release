@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.16.0
+
+* Use paths from .git root
+
 ### 6.15.0
 
 * Updated bump commit reorder advise
