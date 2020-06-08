@@ -79,7 +79,6 @@ const api = {
 			{
 				release,
 				cwd,
-				configPath: "./package.json",
 				workflow: automatedWorkflow
 			}
 		);

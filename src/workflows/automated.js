@@ -2,6 +2,7 @@ const run = require("./steps/index");
 
 module.exports = [
 	run.changeDirectory,
+	run.setFilePaths,
 	run.fetchUpstream,
 	run.checkoutMaster,
 	run.gitMergeUpstreamMaster,

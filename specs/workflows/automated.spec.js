@@ -5,6 +5,7 @@ describe("default workflow", () => {
 	it("should have all of the required steps", () => {
 		expect(defaultWorkflow).toEqual([
 			run.changeDirectory,
+			run.setFilePaths,
 			run.fetchUpstream,
 			run.checkoutMaster,
 			run.gitMergeUpstreamMaster,

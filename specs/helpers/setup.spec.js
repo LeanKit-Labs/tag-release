@@ -1,14 +1,14 @@
 const setup = require("../../src/helpers/setup");
 const api = require("../../src/workflows/steps/index.js"); // eslint-disable-line no-unused-vars
 const getCurrentBranch = require("../../src/helpers/getCurrentBranch"); // eslint-disable-line no-unused-vars
-const getRootDirectory = require("../../src/helpers/getRootDirectory"); // eslint-disable-line no-unused-vars
 const filterFlowBasedOnDevelopBranch = require("../../src/helpers/filterFlowBasedOnDevelopBranch"); // eslint-disable-line no-unused-vars
 const utils = require("../../src/utils"); // eslint-disable-line no-unused-vars
 
 jest.mock("../../src/workflows/steps/index.js", () => ({
 	checkHasDevelopBranch: jest.fn(() => true),
 	runPreScript: "preScript",
-	runPostScript: "postScript"
+	runPostScript: "postScript",
+	setFilePaths: jest.fn()
 }));
 
 jest.mock("../../src/utils", () => ({
@@ -26,15 +26,22 @@ jest.mock("../../src/helpers/filterFlowBasedOnDevelopBranch", () =>
 jest.mock("../../src/helpers/getCurrentBranch", () =>
 	jest.fn(() => Promise.resolve("current-branch"))
 );
-jest.mock("../../src/helpers/getRootDirectory", () =>
-	jest.fn(() => Promise.resolve("/some/root/path"))
-);
 
 describe("setup", () => {
 	let state;
-
 	beforeEach(() => {
-		state = { command: "start" };
+		state = {
+			command: "start",
+			filePaths: {
+				rootPath: "/some/root/path",
+				configPath: "/some/root/path/package.json",
+				changeLogPath: "/some/root/path/CHANGELOG.md",
+				packageLockJsonPath: "/some/root/path/package-lock.json",
+				gitIgnorePath: "/some/root/path/.gitignore",
+				pullRequestTemplatePath:
+					"/some/root/path/.github/PULL_REQUEST_TEMPLATE.md"
+			}
+		};
 	});
 
 	it("should transform state", () => {
@@ -60,7 +67,12 @@ describe("setup", () => {
 	describe("callback provided", () => {
 		it("should use provided callback", () => {
 			const callback = jest.fn();
-			state = { callback };
+			state = Object.assign(
+				{
+					callback
+				},
+				state
+			);
 			return setup(state).then(() => {
 				expect(state).toMatchObject({ callback });
 			});
@@ -69,29 +81,9 @@ describe("setup", () => {
 
 	describe("branch provided", () => {
 		it("should use provided branch", () => {
-			state = { branch: "provided-branch" };
+			state.branch = "provided-branch";
 			return setup(state).then(() => {
 				expect(state).toMatchObject({ branch: "provided-branch" });
-			});
-		});
-	});
-
-	describe("config provided", () => {
-		it("should use provided config", () => {
-			state = { config: "another-config.json" };
-			return setup(state).then(() => {
-				expect(state).toMatchObject({
-					filePaths: {
-						rootPath: "/some/root/path",
-						configPath: "/some/root/path/another-config.json",
-						changeLogPath: "/some/root/path/CHANGELOG.md",
-						packageLockJsonPath:
-							"/some/root/path/package-lock.json",
-						gitIgnorePath: "/some/root/path/.gitignore",
-						pullRequestTemplatePath:
-							"/some/root/path/.github/PULL_REQUEST_TEMPLATE.md"
-					}
-				});
 			});
 		});
 	});
@@ -99,7 +91,7 @@ describe("setup", () => {
 	describe("scripts", () => {
 		describe("provided", () => {
 			beforeEach(() => {
-				state = { command: "pr" };
+				state.command = "pr";
 			});
 
 			describe("pre", () => {

@@ -17,7 +17,17 @@ import * as run from "../../../src/workflows/steps/conflictResolution";
 describe("conflict resolution workflow steps", () => {
 	let state = {};
 	beforeEach(() => {
-		state = {};
+		state = {
+			filePaths: {
+				rootPath: "/some/root/path",
+				configPath: "/some/root/path/package.json",
+				changeLogPath: "/some/root/path/CHANGELOG.md",
+				packageLockJsonPath: "/some/root/path/package-lock.json",
+				gitIgnorePath: "/some/root/path/.gitignore",
+				pullRequestTemplatePath:
+					"/some/root/path/.github/PULL_REQUEST_TEMPLATE.md"
+			}
+		};
 		logger.log = jest.fn(arg => arg);
 		util.writeFile = jest.fn(arg => arg);
 		util.readFile = jest.fn(
@@ -41,9 +51,12 @@ describe("conflict resolution workflow steps", () => {
 
 	describe("gitRebaseUpstreamBaseWithConflictFlag", () => {
 		beforeEach(() => {
-			state = {
-				hasDevelopBranch: true
-			};
+			state = Object.assign(
+				{
+					hasDevelopBranch: true
+				},
+				state
+			);
 		});
 
 		it(`should call "command.rebaseUpstreamDevelop"`, () => {
@@ -111,19 +124,22 @@ describe("conflict resolution workflow steps", () => {
 
 	describe("getLocalChanges", () => {
 		it("should set state with localChanges", () => {
-			state = {
-				dependencies: [
-					{
-						pkg: "my-perfect-package",
-						version: "1.1.1-something.3"
-					},
-					{
-						pkg: "my-worst-package",
-						version: "2.4.1-overwatch.1"
-					}
-				],
-				cr: {}
-			};
+			state = Object.assign(
+				{
+					dependencies: [
+						{
+							pkg: "my-perfect-package",
+							version: "1.1.1-something.3"
+						},
+						{
+							pkg: "my-worst-package",
+							version: "2.4.1-overwatch.1"
+						}
+					],
+					cr: {}
+				},
+				state
+			);
 			run.getLocalChanges(state);
 			expect(state.cr).toHaveProperty("localChanges");
 			expect(state.cr.localChanges).toEqual({
@@ -135,14 +151,16 @@ describe("conflict resolution workflow steps", () => {
 
 	describe("findConflictedPackageJSONChunks", () => {
 		it("should set state with conflicts", () => {
-			state = {
-				configPath: "./package.json",
-				cr: {
-					localChanges: {
-						"my-package": "14.14.2-filterror.0"
+			state = Object.assign(
+				{
+					cr: {
+						localChanges: {
+							"my-package": "14.14.2-filterror.0"
+						}
 					}
-				}
-			};
+				},
+				state
+			);
 
 			run.findConflictedPackageJSONChunks(state);
 			expect(state.cr).toHaveProperty("chunks");
@@ -182,14 +200,16 @@ describe("conflict resolution workflow steps", () => {
 		});
 
 		it("should use undefined in localChanges for change when change isn't in localChanges and package doesn't match regex", () => {
-			state = {
-				configPath: "./package.json",
-				cr: {
-					localChanges: {
-						"my-package": "14.14.2-filterror.0"
+			state = Object.assign(
+				{
+					cr: {
+						localChanges: {
+							"my-package": "14.14.2-filterror.0"
+						}
 					}
-				}
-			};
+				},
+				state
+			);
 
 			util.readFile = jest.fn(
 				() =>
@@ -248,19 +268,22 @@ describe("conflict resolution workflow steps", () => {
 
 	describe("resolveChunkConflicts", () => {
 		it("should update chunks with localChanges if locally changed packages are the ones in conflict", () => {
-			state = {
-				scope: "@lk",
-				cr: {
-					chunks: {
-						'		"@lk/some-package": "2.5.0",': [
-							'		"@lk/my-perfect-package": "1.2.0",'
-						]
-					},
-					localChanges: {
-						"my-perfect-package": "1.1.1-something.3"
+			state = Object.assign(
+				{
+					scope: "@lk",
+					cr: {
+						chunks: {
+							'		"@lk/some-package": "2.5.0",': [
+								'		"@lk/my-perfect-package": "1.2.0",'
+							]
+						},
+						localChanges: {
+							"my-perfect-package": "1.1.1-something.3"
+						}
 					}
-				}
-			};
+				},
+				state
+			);
 
 			run.resolveChunkConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
@@ -272,21 +295,24 @@ describe("conflict resolution workflow steps", () => {
 		});
 
 		it("should use HEAD changes with conflicted package in chunk isn't a pre-release", () => {
-			state = {
-				scope: "@lk",
-				cr: {
-					chunks: {
-						'		"@lk/some-package": "2.5.0",': [
-							'		"@lk/my-package": "11.2.0",'
-						]
-					},
-					localChanges: {
-						"my-perfect-package": "1.1.1-something.3",
-						"my-package": "11.2.0",
-						"some-random-package": "11.2.0"
+			state = Object.assign(
+				{
+					scope: "@lk",
+					cr: {
+						chunks: {
+							'		"@lk/some-package": "2.5.0",': [
+								'		"@lk/my-package": "11.2.0",'
+							]
+						},
+						localChanges: {
+							"my-perfect-package": "1.1.1-something.3",
+							"my-package": "11.2.0",
+							"some-random-package": "11.2.0"
+						}
 					}
-				}
-			};
+				},
+				state
+			);
 
 			run.resolveChunkConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
@@ -300,20 +326,23 @@ describe("conflict resolution workflow steps", () => {
 		});
 
 		it("should do nothing for with localChanges that aren't in conflicted chunks", () => {
-			state = {
-				scope: "@lk",
-				cr: {
-					chunks: {
-						'		"@lk/some-package": "2.5.0",': [
-							'		"@lk/my-package": "11.2.0",'
-						]
-					},
-					localChanges: {
-						"my-package": "11.2.0",
-						"some-random-package": "1.0.0"
+			state = Object.assign(
+				{
+					scope: "@lk",
+					cr: {
+						chunks: {
+							'		"@lk/some-package": "2.5.0",': [
+								'		"@lk/my-package": "11.2.0",'
+							]
+						},
+						localChanges: {
+							"my-package": "11.2.0",
+							"some-random-package": "1.0.0"
+						}
 					}
-				}
-			};
+				},
+				state
+			);
 
 			run.resolveChunkConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
@@ -323,19 +352,22 @@ describe("conflict resolution workflow steps", () => {
 		});
 
 		it("should use undefined when version doesn't match regex in conflict chunk", () => {
-			state = {
-				scope: "@lk",
-				cr: {
-					chunks: {
-						'		"@lk/some-package": "2.5.0",': [
-							'		"@lk/my-package": "this shouldn\'t match",'
-						]
-					},
-					localChanges: {
-						"my-package": "11.2.0"
+			state = Object.assign(
+				{
+					scope: "@lk",
+					cr: {
+						chunks: {
+							'		"@lk/some-package": "2.5.0",': [
+								'		"@lk/my-package": "this shouldn\'t match",'
+							]
+						},
+						localChanges: {
+							"my-package": "11.2.0"
+						}
 					}
-				}
-			};
+				},
+				state
+			);
 
 			run.resolveChunkConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
@@ -353,9 +385,10 @@ describe("conflict resolution workflow steps", () => {
 
 	describe("writeChunksToPackageJSON", () => {
 		it("should call util.writeFile with appropriate args", () => {
-			state = {
-				cr: {
-					contents: `{
+			state = Object.assign(
+				{
+					cr: {
+						contents: `{
 						"devDependencies": {
 							"@lk/some-package": "2.5.0",
 						<<<<<<< HEAD
@@ -366,26 +399,27 @@ describe("conflict resolution workflow steps", () => {
 							"@lk/some-other-package": "1.3.0",
 						}
 					}`,
-					chunks: {
-						'		"@lk/some-package": "2.5.0",': [
-							'		"@lk/my-package": "14.14.2-filterror.0",'
+						chunks: {
+							'		"@lk/some-package": "2.5.0",': [
+								'		"@lk/my-package": "14.14.2-filterror.0",'
+							]
+						},
+						newLines: [
+							"{",
+							'	"devDependencies": {',
+							'		"@lk/some-package": "2.5.0",',
+							'		"@lk/some-other-package": "1.3.0",',
+							"	}",
+							"}"
 						]
-					},
-					newLines: [
-						"{",
-						'	"devDependencies": {',
-						'		"@lk/some-package": "2.5.0",',
-						'		"@lk/some-other-package": "1.3.0",',
-						"	}",
-						"}"
-					]
+					}
 				},
-				configPath: "./package.json"
-			};
+				state
+			);
 			run.writeChunksToPackageJSON(state);
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
 			expect(util.writeFile).toHaveBeenCalledWith(
-				"./package.json",
+				"/some/root/path/package.json",
 				`{
 	"devDependencies": {
 		"@lk/some-package": "2.5.0",
@@ -399,17 +433,19 @@ describe("conflict resolution workflow steps", () => {
 
 	describe("resolvePackageJSONConflicts", () => {
 		it("should write to package.json with corrected conflicted chunks and set state accordingly if conflict is true", () => {
-			state = {
-				scope: "@lk",
-				conflict: true,
-				configPath: "./package.json",
-				dependencies: [
-					{
-						pkg: "my-package",
-						version: "14.14.2-filterror.0"
-					}
-				]
-			};
+			state = Object.assign(
+				{
+					scope: "@lk",
+					conflict: true,
+					dependencies: [
+						{
+							pkg: "my-package",
+							version: "14.14.2-filterror.0"
+						}
+					]
+				},
+				state
+			);
 
 			run.resolvePackageJSONConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
@@ -446,7 +482,7 @@ describe("conflict resolution workflow steps", () => {
 }`);
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
 			expect(util.writeFile).toHaveBeenCalledWith(
-				"./package.json",
+				"/some/root/path/package.json",
 				`{
 	"devDependencies": {
 		"@lk/some-package": "2.5.0",
@@ -459,13 +495,25 @@ describe("conflict resolution workflow steps", () => {
 		});
 
 		it("should do nothing if conflict is false", () => {
-			state = {
-				conflict: false
-			};
+			state = Object.assign(
+				{
+					conflict: false
+				},
+				state
+			);
 
 			run.resolvePackageJSONConflicts(state);
 			expect(state).toEqual({
-				conflict: false
+				conflict: false,
+				filePaths: {
+					rootPath: "/some/root/path",
+					configPath: "/some/root/path/package.json",
+					changeLogPath: "/some/root/path/CHANGELOG.md",
+					packageLockJsonPath: "/some/root/path/package-lock.json",
+					gitIgnorePath: "/some/root/path/.gitignore",
+					pullRequestTemplatePath:
+						"/some/root/path/.github/PULL_REQUEST_TEMPLATE.md"
+				}
 			});
 			expect(util.writeFile).toHaveBeenCalledTimes(0);
 		});
