@@ -1884,10 +1884,9 @@ ${chalk.green(log)}`);
 	async setFilePaths(state) {
 		state.step = "setFilePaths";
 		const rootDir = await getRootDirectory();
-		const configPath = state.config || "package.json";
 		state.filePaths = {
 			rootPath: rootDir,
-			configPath: `${rootDir}/${configPath}`,
+			configPath: `${rootDir}/package.json`,
 			changeLogPath: `${rootDir}/CHANGELOG.md`,
 			packageLockJsonPath: `${rootDir}/package-lock.json`,
 			gitIgnorePath: `${rootDir}/.gitignore`,

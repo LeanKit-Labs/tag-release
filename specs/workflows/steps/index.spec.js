@@ -5285,52 +5285,25 @@ common.filter.savedFilters.new: "<New>"
 	});
 
 	describe("setFilePaths", () => {
-		describe("when config is provided", () => {
-			beforeEach(() => {
-				state.config = "another-config.json";
-				run.setFilePaths(state);
-			});
-
-			it("should set step on state", () => {
-				expect(state).toHaveProperty("step");
-				expect(state.step).toEqual("setFilePaths");
-			});
-
-			it("should set filePaths on state", () => {
-				expect(state).toHaveProperty("filePaths");
-				expect(state.filePaths).toEqual({
-					rootPath: "/some/root/dir",
-					configPath: "/some/root/dir/another-config.json",
-					changeLogPath: "/some/root/dir/CHANGELOG.md",
-					packageLockJsonPath: "/some/root/dir/package-lock.json",
-					gitIgnorePath: "/some/root/dir/.gitignore",
-					pullRequestTemplatePath:
-						"/some/root/dir/.github/PULL_REQUEST_TEMPLATE.md"
-				});
-			});
+		beforeEach(() => {
+			run.setFilePaths(state);
 		});
 
-		describe("when config isn't provided", () => {
-			beforeEach(() => {
-				run.setFilePaths(state);
-			});
+		it("should set step on state", () => {
+			expect(state).toHaveProperty("step");
+			expect(state.step).toEqual("setFilePaths");
+		});
 
-			it("should set step on state", () => {
-				expect(state).toHaveProperty("step");
-				expect(state.step).toEqual("setFilePaths");
-			});
-
-			it("should set filePaths on state", () => {
-				expect(state).toHaveProperty("filePaths");
-				expect(state.filePaths).toEqual({
-					rootPath: "/some/root/dir",
-					configPath: "/some/root/dir/package.json",
-					changeLogPath: "/some/root/dir/CHANGELOG.md",
-					packageLockJsonPath: "/some/root/dir/package-lock.json",
-					gitIgnorePath: "/some/root/dir/.gitignore",
-					pullRequestTemplatePath:
-						"/some/root/dir/.github/PULL_REQUEST_TEMPLATE.md"
-				});
+		it("should set filePaths on state", () => {
+			expect(state).toHaveProperty("filePaths");
+			expect(state.filePaths).toEqual({
+				rootPath: "/some/root/dir",
+				configPath: "/some/root/dir/package.json",
+				changeLogPath: "/some/root/dir/CHANGELOG.md",
+				packageLockJsonPath: "/some/root/dir/package-lock.json",
+				gitIgnorePath: "/some/root/dir/.gitignore",
+				pullRequestTemplatePath:
+					"/some/root/dir/.github/PULL_REQUEST_TEMPLATE.md"
 			});
 		});
 	});

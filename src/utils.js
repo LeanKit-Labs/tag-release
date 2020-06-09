@@ -454,11 +454,6 @@ const api = {
 			"overrides the max stdout buffer of the child process, size is 1024 * <n>",
 			parseInt
 		);
-		commander.option(
-			"-c, --config <filePath>",
-			"path to json configuration file (defaults to './package.json')",
-			/^.*\.json$/
-		);
 	},
 	getScripts(command) {
 		const content = rcfile("tag-release");

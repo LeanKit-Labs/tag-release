@@ -1456,7 +1456,7 @@ describe("utils", () => {
 
 		it("should apply verbose option", () => {
 			util.applyCommanderOptions(commander);
-			expect(commander.option).toHaveBeenCalledTimes(3);
+			expect(commander.option).toHaveBeenCalledTimes(2);
 			expect(commander.option).toHaveBeenCalledWith(
 				"--verbose",
 				"console additional information"
@@ -1465,21 +1465,11 @@ describe("utils", () => {
 
 		it("should apply maxbuffer option", () => {
 			util.applyCommanderOptions(commander);
-			expect(commander.option).toHaveBeenCalledTimes(3);
+			expect(commander.option).toHaveBeenCalledTimes(2);
 			expect(commander.option).toHaveBeenCalledWith(
 				"--maxbuffer <n>",
 				"overrides the max stdout buffer of the child process, size is 1024 * <n>",
 				parseInt
-			);
-		});
-
-		it("should apply config option", () => {
-			util.applyCommanderOptions(commander);
-			expect(commander.option).toHaveBeenCalledTimes(3);
-			expect(commander.option).toHaveBeenCalledWith(
-				"-c, --config <filePath>",
-				"path to json configuration file (defaults to './package.json')",
-				/^.*\.json$/
 			);
 		});
 	});
