@@ -12,6 +12,7 @@ const { get, set, difference, union } = require("lodash");
 const { retryRebase } = require("./conflictResolution");
 const getCurrentBranch = require("../../helpers/getCurrentBranch");
 const getContentsFromYAML = require("../../helpers/getContentsFromYAML");
+const getRootDirectory = require("../../helpers/getRootDirectory");
 
 const MAX_PERCENT = 100;
 
@@ -1335,8 +1336,8 @@ ${chalk.green(log)}`);
 	},
 	verifyPackageJson(state) {
 		state.step = "verifyPackageJson";
-		const { filePaths: { configPath } } = state;
-		util.log.begin("Verifying package.json");
+		const { filePaths: { rootPath, configPath } } = state;
+		util.log.begin(`Verifying ${configPath.replace(`${rootPath}/`, "")}`);
 		util.log.end();
 
 		if (!util.fileExists(configPath)) {
@@ -1879,6 +1880,20 @@ ${chalk.green(log)}`);
 				util.log.end();
 			}
 		});
+	},
+	async setFilePaths(state) {
+		state.step = "setFilePaths";
+		const rootDir = await getRootDirectory();
+		state.filePaths = {
+			rootPath: rootDir,
+			configPath: `${rootDir}/package.json`,
+			changeLogPath: `${rootDir}/CHANGELOG.md`,
+			packageLockJsonPath: `${rootDir}/package-lock.json`,
+			gitIgnorePath: `${rootDir}/.gitignore`,
+			pullRequestTemplatePath: `${rootDir}/.github/PULL_REQUEST_TEMPLATE.md`
+		};
+
+		return Promise.resolve();
 	}
 };
 

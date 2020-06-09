@@ -76,7 +76,7 @@ const api = {
 		state.cr.localChanges = localChanges;
 	},
 	findConflictedPackageJSONChunks(state) {
-		const { configPath, cr: { localChanges } } = state;
+		const { filePaths: { configPath }, cr: { localChanges } } = state;
 		const contents = util.readFile(configPath);
 
 		const chunks = retrieveAndRemoveConflictedSectionsFromContents(
@@ -133,7 +133,7 @@ const api = {
 	},
 	writeChunksToPackageJSON(state) {
 		let { cr: { contents } } = state;
-		const { configPath, cr: { chunks, newLines } } = state;
+		const { filePaths: { configPath }, cr: { chunks, newLines } } = state;
 
 		// inserts chunks back into package.json to be writen to file
 		Object.keys(chunks).forEach(key => {

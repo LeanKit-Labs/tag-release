@@ -27,7 +27,6 @@ verify, modify, or cancel the `tag-release` process.
 
     --verbose                console additional information
     --maxbuffer <n>          overrides the max stdout buffer of the child process, size is 1024 * <n>
-    -c, --config <filePath>  path to json configuration file (defaults to './package.json')
     -V, --version            output the version number
     -h, --help               output usage information
 
@@ -35,11 +34,10 @@ verify, modify, or cancel the `tag-release` process.
   Commands:
 
     continue                     continue from a previously conflicted state
-    config <filePath>            override .json configuration file path, defaults to './package.json'
+    config                       open the tag-release config in your default editor
     dev [branch]                 create a PR from origin feature branch to upstream feature branch
     pr [scope]                   update consumer project feature branch and create a PR to develop
     prerelease|pre [identifier]  create a pre-release
-    promote|pro [tag]            promote a pre-release tag previously created by tag-release
     qa [scope]                   create initial upstream feature branch for consumer project
     reset                        reset repo to upstream master/develop branches
     l10n                         update and prerelease updated localization branches

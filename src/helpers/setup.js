@@ -1,24 +1,15 @@
 const {
 	checkHasDevelopBranch,
 	runPreScript,
-	runPostScript
+	runPostScript,
+	setFilePaths
 } = require("../workflows/steps/index.js");
 const getCurrentBranch = require("./getCurrentBranch");
-const getRootDirectory = require("./getRootDirectory");
 const filterFlowBasedOnDevelopBranch = require("./filterFlowBasedOnDevelopBranch");
 const utils = require("../utils");
 
 const setup = async options => {
-	const rootDir = await getRootDirectory();
-	const configPath = options.config || "package.json";
-	options.filePaths = {
-		rootPath: rootDir,
-		configPath: `${rootDir}/${configPath}`,
-		changeLogPath: `${rootDir}/CHANGELOG.md`,
-		packageLockJsonPath: `${rootDir}/package-lock.json`,
-		gitIgnorePath: `${rootDir}/.gitignore`,
-		pullRequestTemplatePath: `${rootDir}/.github/PULL_REQUEST_TEMPLATE.md`
-	};
+	await setFilePaths(options);
 
 	options.version = await utils.getCurrentVersion();
 

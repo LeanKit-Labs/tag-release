@@ -48,6 +48,7 @@ const git = require("../../../src/git");
 const command = require("../../../src/command");
 const conflictResolution = require("../../../src/workflows/steps/conflictResolution");
 const getContentsFromYAML = require("../../../src/helpers/getContentsFromYAML"); // eslint-disable-line no-unused-vars
+const getRootDirectory = require("../../../src/helpers/getRootDirectory"); // eslint-disable-line no-unused-vars
 
 jest.mock("../../../src/git");
 jest.mock("../../../src/command");
@@ -67,6 +68,10 @@ jest.mock("../../../src/workflows/steps/conflictResolution", () => ({
 
 jest.mock("../../../src/helpers/getContentsFromYAML", () =>
 	jest.fn(() => ({ "first.key": "one", "second.key": "two" }))
+);
+
+jest.mock("../../../src/helpers/getRootDirectory", () =>
+	jest.fn(() => "/some/root/dir")
 );
 
 describe("shared workflow steps", () => {
@@ -5275,6 +5280,30 @@ common.filter.savedFilters.new: "<New>"
 					"this is my output."
 				);
 				expect(util.log.end).toHaveBeenCalledTimes(2);
+			});
+		});
+	});
+
+	describe("setFilePaths", () => {
+		beforeEach(() => {
+			run.setFilePaths(state);
+		});
+
+		it("should set step on state", () => {
+			expect(state).toHaveProperty("step");
+			expect(state.step).toEqual("setFilePaths");
+		});
+
+		it("should set filePaths on state", () => {
+			expect(state).toHaveProperty("filePaths");
+			expect(state.filePaths).toEqual({
+				rootPath: "/some/root/dir",
+				configPath: "/some/root/dir/package.json",
+				changeLogPath: "/some/root/dir/CHANGELOG.md",
+				packageLockJsonPath: "/some/root/dir/package-lock.json",
+				gitIgnorePath: "/some/root/dir/.gitignore",
+				pullRequestTemplatePath:
+					"/some/root/dir/.github/PULL_REQUEST_TEMPLATE.md"
 			});
 		});
 	});
