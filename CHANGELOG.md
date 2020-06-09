@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.17.0
+
+* Removed --config option
+* Fixed renaming config path references
+
 ### 6.16.0
 
 * Use paths from .git root
