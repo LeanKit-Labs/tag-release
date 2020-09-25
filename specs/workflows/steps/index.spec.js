@@ -3940,8 +3940,29 @@ describe("shared workflow steps", () => {
 			util.prompt = jest.fn(() => Promise.resolve({ keep: true }));
 		});
 
-		it("should resolve with no new commits", () => {
+		it("should resolve with no prompt if no new commits", () => {
 			state.log = "";
+			return run.promptKeepBranchOrCreateNew(state).then(() => {
+				expect(util.prompt).toHaveBeenCalledTimes(0);
+			});
+		});
+
+		it("should resolve with no prompt if on develop branch", () => {
+			state.branch = "develop";
+			return run.promptKeepBranchOrCreateNew(state).then(() => {
+				expect(util.prompt).toHaveBeenCalledTimes(0);
+			});
+		});
+
+		it("should resolve with no prompt if on master branch", () => {
+			state.branch = "master";
+			return run.promptKeepBranchOrCreateNew(state).then(() => {
+				expect(util.prompt).toHaveBeenCalledTimes(0);
+			});
+		});
+
+		it("should resolve with no prompt if on main branch", () => {
+			state.branch = "main";
 			return run.promptKeepBranchOrCreateNew(state).then(() => {
 				expect(util.prompt).toHaveBeenCalledTimes(0);
 			});

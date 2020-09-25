@@ -15,6 +15,7 @@ const getContentsFromYAML = require("../../helpers/getContentsFromYAML");
 const getRootDirectory = require("../../helpers/getRootDirectory");
 
 const MAX_PERCENT = 100;
+const LOCKED_BRANCHES = ["develop", "master", "main"];
 
 const api = {
 	checkoutWorkingBranch(state) {
@@ -1373,7 +1374,7 @@ ${chalk.green(log)}`);
 		state.step = "promptKeepBranchOrCreateNew";
 		const { log, branch } = state;
 
-		if (!log.length) {
+		if (!log.length || LOCKED_BRANCHES.includes(branch)) {
 			return Promise.resolve();
 		}
 
