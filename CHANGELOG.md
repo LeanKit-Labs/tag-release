@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.17.1
+
+* Don't allow user to keep branch if on develop, master, or main branch when running qa
+
 ### 6.17.0
 
 * Removed --config option
