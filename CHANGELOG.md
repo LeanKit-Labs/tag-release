@@ -1,5 +1,10 @@
 ## 6.x
 
+### 6.18.0
+
+* Added scope check for LK id
+* Added support for adding a LK id
+
 ### 6.17.1
 
 * Don't allow user to keep branch if on develop, master, or main branch when running qa
