@@ -1,4 +1,5 @@
 const run = require("./steps/index");
+const { hasLkScope } = require("../utils");
 
 module.exports = [
 	run.fetchUpstream,
@@ -10,6 +11,7 @@ module.exports = [
 	run.githubUpstream,
 	run.githubOrigin,
 	run.updatePullRequestTitle,
+	hasLkScope() ? run.addLKId : null,
 	run.updatePullRequestBody,
 	run.createGithubPullRequestAganistBranch
-];
+].filter(x => x);
