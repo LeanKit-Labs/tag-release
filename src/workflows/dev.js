@@ -10,6 +10,7 @@ module.exports = [
 	run.githubUpstream,
 	run.githubOrigin,
 	run.updatePullRequestTitle,
+	run.addLKId,
 	run.updatePullRequestBody,
 	run.createGithubPullRequestAganistBranch
 ];

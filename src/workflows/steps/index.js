@@ -1138,6 +1138,7 @@ ${chalk.green(log)}`);
 				},
 				origin: { owner: repositoryOriginOwner }
 			},
+			lkId,
 			token,
 			branch,
 			devBranch,
@@ -1152,7 +1153,7 @@ ${chalk.green(log)}`);
 		);
 
 		const options = {
-			title,
+			title: `${title}${lkId ? ` (LK:${lkId})` : ""}`,
 			body,
 			head: `${repositoryOriginOwner}:${branch}`,
 			base: devBranch ? `${devBranch}` : `${branch}`
@@ -1599,6 +1600,35 @@ ${chalk.green(log)}`);
 				});
 			});
 		});
+	},
+	addLKId(state) {
+		state.step = "addLKId";
+		return util
+			.prompt([
+				{
+					type: "confirm",
+					name: "hasId",
+					message: "Do you have a LK ID?",
+					default: false
+				}
+			])
+			.then(answers => {
+				if (answers.hasId) {
+					return util
+						.prompt([
+							{
+								type: "input",
+								name: "id",
+								message: "What is your LK ID?"
+							}
+						])
+						.then(response => {
+							state.lkId = response.id.trim();
+							return Promise.resolve();
+						});
+				}
+				return Promise.resolve();
+			});
 	},
 	updatePullRequestBody(state) {
 		state.step = "updatePullRequestBody";

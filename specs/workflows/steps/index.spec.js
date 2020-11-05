@@ -3204,6 +3204,23 @@ describe("shared workflow steps", () => {
 			});
 		});
 
+		describe("has LK id", () => {
+			it("should call update title with LK id", () => {
+				state.lkId = "123456789";
+				return run
+					.createGithubPullRequestAganistBranch(state)
+					.then(() => {
+						expect(createPullRequest).toHaveBeenCalledWith({
+							base: "feature-branch",
+							body: "This is my pull request body",
+							head: "someone-awesome-origin:feature-branch",
+							title:
+								"This is my pull request title (LK:123456789)"
+						});
+					});
+			});
+		});
+
 		it("should create a new GitHub client instance given a valid auth token", () => {
 			return run.createGithubPullRequestAganistBranch(state).then(() => {
 				expect(GitHub).toHaveBeenCalledTimes(1);
@@ -4591,6 +4608,65 @@ feature-last-branch`)
 			return run.updatePullRequestTitle(state).then(() => {
 				expect(state.pullRequest).toHaveProperty("title");
 				expect(state.pullRequest.title).toEqual(prTitle);
+			});
+		});
+	});
+
+	describe("addLKId", () => {
+		describe("when user has LK id", () => {
+			beforeEach(() => {
+				util.prompt = jest.fn(() =>
+					Promise.resolve({ hasId: true, id: "123456789" })
+				);
+			});
+
+			it("should prompt the user if they have a LK id", () => {
+				return run.addLKId(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledWith([
+						{
+							type: "confirm",
+							name: "hasId",
+							message: "Do you have a LK ID?",
+							default: false
+						}
+					]);
+				});
+			});
+
+			it("should prompt the user for their LK id", () => {
+				return run.addLKId(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledWith([
+						{
+							type: "input",
+							name: "id",
+							message: "What is your LK ID?"
+						}
+					]);
+				});
+			});
+
+			it("should persist the given LK id to the workflow state", () => {
+				return run.addLKId(state).then(() => {
+					expect(state).toHaveProperty("lkId");
+					expect(state.lkId).toEqual("123456789");
+				});
+			});
+		});
+
+		describe("when user doesn't have LK id", () => {
+			it("should prompt the user for their LK id", () => {
+				util.prompt = jest.fn(() => Promise.resolve({ hasId: false }));
+				return run.addLKId(state).then(() => {
+					expect(util.prompt).toHaveBeenCalledTimes(1);
+					expect(util.prompt).toHaveBeenCalledWith([
+						{
+							type: "confirm",
+							name: "hasId",
+							message: "Do you have a LK ID?",
+							default: false
+						}
+					]);
+				});
 			});
 		});
 	});
