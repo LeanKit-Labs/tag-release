@@ -1,5 +1,9 @@
 ## 6.x
 
+### 6.19.0
+
+* Reduced LK Id questions into one
+
 ### 6.18.0
 
 * Added scope check for LK id
