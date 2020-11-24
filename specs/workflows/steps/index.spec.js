@@ -4616,30 +4616,18 @@ feature-last-branch`)
 		describe("when user has LK id", () => {
 			beforeEach(() => {
 				util.prompt = jest.fn(() =>
-					Promise.resolve({ hasId: true, id: "123456789" })
+					Promise.resolve({ id: "123456789" })
 				);
 			});
 
-			it("should prompt the user if they have a LK id", () => {
-				return run.addLKId(state).then(() => {
-					expect(util.prompt).toHaveBeenCalledWith([
-						{
-							type: "confirm",
-							name: "hasId",
-							message: "Do you have a LK ID?",
-							default: false
-						}
-					]);
-				});
-			});
-
-			it("should prompt the user for their LK id", () => {
+			it("should prompt the user for their LeanKit card id", () => {
 				return run.addLKId(state).then(() => {
 					expect(util.prompt).toHaveBeenCalledWith([
 						{
 							type: "input",
 							name: "id",
-							message: "What is your LK ID?"
+							message:
+								"What is the LeanKit card id? (leave empty to skip)"
 						}
 					]);
 				});
@@ -4655,17 +4643,23 @@ feature-last-branch`)
 
 		describe("when user doesn't have LK id", () => {
 			it("should prompt the user for their LK id", () => {
-				util.prompt = jest.fn(() => Promise.resolve({ hasId: false }));
+				util.prompt = jest.fn(() => Promise.resolve({ id: "" }));
 				return run.addLKId(state).then(() => {
-					expect(util.prompt).toHaveBeenCalledTimes(1);
 					expect(util.prompt).toHaveBeenCalledWith([
 						{
-							type: "confirm",
-							name: "hasId",
-							message: "Do you have a LK ID?",
-							default: false
+							type: "input",
+							name: "id",
+							message:
+								"What is the LeanKit card id? (leave empty to skip)"
 						}
 					]);
+				});
+			});
+
+			it("should persist default LK id to the workflow state", () => {
+				return run.addLKId(state).then(() => {
+					expect(state).toHaveProperty("lkId");
+					expect(state.lkId).toEqual("");
 				});
 			});
 		});

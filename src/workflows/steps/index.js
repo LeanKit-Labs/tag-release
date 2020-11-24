@@ -1606,27 +1606,14 @@ ${chalk.green(log)}`);
 		return util
 			.prompt([
 				{
-					type: "confirm",
-					name: "hasId",
-					message: "Do you have a LK ID?",
-					default: false
+					type: "input",
+					name: "id",
+					message:
+						"What is the LeanKit card id? (leave empty to skip)"
 				}
 			])
-			.then(answers => {
-				if (answers.hasId) {
-					return util
-						.prompt([
-							{
-								type: "input",
-								name: "id",
-								message: "What is your LK ID?"
-							}
-						])
-						.then(response => {
-							state.lkId = response.id.trim();
-							return Promise.resolve();
-						});
-				}
+			.then(response => {
+				state.lkId = response.id ? response.id.trim() : "";
 				return Promise.resolve();
 			});
 	},
