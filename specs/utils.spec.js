@@ -1430,16 +1430,16 @@ describe("utils", () => {
 			util.hasLkScope();
 			expect(cp.execSync).toHaveBeenCalledTimes(1);
 			expect(cp.execSync).toHaveBeenCalledWith(
-				"npm config get @lk:registry"
+				"npm config get @banditsoftware:registry"
 			);
 		});
 
-		it(`should return true when the user has a registry for the "@lk" scope`, () => {
+		it(`should return true when the user has a registry for the "@banditsoftware" scope`, () => {
 			const isLK = util.hasLkScope();
 			expect(isLK).toBeTruthy();
 		});
 
-		it(`should return false when the user has no registry for the "@lk" scope`, () => {
+		it(`should return false when the user has no registry for the "@banditsoftware" scope`, () => {
 			cp.execSync = jest.fn(() => "undefined");
 			const isLK = util.hasLkScope();
 			expect(isLK).toBeFalsy();

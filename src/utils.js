@@ -431,7 +431,7 @@ const api = {
 		}
 	},
 	hasLkScope() {
-		const GET_LK_REGISTRY_SCOPE = "npm config get @lk:registry";
+		const GET_LK_REGISTRY_SCOPE = "npm config get @banditsoftware:registry";
 		const run = command =>
 			childProcess
 				.execSync(command)

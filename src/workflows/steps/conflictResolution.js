@@ -50,7 +50,7 @@ const createChunksToBeInserted = (chunks, localChanges, state) => {
 
 		local.forEach(item => {
 			const [, pkg, version] =
-				/"@lk\/([\w-]+)": "(\^?[\d.]+)"/.exec(item) || [];
+				/"@banditsoftware\/([\w-]+)": "(\^?[\d.]+)"/.exec(item) || [];
 			localChanges[pkg] = version;
 		});
 
@@ -108,8 +108,9 @@ const api = {
 					chunk.forEach(line => {
 						if (line.includes(localKey)) {
 							const [, , version] =
-								/"@lk\/([\w-]+)": "(\^?[\d.]+)"/.exec(line) ||
-								[];
+								/"@banditsoftware\/([\w-]+)": "(\^?[\d.]+)"/.exec(
+									line
+								) || [];
 							logger.log(
 								`${chalk.white.bold(
 									`You had a local change of`
