@@ -2130,7 +2130,7 @@ describe("shared workflow steps", () => {
 			it("should set CLI flag to default scope", () => {
 				state.qa = true;
 				return run.getPackageScope(state).then(() => {
-					expect(state.scope).toEqual("@lk");
+					expect(state.scope).toEqual("@banditsoftware");
 				});
 			});
 
@@ -2163,7 +2163,7 @@ describe("shared workflow steps", () => {
 			it("should set CLI flag to default scope", () => {
 				state.pr = true;
 				return run.getPackageScope(state).then(() => {
-					expect(state.scope).toEqual("@lk");
+					expect(state.scope).toEqual("@banditsoftware");
 				});
 			});
 
@@ -2197,10 +2197,10 @@ describe("shared workflow steps", () => {
 		const originalProcessExit = process.exit;
 
 		beforeEach(() => {
-			state.scope = "@lk";
+			state.scope = "@banditsoftware";
 			util.readJSONFile = jest.fn(() => ({
-				devDependencies: { "@lk/over-watch": "1.1.1" },
-				dependencies: { "@lk/watch-over": "1.1.1" }
+				devDependencies: { "@banditsoftware/over-watch": "1.1.1" },
+				dependencies: { "@banditsoftware/watch-over": "1.1.1" }
 			}));
 			process.exit = jest.fn(() => {});
 		});
@@ -2252,10 +2252,10 @@ describe("shared workflow steps", () => {
 
 	describe("askReposToUpdate", () => {
 		beforeEach(() => {
-			state.scope = "@lk";
+			state.scope = "@banditsoftware";
 			util.readJSONFile = jest.fn(() => ({
-				devDependencies: { "@lk/over-watch": "1.1.1" },
-				dependencies: { "@lk/watch-over": "1.1.1" }
+				devDependencies: { "@banditsoftware/over-watch": "1.1.1" },
+				dependencies: { "@banditsoftware/watch-over": "1.1.1" }
 			}));
 			util.prompt = jest.fn(() =>
 				Promise.resolve({ packagesToPromote: "over-watch" })
@@ -2616,7 +2616,7 @@ describe("shared workflow steps", () => {
 		beforeEach(() => {
 			state = Object.assign(
 				{
-					scope: "@lk",
+					scope: "@banditsoftware",
 					dependencies: [
 						{
 							pkg: "over-watch",
@@ -2631,8 +2631,8 @@ describe("shared workflow steps", () => {
 				state
 			);
 			util.readJSONFile = jest.fn(() => ({
-				devDependencies: { "@lk/over-watch": "1.1.1" },
-				dependencies: { "@lk/watch-over": "1.1.1" }
+				devDependencies: { "@banditsoftware/over-watch": "1.1.1" },
+				dependencies: { "@banditsoftware/watch-over": "1.1.1" }
 			}));
 			util.writeJSONFile = jest.fn(() => {});
 		});
@@ -2653,10 +2653,10 @@ describe("shared workflow steps", () => {
 					state.filePaths.configPath,
 					{
 						dependencies: {
-							"@lk/watch-over": "2.2.2"
+							"@banditsoftware/watch-over": "2.2.2"
 						},
 						devDependencies: {
-							"@lk/over-watch": "1.1.1"
+							"@banditsoftware/over-watch": "1.1.1"
 						}
 					}
 				);
@@ -2853,18 +2853,18 @@ describe("shared workflow steps", () => {
 			state = Object.assign(
 				{
 					packages: ["another-ui", "my-secret-repo"],
-					scope: "@lk"
+					scope: "@banditsoftware"
 				},
 				state
 			);
 			util.readJSONFile = jest.fn(() => ({
 				devDependencies: {
-					"@lk/another-ui": "1.0.0",
-					"@lk/my-thing": "14.0.0"
+					"@banditsoftware/another-ui": "1.0.0",
+					"@banditsoftware/my-thing": "14.0.0"
 				},
 				dependencies: {
-					"@lk/web-common-ui": "3.0.0",
-					"@lk/my-secret-repo": "4.0.0"
+					"@banditsoftware/web-common-ui": "3.0.0",
+					"@banditsoftware/my-secret-repo": "4.0.0"
 				}
 			}));
 		});
@@ -3280,7 +3280,7 @@ describe("shared workflow steps", () => {
 		let joinSpy;
 
 		beforeEach(() => {
-			state.scope = "@lk";
+			state.scope = "@banditsoftware";
 			util.writeJSONFile = jest.fn(() => {});
 			joinSpy = jest
 				.spyOn(path, "join")
@@ -3295,7 +3295,7 @@ describe("shared workflow steps", () => {
 			return run.saveState(state).then(() => {
 				expect(util.writeJSONFile).toHaveBeenCalledTimes(1);
 				expect(util.writeJSONFile).toHaveBeenCalledWith("my_path/", {
-					scope: "@lk"
+					scope: "@banditsoftware"
 				});
 			});
 		});
@@ -4384,7 +4384,7 @@ feature-last-branch`)
 		beforeEach(() => {
 			util.exec = jest.fn(() => Promise.resolve());
 			util.advise = jest.fn(() => Promise.resolve());
-			dep = "@lk/my-package@1.1.1";
+			dep = "@banditsoftware/my-package@1.1.1";
 		});
 
 		it("should execute install successfully", () => {

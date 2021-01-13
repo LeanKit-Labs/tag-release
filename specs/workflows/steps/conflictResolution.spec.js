@@ -34,15 +34,15 @@ describe("conflict resolution workflow steps", () => {
 			() =>
 				`{
 	"devDependencies": {
-		"@lk/some-package": "2.5.0",
+		"@banditsoftware/some-package": "2.5.0",
 	<<<<<<< HEAD
-		"@lk/my-package": "14.14.0",
-		"@lk/my-other-package": "2.0.0",
+		"@banditsoftware/my-package": "14.14.0",
+		"@banditsoftware/my-other-package": "2.0.0",
 	=======
-		"@lk/my-package": "14.14.2-filterror.0",
-		"@lk/my-other-package": "1.0.0",
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/my-other-package": "1.0.0",
 	>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
-		"@lk/some-other-package": "1.3.0",
+		"@banditsoftware/some-other-package": "1.3.0",
 	}
 }`
 		);
@@ -153,6 +153,7 @@ describe("conflict resolution workflow steps", () => {
 		it("should set state with conflicts", () => {
 			state = Object.assign(
 				{
+					scope: "@banditsoftware",
 					cr: {
 						localChanges: {
 							"my-package": "14.14.2-filterror.0"
@@ -167,30 +168,30 @@ describe("conflict resolution workflow steps", () => {
 			expect(state.cr).toHaveProperty("newLines");
 			expect(state.cr).toHaveProperty("contents");
 			expect(state.cr.chunks).toEqual({
-				'		"@lk/some-package": "2.5.0",': [
-					'		"@lk/my-package": "14.14.0",',
-					'		"@lk/my-other-package": "2.0.0",'
+				'		"@banditsoftware/some-package": "2.5.0",': [
+					'		"@banditsoftware/my-package": "14.14.0",',
+					'		"@banditsoftware/my-other-package": "2.0.0",'
 				]
 			});
 			expect(state.cr.newLines).toEqual([
 				"{",
 				'	"devDependencies": {',
-				'		"@lk/some-package": "2.5.0",',
-				'		"@lk/some-other-package": "1.3.0",',
+				'		"@banditsoftware/some-package": "2.5.0",',
+				'		"@banditsoftware/some-other-package": "1.3.0",',
 				"	}",
 				"}"
 			]);
 			expect(state.cr.contents).toEqual(`{
 	"devDependencies": {
-		"@lk/some-package": "2.5.0",
+		"@banditsoftware/some-package": "2.5.0",
 	<<<<<<< HEAD
-		"@lk/my-package": "14.14.0",
-		"@lk/my-other-package": "2.0.0",
+		"@banditsoftware/my-package": "14.14.0",
+		"@banditsoftware/my-other-package": "2.0.0",
 	=======
-		"@lk/my-package": "14.14.2-filterror.0",
-		"@lk/my-other-package": "1.0.0",
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/my-other-package": "1.0.0",
 	>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
-		"@lk/some-other-package": "1.3.0",
+		"@banditsoftware/some-other-package": "1.3.0",
 	}
 }`);
 			expect(state.cr.localChanges).toEqual({
@@ -215,15 +216,15 @@ describe("conflict resolution workflow steps", () => {
 				() =>
 					`{
 	"devDependencies": {
-		"@lk/some-package": "2.5.0",
+		"@banditsoftware/some-package": "2.5.0",
 	<<<<<<< HEAD
-		"@lk/my-package": "14.14.0",
-		"@lk/my-other-package": "2.0.0",
+		"@banditsoftware/my-package": "14.14.0",
+		"@banditsoftware/my-other-package": "2.0.0",
 	=======
-		"@lk/my-package": "14.14.2-filterror.0",
-		"@lk/my-other-package": "blahblahblah",
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/my-other-package": "blahblahblah",
 	>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
-		"@lk/some-other-package": "1.3.0",
+		"@banditsoftware/some-other-package": "1.3.0",
 	}
 }`
 			);
@@ -233,30 +234,30 @@ describe("conflict resolution workflow steps", () => {
 			expect(state.cr).toHaveProperty("newLines");
 			expect(state.cr).toHaveProperty("contents");
 			expect(state.cr.chunks).toEqual({
-				'		"@lk/some-package": "2.5.0",': [
-					'		"@lk/my-package": "14.14.0",',
-					'		"@lk/my-other-package": "2.0.0",'
+				'		"@banditsoftware/some-package": "2.5.0",': [
+					'		"@banditsoftware/my-package": "14.14.0",',
+					'		"@banditsoftware/my-other-package": "2.0.0",'
 				]
 			});
 			expect(state.cr.newLines).toEqual([
 				"{",
 				'	"devDependencies": {',
-				'		"@lk/some-package": "2.5.0",',
-				'		"@lk/some-other-package": "1.3.0",',
+				'		"@banditsoftware/some-package": "2.5.0",',
+				'		"@banditsoftware/some-other-package": "1.3.0",',
 				"	}",
 				"}"
 			]);
 			expect(state.cr.contents).toEqual(`{
 	"devDependencies": {
-		"@lk/some-package": "2.5.0",
+		"@banditsoftware/some-package": "2.5.0",
 	<<<<<<< HEAD
-		"@lk/my-package": "14.14.0",
-		"@lk/my-other-package": "2.0.0",
+		"@banditsoftware/my-package": "14.14.0",
+		"@banditsoftware/my-other-package": "2.0.0",
 	=======
-		"@lk/my-package": "14.14.2-filterror.0",
-		"@lk/my-other-package": "blahblahblah",
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/my-other-package": "blahblahblah",
 	>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
-		"@lk/some-other-package": "1.3.0",
+		"@banditsoftware/some-other-package": "1.3.0",
 	}
 }`);
 			expect(state.cr.localChanges).toEqual({
@@ -270,11 +271,11 @@ describe("conflict resolution workflow steps", () => {
 		it("should update chunks with localChanges if locally changed packages are the ones in conflict", () => {
 			state = Object.assign(
 				{
-					scope: "@lk",
+					scope: "@banditsoftware",
 					cr: {
 						chunks: {
-							'		"@lk/some-package": "2.5.0",': [
-								'		"@lk/my-perfect-package": "1.2.0",'
+							'		"@banditsoftware/some-package": "2.5.0",': [
+								'		"@banditsoftware/my-perfect-package": "1.2.0",'
 							]
 						},
 						localChanges: {
@@ -288,8 +289,8 @@ describe("conflict resolution workflow steps", () => {
 			run.resolveChunkConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
 			expect(state.cr.chunks).toEqual({
-				'		"@lk/some-package": "2.5.0",': [
-					'		"@lk/my-perfect-package": "1.1.1-something.3",'
+				'		"@banditsoftware/some-package": "2.5.0",': [
+					'		"@banditsoftware/my-perfect-package": "1.1.1-something.3",'
 				]
 			});
 		});
@@ -297,11 +298,11 @@ describe("conflict resolution workflow steps", () => {
 		it("should use HEAD changes with conflicted package in chunk isn't a pre-release", () => {
 			state = Object.assign(
 				{
-					scope: "@lk",
+					scope: "@banditsoftware",
 					cr: {
 						chunks: {
-							'		"@lk/some-package": "2.5.0",': [
-								'		"@lk/my-package": "11.2.0",'
+							'		"@banditsoftware/some-package": "2.5.0",': [
+								'		"@banditsoftware/my-package": "11.2.0",'
 							]
 						},
 						localChanges: {
@@ -317,7 +318,9 @@ describe("conflict resolution workflow steps", () => {
 			run.resolveChunkConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
 			expect(state.cr.chunks).toEqual({
-				'		"@lk/some-package": "2.5.0",': ['		"@lk/my-package": "11.2.0",']
+				'		"@banditsoftware/some-package": "2.5.0",': [
+					'		"@banditsoftware/my-package": "11.2.0",'
+				]
 			});
 			expect(logger.log).toHaveBeenCalledTimes(1);
 			expect(logger.log).toHaveBeenCalledWith(
@@ -328,11 +331,11 @@ describe("conflict resolution workflow steps", () => {
 		it("should do nothing for with localChanges that aren't in conflicted chunks", () => {
 			state = Object.assign(
 				{
-					scope: "@lk",
+					scope: "@banditsoftware",
 					cr: {
 						chunks: {
-							'		"@lk/some-package": "2.5.0",': [
-								'		"@lk/my-package": "11.2.0",'
+							'		"@banditsoftware/some-package": "2.5.0",': [
+								'		"@banditsoftware/my-package": "11.2.0",'
 							]
 						},
 						localChanges: {
@@ -347,18 +350,20 @@ describe("conflict resolution workflow steps", () => {
 			run.resolveChunkConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
 			expect(state.cr.chunks).toEqual({
-				'		"@lk/some-package": "2.5.0",': ['		"@lk/my-package": "11.2.0",']
+				'		"@banditsoftware/some-package": "2.5.0",': [
+					'		"@banditsoftware/my-package": "11.2.0",'
+				]
 			});
 		});
 
 		it("should use undefined when version doesn't match regex in conflict chunk", () => {
 			state = Object.assign(
 				{
-					scope: "@lk",
+					scope: "@banditsoftware",
 					cr: {
 						chunks: {
-							'		"@lk/some-package": "2.5.0",': [
-								'		"@lk/my-package": "this shouldn\'t match",'
+							'		"@banditsoftware/some-package": "2.5.0",': [
+								'		"@banditsoftware/my-package": "this shouldn\'t match",'
 							]
 						},
 						localChanges: {
@@ -372,8 +377,8 @@ describe("conflict resolution workflow steps", () => {
 			run.resolveChunkConflicts(state);
 			expect(state.cr).toHaveProperty("chunks");
 			expect(state.cr.chunks).toEqual({
-				'		"@lk/some-package": "2.5.0",': [
-					'		"@lk/my-package": "this shouldn\'t match",'
+				'		"@banditsoftware/some-package": "2.5.0",': [
+					'		"@banditsoftware/my-package": "this shouldn\'t match",'
 				]
 			});
 			expect(logger.log).toHaveBeenCalledTimes(1);
@@ -390,25 +395,25 @@ describe("conflict resolution workflow steps", () => {
 					cr: {
 						contents: `{
 						"devDependencies": {
-							"@lk/some-package": "2.5.0",
+							"@banditsoftware/some-package": "2.5.0",
 						<<<<<<< HEAD
-							"@lk/my-package": "14.14.0",
+							"@banditsoftware/my-package": "14.14.0",
 						=======
-							"@lk/my-package": "14.14.2-filterror.0",
+							"@banditsoftware/my-package": "14.14.2-filterror.0",
 						>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
-							"@lk/some-other-package": "1.3.0",
+							"@banditsoftware/some-other-package": "1.3.0",
 						}
 					}`,
 						chunks: {
-							'		"@lk/some-package": "2.5.0",': [
-								'		"@lk/my-package": "14.14.2-filterror.0",'
+							'		"@banditsoftware/some-package": "2.5.0",': [
+								'		"@banditsoftware/my-package": "14.14.2-filterror.0",'
 							]
 						},
 						newLines: [
 							"{",
 							'	"devDependencies": {',
-							'		"@lk/some-package": "2.5.0",',
-							'		"@lk/some-other-package": "1.3.0",',
+							'		"@banditsoftware/some-package": "2.5.0",',
+							'		"@banditsoftware/some-other-package": "1.3.0",',
 							"	}",
 							"}"
 						]
@@ -422,9 +427,9 @@ describe("conflict resolution workflow steps", () => {
 				"/some/root/path/package.json",
 				`{
 	"devDependencies": {
-		"@lk/some-package": "2.5.0",
-		"@lk/my-package": "14.14.2-filterror.0",
-		"@lk/some-other-package": "1.3.0",
+		"@banditsoftware/some-package": "2.5.0",
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/some-other-package": "1.3.0",
 	}
 }`
 			);
@@ -435,7 +440,7 @@ describe("conflict resolution workflow steps", () => {
 		it("should write to package.json with corrected conflicted chunks and set state accordingly if conflict is true", () => {
 			state = Object.assign(
 				{
-					scope: "@lk",
+					scope: "@banditsoftware",
 					conflict: true,
 					dependencies: [
 						{
@@ -452,32 +457,32 @@ describe("conflict resolution workflow steps", () => {
 			expect(state.cr).toHaveProperty("newLines");
 			expect(state.cr).toHaveProperty("contents");
 			expect(state.cr.chunks).toEqual({
-				'		"@lk/some-package": "2.5.0",': [
-					'		"@lk/my-package": "14.14.2-filterror.0",',
-					'		"@lk/my-other-package": "2.0.0",'
+				'		"@banditsoftware/some-package": "2.5.0",': [
+					'		"@banditsoftware/my-package": "14.14.2-filterror.0",',
+					'		"@banditsoftware/my-other-package": "2.0.0",'
 				]
 			});
 			expect(state.cr.newLines).toEqual([
 				"{",
 				'	"devDependencies": {',
-				'		"@lk/some-package": "2.5.0",',
-				'		"@lk/my-package": "14.14.2-filterror.0",',
-				'		"@lk/my-other-package": "2.0.0",',
-				'		"@lk/some-other-package": "1.3.0",',
+				'		"@banditsoftware/some-package": "2.5.0",',
+				'		"@banditsoftware/my-package": "14.14.2-filterror.0",',
+				'		"@banditsoftware/my-other-package": "2.0.0",',
+				'		"@banditsoftware/some-other-package": "1.3.0",',
 				"	}",
 				"}"
 			]);
 			expect(state.cr.contents).toEqual(`{
 	"devDependencies": {
-		"@lk/some-package": "2.5.0",
+		"@banditsoftware/some-package": "2.5.0",
 	<<<<<<< HEAD
-		"@lk/my-package": "14.14.0",
-		"@lk/my-other-package": "2.0.0",
+		"@banditsoftware/my-package": "14.14.0",
+		"@banditsoftware/my-other-package": "2.0.0",
 	=======
-		"@lk/my-package": "14.14.2-filterror.0",
-		"@lk/my-other-package": "1.0.0",
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/my-other-package": "1.0.0",
 	>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
-		"@lk/some-other-package": "1.3.0",
+		"@banditsoftware/some-other-package": "1.3.0",
 	}
 }`);
 			expect(util.writeFile).toHaveBeenCalledTimes(1);
@@ -485,10 +490,10 @@ describe("conflict resolution workflow steps", () => {
 				"/some/root/path/package.json",
 				`{
 	"devDependencies": {
-		"@lk/some-package": "2.5.0",
-		"@lk/my-package": "14.14.2-filterror.0",
-		"@lk/my-other-package": "2.0.0",
-		"@lk/some-other-package": "1.3.0",
+		"@banditsoftware/some-package": "2.5.0",
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/my-other-package": "2.0.0",
+		"@banditsoftware/some-other-package": "1.3.0",
 	}
 }`
 			);

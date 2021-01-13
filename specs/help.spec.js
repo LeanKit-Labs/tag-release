@@ -38,7 +38,7 @@ describe("help", () => {
 		);
 	});
 
-	describe("when the user has an @lk registry scope", () => {
+	describe("when the user has an @banditsoftware registry scope", () => {
 		it("the help output should include a link to the LeanKit tag-release workflow doc", () => {
 			help();
 			expect(util.renderHelpContent.mock.calls[0][0]).toEqual(
@@ -49,7 +49,7 @@ describe("help", () => {
 		});
 	});
 
-	describe("when the user does not have an @lk registry scope", () => {
+	describe("when the user does not have an @banditsoftware registry scope", () => {
 		beforeEach(() => {
 			jest.resetModules();
 			jest.doMock("../src/utils", () => ({

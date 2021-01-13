@@ -825,7 +825,7 @@ ${chalk.green(log)}`);
 			return flag.charAt(0) === "@" ? `${flag}` : `@${flag}`;
 		};
 		const content = util.readJSONFile(path.join(__dirname, ".state.json"));
-		state.scope = content.scope ? content.scope : "@lk";
+		state.scope = content.scope ? content.scope : "@banditsoftware";
 
 		if (state.qa && typeof state.qa !== "boolean") {
 			state.scope = defaultOrProvidedScope(state.qa);

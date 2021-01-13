@@ -40,6 +40,8 @@ const retrieveAndRemoveConflictedSectionsFromContents = (contents, state) => {
 const createChunksToBeInserted = (chunks, localChanges, state) => {
 	const MIDDLE_MARKER = "=======";
 
+	const { scope } = state;
+	const r2 = new RegExp(`"${scope}\\/([\\w-]+)": "(\\^?[\\d.]+)"`);
 	Object.keys(chunks).forEach(key => {
 		const chunk = chunks[key];
 		const index = chunk.findIndex(item => item.includes(MIDDLE_MARKER));
@@ -49,8 +51,7 @@ const createChunksToBeInserted = (chunks, localChanges, state) => {
 		});
 
 		local.forEach(item => {
-			const [, pkg, version] =
-				/"@lk\/([\w-]+)": "(\^?[\d.]+)"/.exec(item) || [];
+			const [, pkg, version] = r2.exec(item) || [];
 			localChanges[pkg] = version;
 		});
 
@@ -105,11 +106,12 @@ const api = {
 						);
 					}
 				} else {
+					const r2 = new RegExp(
+						`"${scope}\\/([\\w-]+)": "(\\^?[\\d.]+)"`
+					);
 					chunk.forEach(line => {
 						if (line.includes(localKey)) {
-							const [, , version] =
-								/"@lk\/([\w-]+)": "(\^?[\d.]+)"/.exec(line) ||
-								[];
+							const [, , version] = r2.exec(line) || [];
 							logger.log(
 								`${chalk.white.bold(
 									`You had a local change of`
