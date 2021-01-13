@@ -153,6 +153,7 @@ describe("conflict resolution workflow steps", () => {
 		it("should set state with conflicts", () => {
 			state = Object.assign(
 				{
+					scope: "@banditsoftware",
 					cr: {
 						localChanges: {
 							"my-package": "14.14.2-filterror.0"
