@@ -1,3 +1,10 @@
+## 7.x
+
+### 7.0.0
+
+* Fixed issue with scope and conflict resolution
+* Converted @lk scope to @banditsoftware scope
+
 ## 6.x
 
 ### 6.19.0
