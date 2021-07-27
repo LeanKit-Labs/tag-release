@@ -18,7 +18,8 @@ commander.parse(process.argv);
 const callback = options => {
 	options.callback = () => console.log("Finished"); // eslint-disable-line no-console
 	const onFeatureBranch =
-		options.branch !== "develop" && options.branch !== "master";
+		options.branch !== "develop" &&
+		options.branch !== options.defaultBranch;
 
 	let flow;
 	if (options.packages.length && onFeatureBranch) {

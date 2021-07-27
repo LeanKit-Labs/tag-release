@@ -14,7 +14,7 @@ jest.mock("../src/helpers/getBranchList", () =>
 		Promise.resolve([
 			"feature-branch",
 			"promote-release-v1.1.1-feature.0",
-			"* master",
+			"* main",
 			"develop",
 			"promote-release-v1.1.1-feature.1"
 		])
@@ -136,12 +136,14 @@ et768df this is commit 2
 23fe4e3 1.1.1-feature.0
 0dda789 this is commit 1`)
 			);
-			return command.generateRebaseCommitLog().then(() => {
-				expect(writeSpy.mock.calls[0][1])
-					.toEqual(`pick 0dda789 this is commit 1
+			return command
+				.generateRebaseCommitLog({ branch: "main" })
+				.then(() => {
+					expect(writeSpy.mock.calls[0][1])
+						.toEqual(`pick 0dda789 this is commit 1
 pick et768df this is commit 2
 `);
-			});
+				});
 		});
 
 		it("should remove all pre-release commits part 2", () => {
@@ -158,16 +160,18 @@ e7a8e93 1.1.1-feature.0
 abcd9e8 0.1.1-feature.1 should also be left
 e8d9f00 should leave this 0.1.1-feature.0`)
 			);
-			return command.generateRebaseCommitLog().then(() => {
-				expect(writeSpy.mock.calls[0][1])
-					.toEqual(`pick e8d9f00 should leave this 0.1.1-feature.0
+			return command
+				.generateRebaseCommitLog({ branch: "main" })
+				.then(() => {
+					expect(writeSpy.mock.calls[0][1])
+						.toEqual(`pick e8d9f00 should leave this 0.1.1-feature.0
 pick abcd9e8 0.1.1-feature.1 should also be left
 pick 0a9b8c7 another commit
 pick 3eabc56 something random
 pick 098abc7 this is commit 1
 pick 23ae89c this is commit 2
 `);
-			});
+				});
 		});
 
 		afterEach(() => {
@@ -189,7 +193,7 @@ pick 23ae89c this is commit 2
 18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.0: a change
 `)
 			);
-			return command.reOrderLatestCommits().then(() => {
+			return command.reOrderLatestCommits({ branch: "main" }).then(() => {
 				expect(writeSpy.mock.calls[0][1])
 					.toEqual(`pick 0987654 Updated en-US.yaml translation file
 pick 18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.0: a change
@@ -202,12 +206,14 @@ pick 18ff751 Bumped web-card-slice to 9.0.0-blah.0, web-common-ui to 12.9.1-ree.
 				Promise.resolve(`0987654 some random commit
 `)
 			);
-			return command.reOrderLatestCommits().then(result => {
-				expect(writeSpy.mock.calls[0][1])
-					.toEqual(`pick 0987654 some random commit
+			return command
+				.reOrderLatestCommits({ branch: "main" })
+				.then(result => {
+					expect(writeSpy.mock.calls[0][1])
+						.toEqual(`pick 0987654 some random commit
 `);
-				expect(result).toEqual(false);
-			});
+					expect(result).toEqual(false);
+				});
 		});
 	});
 
@@ -251,32 +257,36 @@ v17.11.2`)
 		});
 
 		it("should call 'runCommand' with appropriate arguments", () => {
-			return command.removePreReleaseCommits().then(() => {
-				expect(runCommand).toHaveBeenCalledTimes(1);
-				expect(runCommand).toHaveBeenCalledWith({
-					args:
-						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i -p upstream/master',
-					failHelpKey: "gitRebaseInteractive",
-					fullCommand: true,
-					logMessage: "Removing pre-release commit history",
-					exitOnFail: true
+			return command
+				.removePreReleaseCommits({ branch: "main" })
+				.then(() => {
+					expect(runCommand).toHaveBeenCalledTimes(1);
+					expect(runCommand).toHaveBeenCalledWith({
+						args:
+							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i -p upstream/main',
+						failHelpKey: "gitRebaseInteractive",
+						fullCommand: true,
+						logMessage: "Removing pre-release commit history",
+						exitOnFail: true
+					});
 				});
-			});
 		});
 
 		it("should pass onError to 'runCommand'", () => {
-			return command.removePreReleaseCommits({ onError }).then(() => {
-				expect(runCommand).toHaveBeenCalledTimes(1);
-				expect(runCommand).toHaveBeenCalledWith({
-					args:
-						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i -p upstream/master',
-					failHelpKey: "gitRebaseInteractive",
-					fullCommand: true,
-					logMessage: "Removing pre-release commit history",
-					exitOnFail: true,
-					onError
+			return command
+				.removePreReleaseCommits({ branch: "main", onError })
+				.then(() => {
+					expect(runCommand).toHaveBeenCalledTimes(1);
+					expect(runCommand).toHaveBeenCalledWith({
+						args:
+							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i -p upstream/main',
+						failHelpKey: "gitRebaseInteractive",
+						fullCommand: true,
+						logMessage: "Removing pre-release commit history",
+						exitOnFail: true,
+						onError
+					});
 				});
-			});
 		});
 
 		afterEach(() => {
@@ -293,11 +303,11 @@ v17.11.2`)
 		});
 
 		it("should call 'runCommand' with appropriate arguments", () => {
-			return command.reOrderBumpCommit().then(() => {
+			return command.reOrderBumpCommit({ branch: "main" }).then(() => {
 				expect(runCommand).toHaveBeenCalledTimes(1);
 				expect(runCommand).toHaveBeenCalledWith({
 					args:
-						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/master',
+						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/main',
 					failHelpKey: "gitRebaseInteractive",
 					fullCommand: true,
 					logMessage: "Reordering bump commit",
@@ -307,18 +317,20 @@ v17.11.2`)
 		});
 
 		it("should pass onError to 'runCommand'", () => {
-			return command.reOrderBumpCommit({ onError }).then(() => {
-				expect(runCommand).toHaveBeenCalledTimes(1);
-				expect(runCommand).toHaveBeenCalledWith({
-					args:
-						'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/master',
-					failHelpKey: "gitRebaseInteractive",
-					fullCommand: true,
-					logMessage: "Reordering bump commit",
-					exitOnFail: true,
-					onError
+			return command
+				.reOrderBumpCommit({ branch: "main", onError })
+				.then(() => {
+					expect(runCommand).toHaveBeenCalledTimes(1);
+					expect(runCommand).toHaveBeenCalledWith({
+						args:
+							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i upstream/main',
+						failHelpKey: "gitRebaseInteractive",
+						fullCommand: true,
+						logMessage: "Reordering bump commit",
+						exitOnFail: true,
+						onError
+					});
 				});
-			});
 		});
 
 		afterEach(() => {
@@ -452,10 +464,11 @@ v17.11.2`)
 
 	describe("merge commands", () => {
 		const mergeCommands = {
-			mergeMaster: {
+			mergeDefaultBranch: {
+				args: { branch },
 				expected: {
-					branch: "master",
-					failHelpKey: "gitMergeDevelopWithMaster"
+					branch,
+					failHelpKey: "gitMergeDevelopWithDefaultBranch"
 				}
 			},
 			mergePromotionBranch: {
@@ -471,9 +484,10 @@ v17.11.2`)
 					remote: "upstream"
 				}
 			},
-			mergeUpstreamMaster: {
+			mergeUpstreamDefaultBranch: {
+				args: { branch },
 				expected: {
-					branch: "master",
+					branch,
 					remote: "upstream"
 				}
 			}
@@ -499,11 +513,11 @@ v17.11.2`)
 	describe("push commands", () => {
 		const pushCommands = {
 			createRemoteBranch: {
-				args: { branch },
+				args: { branch, remote: "upstream", base: "main" },
 				expected: {
 					branch,
 					remote: "upstream",
-					base: "master"
+					base: "main"
 				}
 			},
 			deleteBranchUpstream: {
@@ -524,24 +538,26 @@ v17.11.2`)
 					onError
 				}
 			},
-			pushUpstreamMaster: {
+			pushUpstreamDefaultBranch: {
+				args: { branch },
 				expected: {
-					branch: "master",
+					branch,
 					remote: "upstream",
 					failHelpKey: "gitPushUpstreamFeatureBranch"
 				}
 			},
-			pushUpstreamMasterWithTag: {
-				args: { tag: "v1.0.0-pre" },
+			pushUpstreamDefaultBranchWithTag: {
+				args: { branch, tag: "v1.0.0-pre" },
 				expected: {
-					branch: "master",
+					branch,
 					remote: "upstream",
 					tag: "v1.0.0-pre"
 				}
 			},
-			pushOriginMaster: {
+			pushOriginDefaultBranch: {
+				args: { branch },
 				expected: {
-					branch: "master",
+					branch,
 					remote: "origin"
 				}
 			},
@@ -591,10 +607,10 @@ v17.11.2`)
 					onError
 				}
 			},
-			rebaseUpstreamMaster: {
-				args: { onError },
+			rebaseUpstreamDefaultBranch: {
+				args: { branch, onError },
 				expected: {
-					branch: "master",
+					branch,
 					remote: "upstream",
 					failHelpKey: "gitRebaseUpstreamBase",
 					exitOnFail: true,
@@ -699,12 +715,12 @@ v17.11.2`)
 			});
 		});
 
-		it(`"rebaseUpstreamMaster" should handle no args`, () => {
-			command.rebaseUpstreamMaster();
+		it(`"rebaseUpstreamDefaultBranch" should handle no onError arg`, () => {
+			command.rebaseUpstreamDefaultBranch({ branch: "main" });
 
 			expect(git.rebase).toHaveBeenCalledTimes(1);
 			expect(git.rebase).toHaveBeenCalledWith({
-				branch: "master",
+				branch: "main",
 				remote: "upstream",
 				failHelpKey: "gitRebaseUpstreamBase",
 				exitOnFail: true

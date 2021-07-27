@@ -21,12 +21,12 @@ describe("shared workflows", () => {
 				run.gitAdd,
 				run.gitCommit,
 				run.gitTag,
-				run.gitPushUpstreamMaster,
+				run.gitPushUpstreamDefaultBranch,
 				run.npmPublish,
 				run.checkoutDevelop,
-				run.gitMergeDevelopWithMaster,
+				run.gitMergeDevelopWithDefaultBranch,
 				run.gitPushUpstreamDevelop,
-				run.gitPushOriginMaster,
+				run.gitPushOriginDefaultBranch,
 				run.githubUpstream,
 				run.githubRelease
 			]);

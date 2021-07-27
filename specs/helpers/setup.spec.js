@@ -1,6 +1,7 @@
 const setup = require("../../src/helpers/setup");
 const api = require("../../src/workflows/steps/index.js"); // eslint-disable-line no-unused-vars
 const getCurrentBranch = require("../../src/helpers/getCurrentBranch"); // eslint-disable-line no-unused-vars
+const getDefaultBranch = require("../../src/helpers/getDefaultBranch"); // eslint-disable-line no-unused-vars
 const filterFlowBasedOnDevelopBranch = require("../../src/helpers/filterFlowBasedOnDevelopBranch"); // eslint-disable-line no-unused-vars
 const utils = require("../../src/utils"); // eslint-disable-line no-unused-vars
 
@@ -26,10 +27,12 @@ jest.mock("../../src/helpers/filterFlowBasedOnDevelopBranch", () =>
 jest.mock("../../src/helpers/getCurrentBranch", () =>
 	jest.fn(() => Promise.resolve("current-branch"))
 );
+jest.mock("../../src/helpers/getDefaultBranch");
 
 describe("setup", () => {
 	let state;
 	beforeEach(() => {
+		getDefaultBranch.mockImplementation(() => Promise.resolve("main"));
 		state = {
 			command: "start",
 			filePaths: {
@@ -60,6 +63,16 @@ describe("setup", () => {
 					pullRequestTemplatePath:
 						"/some/root/path/.github/PULL_REQUEST_TEMPLATE.md"
 				}
+			});
+		});
+	});
+
+	describe("default branch call failed", () => {
+		it("should advise", () => {
+			getDefaultBranch.mockImplementation(() => Promise.resolve(""));
+			return setup(state).catch(() => {
+				expect(utils.advise).toHaveBeenCalledTimes(1);
+				expect(utils.advise).toHaveBeenCalledWith("defaultBranch");
 			});
 		});
 	});

@@ -91,7 +91,7 @@ const command = {
 		return Promise.resolve();
 	},
 
-	createRemoteBranch({ branch, remote = "upstream", base = "master" }) {
+	createRemoteBranch({ branch, remote, base }) {
 		return git.push({
 			branch,
 			remote,
@@ -122,11 +122,11 @@ const command = {
 		return git.fetch({ spinner, repo, failHelpKey: "fetchUpstream" });
 	},
 
-	generateRebaseCommitLog() {
+	generateRebaseCommitLog({ branch }) {
 		const preReleaseRegEx = /^v?\d+\.\d+\.\d+-.+\.\d+$/;
 		const gitLogMsgRegEx = /^[0-9a-f]{5,40} (.*)/;
 
-		const args = `log upstream/master..HEAD --pretty=format:"%h %s"`;
+		const args = `log upstream/${branch}..HEAD --pretty=format:"%h %s"`;
 		return runCommand({ args }).then(result => {
 			let commits = result.split("\n");
 
@@ -148,11 +148,11 @@ const command = {
 		});
 	},
 
-	reOrderLatestCommits() {
+	reOrderLatestCommits({ branch }) {
 		const bumpedRegEx = /Bumped (.*): (.*)/;
 		const gitLogMsgRegEx = /^[0-9a-f]{5,40} (.*)/;
 
-		const args = `log upstream/master..HEAD --pretty=format:"%h %s"`;
+		const args = `log upstream/${branch}..HEAD --pretty=format:"%h %s"`;
 		return runCommand({ args }).then(result => {
 			let commits = result.split("\n");
 
@@ -251,10 +251,10 @@ const command = {
 		return runCommand({ args, showOutput });
 	},
 
-	mergeMaster() {
+	mergeDefaultBranch({ branch }) {
 		return git.merge({
-			branch: "master",
-			failHelpKey: "gitMergeDevelopWithMaster"
+			branch,
+			failHelpKey: "gitMergeDevelopWithDefaultBranch"
 		});
 	},
 
@@ -272,9 +272,9 @@ const command = {
 		});
 	},
 
-	mergeUpstreamMaster() {
+	mergeUpstreamDefaultBranch({ branch }) {
 		return git.merge({
-			branch: "master",
+			branch,
 			remote: "upstream"
 		});
 	},
@@ -288,25 +288,25 @@ const command = {
 		});
 	},
 
-	pushUpstreamMaster() {
+	pushUpstreamDefaultBranch({ branch }) {
 		return git.push({
-			branch: "master",
+			branch,
 			remote: "upstream",
 			failHelpKey: "gitPushUpstreamFeatureBranch"
 		});
 	},
 
-	pushUpstreamMasterWithTag({ tag }) {
+	pushUpstreamDefaultBranchWithTag({ branch, tag }) {
 		return git.push({
-			branch: "master",
+			branch,
 			remote: "upstream",
 			tag
 		});
 	},
 
-	pushOriginMaster() {
+	pushOriginDefaultBranch({ branch }) {
 		return git.push({
-			branch: "master",
+			branch,
 			remote: "origin"
 		});
 	},
@@ -323,11 +323,11 @@ const command = {
 		return runCommand({ args });
 	},
 
-	removePreReleaseCommits({ onError } = {}) {
+	removePreReleaseCommits({ branch, onError }) {
 		const args = `GIT_SEQUENCE_EDITOR="cat ${path.join(
 			__dirname,
 			".commits-to-rebase.txt"
-		)} >" git rebase -i -p upstream/master`;
+		)} >" git rebase -i -p upstream/${branch}`;
 		return runCommand({
 			args,
 			logMessage: "Removing pre-release commit history",
@@ -338,11 +338,11 @@ const command = {
 		});
 	},
 
-	reOrderBumpCommit({ onError } = {}) {
+	reOrderBumpCommit({ branch, onError }) {
 		const args = `GIT_SEQUENCE_EDITOR="cat ${path.join(
 			__dirname,
 			".reordered-commits.txt"
-		)} >" git rebase -i upstream/master`;
+		)} >" git rebase -i upstream/${branch}`;
 		return runCommand({
 			args,
 			logMessage: "Reordering bump commit",
@@ -353,9 +353,9 @@ const command = {
 		});
 	},
 
-	rebaseUpstreamMaster({ onError } = {}) {
+	rebaseUpstreamDefaultBranch({ branch, onError }) {
 		return git.rebase({
-			branch: "master",
+			branch,
 			remote: "upstream",
 			failHelpKey: "gitRebaseUpstreamBase",
 			exitOnFail: true,

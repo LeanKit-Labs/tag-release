@@ -12,14 +12,14 @@ jest.mock("../../src/utils", () => ({
 
 describe("runCommand", () => {
 	it("should call runCommand with appropriate args", () => {
-		const branch = "master";
+		const branch = "main";
 		const includeTags = true;
 		const args = `fetch upstream ${branch}${includeTags ? " --tags" : ""}`;
 
 		return runCommand({ args }).then(() => {
 			expect(utils.exec).toHaveBeenCalledTimes(1);
 			expect(utils.exec).toHaveBeenCalledWith(
-				"git fetch upstream master --tags",
+				"git fetch upstream main --tags",
 				undefined
 			);
 		});

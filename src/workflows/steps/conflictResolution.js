@@ -164,7 +164,11 @@ const api = {
 
 		const call = hasDevelopBranch
 			? () => command.rebaseUpstreamDevelop({ onError })
-			: () => command.rebaseUpstreamMaster({ onError });
+			: () =>
+					command.rebaseUpstreamDefaultBranch({
+						branch: state.defaultBranch,
+						onError
+					});
 
 		return call().then(response => {
 			const { conflict } = response;

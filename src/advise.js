@@ -9,11 +9,11 @@ You really shouldn't be seeing this message, so, if you are, ping someone in eng
 tag-release needs an upstream remote in order to work correctly. You can double check by running 'git remote -v'
 
 To add a remote run 'git remote add upstream https://github.com/owner/repo.git'`,
-	gitMergeUpstreamMaster: `It looks like git couldn't merge upstream/master.
+	gitMergeUpstreamDefaultBranch: `It looks like git couldn't merge upstream default branch.
 
 It could be that your local environment is out of sync with your upstream.
 
-You might consider reseting your master by running 'git reset --hard upstream/master'`,
+You might consider reseting your default branch by running 'git reset --hard upstream/defaultBranch'`,
 	updateVersion: `It looks like there isn't a package.json for this project.
 
 You can easily create one by running 'npm init' and walking through the steps.`,
@@ -35,7 +35,7 @@ You need at least version 2.x in order for tag-release to work properly.`,
 Your upstream has a develop branch and you need one too.
 
 You can retrieve upstream's develop by running 'git branch -t upstream/develop'`,
-	gitMergeDevelopWithMaster: `It looks like git couldn't merge master into develop.
+	gitMergeDevelopWithDefaultBranch: `It looks like git couldn't merge your default branch into develop.
 
 It could be that your local environment is out of sync with your upstream.
 
@@ -62,7 +62,7 @@ You can double check by running 'git remote -v'`,
 
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
 will handle adding the conflicting files and continuing with the rebase.`,
-	gitRebaseInteractive: `It looks like there were some conflict(s) while trying to rebase with upstream/master.
+	gitRebaseInteractive: `It looks like there were some conflict(s) while trying to rebase with upstream default branch.
 
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
 will handle adding the conflicting files and continuing with the rebase.`,
@@ -106,7 +106,10 @@ The default size is 1024 * 5000. Where 5000 is <n>.`,
 Coverage of language translations might be not accurate for the repository in question.`,
 	reOrderFail: `It appears something went wrong with the reordering of the bump commit.
 
-You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`
+You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
+	defaultBranch: `Sorry, we were unable to read from your 'upstream' remote.
+
+Please verify the 'upstream' remote exists and you have the correct access rights.`
 };
 
 const MAXIMUM_WIDTH = 50;

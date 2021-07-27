@@ -268,18 +268,18 @@ describe("git", () => {
 		});
 
 		it("should call diff with branch", () => {
-			git.diff({ branch: "master" });
+			git.diff({ branch: "main" });
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "diff --color upstream/master"
+				args: "diff --color upstream/main"
 			});
 		});
 
 		it("should call diff with remote", () => {
-			git.diff({ remote: "origin", branch: "master" });
+			git.diff({ remote: "origin", branch: "main" });
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "diff --color origin/master"
+				args: "diff --color origin/main"
 			});
 		});
 
@@ -295,7 +295,7 @@ describe("git", () => {
 			git.diff({
 				option: "--check",
 				files: ["./package.json"],
-				branch: "master",
+				branch: "main",
 				remote: "upstream",
 				glob: "*.yaml",
 				maxBuffer: 5000,
@@ -306,7 +306,7 @@ describe("git", () => {
 			});
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "diff --check ./package.json upstream/master -- *.yaml",
+				args: "diff --check ./package.json upstream/main -- *.yaml",
 				maxBuffer: 5000,
 				logMessage: "some message",
 				failHelpKey: "failureKey",
@@ -364,12 +364,11 @@ describe("git", () => {
 			git.log({
 				option: "--no-merges --oneline",
 				branch: "feature-branch",
-				remote: "upstream/master"
+				remote: "upstream/main"
 			});
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args:
-					"log --no-merges --oneline feature-branch..upstream/master"
+				args: "log --no-merges --oneline feature-branch..upstream/main"
 			});
 		});
 	});

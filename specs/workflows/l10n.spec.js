@@ -9,9 +9,9 @@ describe("l10n workflow", () => {
 			run.fetchUpstream,
 			run.createOrCheckoutBranch,
 			run.gitMergeUpstreamBranch,
-			run.gitMergeUpstreamMasterNoFF,
+			run.gitMergeUpstreamDefaultBranchNoFF,
 			run.gitPushUpstreamFeatureBranch,
-			run.diffWithUpstreamMaster
+			run.diffWithUpstreamDefaultBranch
 		]);
 	});
 
@@ -22,8 +22,8 @@ describe("l10n workflow", () => {
 			run.fetchUpstream,
 			run.createOrCheckoutBranch,
 			run.gitMergeUpstreamBranch,
-			run.diffWithUpstreamMaster,
-			run.commitDiffWithUpstreamMaster,
+			run.diffWithUpstreamDefaultBranch,
+			run.commitDiffWithUpstreamDefaultBranch,
 			run.resetIfStashed
 		]);
 	});
@@ -33,8 +33,8 @@ describe("l10n workflow", () => {
 			run.changeDirectory,
 			run.gitStash,
 			run.fetchUpstream,
-			run.checkoutMaster,
-			run.gitResetMaster,
+			run.checkoutDefaultBranch,
+			run.gitResetDefaultBranch,
 			run.buildLocale,
 			run.getLangCodes,
 			run.getl10nCoverage,
