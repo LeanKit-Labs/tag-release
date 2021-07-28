@@ -432,6 +432,15 @@ const command = {
 			repo,
 			logMessage: "checking for uncommitted changes"
 		});
+	},
+
+	checkIfPublished({ name, onError }) {
+		const args = `npm info ${name}`;
+		return runCommand({
+			args,
+			onError,
+			fullCommand: true
+		});
 	}
 };
 

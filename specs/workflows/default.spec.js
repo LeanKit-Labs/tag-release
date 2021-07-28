@@ -21,6 +21,7 @@ describe("default workflow", () => {
 			run.gitCommit,
 			run.gitTag,
 			run.gitPushUpstreamDefaultBranch,
+			run.checkIfPublished,
 			run.npmPublish,
 			run.checkoutDevelop,
 			run.gitMergeDevelopWithDefaultBranch,

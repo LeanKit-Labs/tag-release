@@ -6,6 +6,7 @@ const {
 } = require("../workflows/steps/index.js");
 const getCurrentBranch = require("./getCurrentBranch");
 const getDefaultBranch = require("./getDefaultBranch");
+const getRepoName = require("./getRepoName");
 const filterFlowBasedOnDevelopBranch = require("./filterFlowBasedOnDevelopBranch");
 const utils = require("../utils");
 
@@ -16,6 +17,8 @@ const setup = async options => {
 		utils.advise("defaultBranch");
 		return Promise.reject();
 	}
+
+	options.repoName = await getRepoName();
 
 	options.version = await utils.getCurrentVersion();
 

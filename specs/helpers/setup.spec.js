@@ -1,7 +1,8 @@
 const setup = require("../../src/helpers/setup");
 const api = require("../../src/workflows/steps/index.js"); // eslint-disable-line no-unused-vars
 const getCurrentBranch = require("../../src/helpers/getCurrentBranch"); // eslint-disable-line no-unused-vars
-const getDefaultBranch = require("../../src/helpers/getDefaultBranch"); // eslint-disable-line no-unused-vars
+const getDefaultBranch = require("../../src/helpers/getDefaultBranch");
+const getRepoName = require("../../src/helpers/getRepoName"); // eslint-disable-line no-unused-vars
 const filterFlowBasedOnDevelopBranch = require("../../src/helpers/filterFlowBasedOnDevelopBranch"); // eslint-disable-line no-unused-vars
 const utils = require("../../src/utils"); // eslint-disable-line no-unused-vars
 
@@ -28,6 +29,9 @@ jest.mock("../../src/helpers/getCurrentBranch", () =>
 	jest.fn(() => Promise.resolve("current-branch"))
 );
 jest.mock("../../src/helpers/getDefaultBranch");
+jest.mock("../../src/helpers/getRepoName", () =>
+	jest.fn(() => Promise.resolve("repoName"))
+);
 
 describe("setup", () => {
 	let state;

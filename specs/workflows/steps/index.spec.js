@@ -1203,53 +1203,7 @@ describe("shared workflow steps", () => {
 			util.getPackageRegistry = jest.fn(() =>
 				Promise.resolve("http://example-registry.com")
 			);
-		});
-
-		it("should log the action to the console", () => {
-			return run.npmPublish(state).then(() => {
-				expect(util.log.begin).toHaveBeenCalledTimes(1);
-				expect(util.log.end).toHaveBeenCalledTimes(1);
-			});
-		});
-
-		it("should publish with identifier for pre-releases", () => {
-			state.prerelease = "my-identifier";
-			util.prompt = jest.fn(() => Promise.resolve({ publish: true }));
-			return run.npmPublish(state).then(() => {
-				expect(util.log.begin).toHaveBeenCalledWith(
-					"npm publish --tag my-identifier"
-				);
-				expect(util.exec).toHaveBeenCalledWith(
-					"npm publish --tag my-identifier"
-				);
-			});
-		});
-
-		it("should publish for releases", () => {
-			state.prerelease = false;
-			util.prompt = jest.fn(() => Promise.resolve({ publish: true }));
-			return run.npmPublish(state).then(() => {
-				expect(util.log.begin).toHaveBeenCalledWith("npm publish");
-				expect(util.exec).toHaveBeenCalledWith("npm publish");
-			});
-		});
-
-		it("should not prompt if the package is private", () => {
-			util.isPackagePrivate = jest.fn(() => true);
-			util.getPackageRegistry = jest.fn(() => Promise.resolve());
-			run.npmPublish(state);
-			expect(util.getPackageRegistry).not.toHaveBeenCalled();
-		});
-
-		it("should advise when the call to `util.exec` fails", () => {
-			util.exec = jest.fn(() => Promise.reject());
-			util.advise = jest.fn(() => {});
-			return run.npmPublish(state).then(() => {
-				expect(util.advise).toHaveBeenCalledTimes(1);
-				expect(util.advise).toHaveBeenCalledWith("npmPublish", {
-					exit: false
-				});
-			});
+			state.isPublished = true;
 		});
 
 		it("should do nothing when the given configuration file is not `package.json`", () => {
@@ -1257,6 +1211,121 @@ describe("shared workflow steps", () => {
 			util.isPackagePrivate = jest.fn(() => Promise.resolve());
 			run.npmPublish(state);
 			expect(util.isPackagePrivate).not.toHaveBeenCalled();
+		});
+
+		describe("when package is private", () => {
+			it("should not publish", () => {
+				util.isPackagePrivate = jest.fn(() => true);
+				return run.npmPublish(state).then(() => {
+					expect(util.exec).not.toHaveBeenCalled();
+				});
+			});
+		});
+
+		describe("when package isn't private", () => {
+			describe("when package has been published before", () => {
+				it("should publish", () => {
+					return run.npmPublish(state).then(() => {
+						expect(util.log.begin).toHaveBeenCalledWith(
+							"npm publish"
+						);
+						expect(util.exec).toHaveBeenCalledWith("npm publish");
+					});
+				});
+
+				it("should advise when the call to `util.exec` fails", () => {
+					util.exec = jest.fn(() => Promise.reject());
+					return run.npmPublish(state).then(() => {
+						expect(util.advise).toHaveBeenCalledTimes(1);
+						expect(util.advise).toHaveBeenCalledWith("npmPublish", {
+							exit: false
+						});
+					});
+				});
+			});
+
+			describe("when package hasn't been published before", () => {
+				beforeEach(() => {
+					state.isPublished = false;
+				});
+
+				it("should prompt user", () => {
+					return run.npmPublish(state).then(() => {
+						expect(util.prompt).toHaveBeenCalledTimes(1);
+						expect(util.prompt).toHaveBeenCalledWith([
+							{
+								type: "confirm",
+								name: "publish",
+								message:
+									"Appears this package has never been published before, do you still want to publish this package to http://example-registry.com",
+								default: false
+							}
+						]);
+					});
+				});
+
+				it("should publish if prompt response is true", () => {
+					util.prompt = jest.fn(() =>
+						Promise.resolve({ publish: true })
+					);
+					return run.npmPublish(state).then(() => {
+						expect(util.log.begin).toHaveBeenCalledWith(
+							"npm publish"
+						);
+						expect(util.exec).toHaveBeenCalledWith("npm publish");
+					});
+				});
+
+				it("should advise when the call to `util.exec` fails", () => {
+					util.prompt = jest.fn(() =>
+						Promise.resolve({ publish: true })
+					);
+					util.exec = jest.fn(() => Promise.reject());
+					return run.npmPublish(state).then(() => {
+						expect(util.advise).toHaveBeenCalledTimes(1);
+						expect(util.advise).toHaveBeenCalledWith("npmPublish", {
+							exit: false
+						});
+					});
+				});
+
+				it("should not publish if prompt response is false", () => {
+					util.prompt = jest.fn(() =>
+						Promise.resolve({ publish: false })
+					);
+					return run.npmPublish(state).then(() => {
+						expect(util.log.begin).not.toHaveBeenCalled();
+						expect(util.exec).not.toHaveBeenCalled();
+					});
+				});
+			});
+
+			it("shoould log when call to `getPackageRegistry` fails", () => {
+				util.getPackageRegistry = jest.fn(() =>
+					Promise.reject("call to getPackageRegistry failed")
+				);
+				return run.npmPublish(state).then(() => {
+					expect(util.logger.log).toHaveBeenCalledTimes(1);
+					expect(util.logger.log).toHaveBeenCalledWith(
+						"call to getPackageRegistry failed"
+					);
+				});
+			});
+		});
+
+		describe("when handling pre-releases", () => {
+			it("should publish", () => {
+				state.prerelease = "my-identifier";
+				util.prompt = jest.fn(() => Promise.resolve({ publish: true }));
+				return run.npmPublish(state).then(() => {
+					expect(util.log.begin).toHaveBeenCalledWith(
+						"npm publish --tag my-identifier"
+					);
+					expect(util.exec).toHaveBeenCalledWith(
+						"npm publish --tag my-identifier"
+					);
+				});
+			});
 		});
 	});
 
@@ -5404,6 +5473,32 @@ common.filter.savedFilters.new: "<New>"
 				gitIgnorePath: "/some/root/dir/.gitignore",
 				pullRequestTemplatePath:
 					"/some/root/dir/.github/PULL_REQUEST_TEMPLATE.md"
+			});
+		});
+	});
+
+	describe("checkIfPublished", () => {
+		beforeEach(() => {
+			state.repoName = "repoName";
+		});
+
+		it("should set state when successful", () => {
+			command.checkIfPublished = jest.fn(() =>
+				Promise.resolve("some response")
+			);
+			return run.checkIfPublished(state).then(() => {
+				expect(state).toHaveProperty("isPublished");
+				expect(state.isPublished).toEqual(true);
+			});
+		});
+
+		it("should resolve when check fails and set state", () => {
+			command.checkIfPublished = jest.fn(args => {
+				return args.onError()();
+			});
+			return run.checkIfPublished(state).then(() => {
+				expect(state).toHaveProperty("isPublished");
+				expect(state.isPublished).toEqual(false);
 			});
 		});
 	});

@@ -683,6 +683,14 @@ v17.11.2`)
 					args: "diff-index HEAD --",
 					logMessage: "checking for uncommitted changes"
 				}
+			},
+			checkIfPublished: {
+				args: { name: "repoName", onError },
+				expected: {
+					args: "npm info repoName",
+					fullCommand: true,
+					onError
+				}
 			}
 		};
 
