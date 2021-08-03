@@ -19,6 +19,7 @@ describe("pre-release workflow", () => {
 			run.gitCommit,
 			run.gitTag,
 			run.gitPushUpstreamFeatureBranch,
+			run.checkIfPublished,
 			run.npmPublish,
 			run.githubUpstream,
 			run.githubRelease

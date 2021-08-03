@@ -39,7 +39,7 @@ verify, modify, or cancel the `tag-release` process.
     pr [scope]                   update consumer project feature branch and create a PR to develop
     prerelease|pre [identifier]  create a pre-release
     qa [scope]                   create initial upstream feature branch for consumer project
-    reset                        reset repo to upstream master/develop branches
+    reset                        reset repo to upstream default and secondary branches
     l10n                         update and prerelease updated localization branches
     help [cmd]                   display help for [cmd]
 ```
@@ -113,7 +113,7 @@ Example:
 ```
 
 After selecting the tag you wish to promote it will attempt remove all pre-release commits from history
-and rebase it with master. If conflicts arise you will be prompted to fix the conflicts and then continue
+and rebase it with your default branch. If conflicts arise you will be prompted to fix the conflicts and then continue
 with the promotion process by running `tag-release continue`. This cycle will continue until all conflicts
 are resolved and then it will continue as normal.
 
@@ -340,7 +340,7 @@ reset
 
 1. Fork the dependency project & add development updates to your project.
 
-> **Note**: An example would be forking my-dependency-project and developing a feature based off its master branch. Your local branch should start with feature, defect, or rework (ex: feature-amazing-thing).
+> **Note**: An example would be forking my-dependency-project and developing a feature based off its default branch. Your local branch should start with feature, defect, or rework (ex: feature-amazing-thing).
 
 2. Make a GitHub PR for your dependency project against an upstream branch.
 
@@ -359,7 +359,7 @@ my-dependency-project git:(my-feature-branch) tag-release prerelease new-feature
 4. Create a consumer project upstream branch to include your pre-released dependency project for QA.
 
 ```
-my-consumer-project git:(master) tag-release qa
+my-consumer-project git:(main) tag-release qa
 ```
 
 > **Note**: This will create an upstream feature branch on the consumer project.
@@ -369,7 +369,7 @@ my-consumer-project git:(master) tag-release qa
 6. Once QA has passed your code, promote dependency project's pre-release to an offical release.
 
 ```
-my-dependency-project git:(master) tag-release promote
+my-dependency-project git:(main) tag-release promote
 ```
 
 > **Note**: This will change your pre-release from something like 1.2.3-new-feature.0 to 1.2.3 or whatever version is next in line. You will use this version in the next step.
@@ -404,7 +404,7 @@ my-consumer-project git:(my-feature-branch) tag-release pr
 </details>
 
 <details>
-	<summary>What does the following error mean? `Potentially unhandled rejection [8] Error: Command failed: "git push upstream master --tags"`</summary>
+	<summary>What does the following error mean? `Potentially unhandled rejection [8] Error: Command failed: "git push upstream main --tags"`</summary>
 	If you have GitHub Two Factor Authentication enabled and you are prompted for
 	your password when `tag-release` tries to push code then you'll need to use
 	your GitHub `token` as your password. If you use the `--verbose` option when

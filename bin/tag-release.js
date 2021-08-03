@@ -34,7 +34,7 @@ commander
 		"qa [scope]",
 		"create initial upstream feature branch for consumer project"
 	)
-	.command("reset", "reset repo to upstream master/develop branches")
+	.command("reset", "reset repo to upstream default and secondary branches")
 	.command(
 		"l10n [repo]",
 		"update and prerelease updated localization branches"

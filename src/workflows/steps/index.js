@@ -23,9 +23,9 @@ const api = {
 		state.branch = state.workingBranch;
 		return command.checkoutBranch(state);
 	},
-	checkoutMaster(state) {
-		state.step = "checkoutMaster";
-		state.branch = "master";
+	checkoutDefaultBranch(state) {
+		state.step = "checkoutDefault";
+		state.branch = state.defaultBranch;
 		return command.checkoutBranch(state);
 	},
 	checkoutDevelop(state) {
@@ -48,7 +48,7 @@ const api = {
 		if (hasDevelopBranch) {
 			return api.checkoutDevelop(state);
 		}
-		return api.checkoutMaster(state);
+		return api.checkoutDefaultBranch(state);
 	},
 	checkoutAndCreateBranch(state) {
 		state.step = "checkoutAndCreateBranch";
@@ -103,16 +103,18 @@ const api = {
 			repo
 		});
 	},
-	gitMergeUpstreamMaster(state) {
-		state.step = "gitMergeUpstreamMaster";
-		return command.mergeUpstreamMaster();
+	gitMergeUpstreamDefaultBranch(state) {
+		state.step = "gitMergeUpstreamDefaultBranch";
+		return command.mergeUpstreamDefaultBranch({
+			branch: state.defaultBranch
+		});
 	},
-	gitMergeUpstreamMasterNoFF(state) {
-		state.step = "gitMergeUpstreamMasterNoFF";
-		const { spinner, repo } = state;
+	gitMergeUpstreamDefaultBranchNoFF(state) {
+		state.step = "gitMergeUpstreamDefaultBranchNoFF";
+		const { defaultBranch, spinner, repo } = state;
 		return git
 			.merge({
-				branch: "master",
+				branch: defaultBranch,
 				remote: "upstream",
 				fastForwardOnly: false,
 				spinner,
@@ -527,14 +529,14 @@ ${chalk.green(log)}`);
 			state.tag = tag;
 		});
 	},
-	gitPushUpstreamMaster(state) {
-		state.step = "gitPushUpstreamMaster";
-		const { tag } = state;
-		return command.pushUpstreamMasterWithTag({ tag });
+	gitPushUpstreamDefaultBranch(state) {
+		state.step = "gitPushUpstreamDefaultBranch";
+		const { defaultBranch: branch, tag } = state;
+		return command.pushUpstreamDefaultBranchWithTag({ branch, tag });
 	},
 	npmPublish(state) {
 		state.step = "npmPublish";
-		const { filePaths: { configPath }, prerelease } = state;
+		const { isPublished, filePaths: { configPath }, prerelease } = state;
 		if (!configPath.includes("package.json")) {
 			return null;
 		}
@@ -545,16 +547,48 @@ ${chalk.green(log)}`);
 			: publishCommand;
 
 		if (!util.isPackagePrivate(configPath)) {
-			util.log.begin(publishCommand);
 			return util
-				.exec(publishCommand)
-				.then(() => util.log.end())
-				.catch(() => util.advise("npmPublish", { exit: false }));
+				.getPackageRegistry(configPath)
+				.then(registry => {
+					if (isPublished) {
+						util.log.begin(publishCommand);
+						return util
+							.exec(publishCommand)
+							.then(() => util.log.end())
+							.catch(() =>
+								util.advise("npmPublish", { exit: false })
+							);
+					}
+					return util
+						.prompt([
+							{
+								type: "confirm",
+								name: "publish",
+								message: `Appears this package has never been published before, do you still want to publish this package to ${registry}`,
+								default: false
+							}
+						])
+						.then(answers => {
+							if (answers.publish) {
+								util.log.begin(publishCommand);
+								return util
+									.exec(publishCommand)
+									.then(() => util.log.end())
+									.catch(() =>
+										util.advise("npmPublish", {
+											exit: false
+										})
+									);
+							}
+						});
+				})
+				.catch(e => util.logger.log(chalk.red(e)));
 		}
+		return Promise.resolve();
 	},
-	gitMergeDevelopWithMaster(state) {
-		state.step = "gitMergeDevelopWithMaster";
-		return command.mergeMaster();
+	gitMergeDevelopWithDefaultBranch(state) {
+		state.step = "gitMergeDevelopWithDefaultBranch";
+		return command.mergeDefaultBranch({ branch: state.defaultBranch });
 	},
 	gitPushUpstreamDevelop(state) {
 		state.step = "gitPushUpstreamDevelop";
@@ -585,9 +619,9 @@ ${chalk.green(log)}`);
 			});
 		}
 	},
-	gitPushOriginMaster(state) {
-		state.step = "gitPushOriginMaster";
-		return command.pushOriginMaster();
+	gitPushOriginDefaultBranch(state) {
+		state.step = "gitPushOriginDefaultBranch";
+		return command.pushOriginDefaultBranch({ branch: state.defaultBranch });
 	},
 	githubUpstream(state) {
 		state.step = "githubUpstream";
@@ -714,11 +748,11 @@ ${chalk.green(log)}`);
 				});
 		}
 	},
-	verifyMasterBranch(state) {
-		state.step = "verifyMasterBranch";
-		return command.branchExists("master").then(exists => {
+	verifyDefaultBranch(state) {
+		state.step = "verifyDefaultBranch";
+		return command.branchExists(state.defaultBranch).then(exists => {
 			if (!exists) {
-				return command.createLocalBranch("master");
+				return command.createLocalBranch(state.defaultBranch);
 			}
 		});
 	},
@@ -730,9 +764,9 @@ ${chalk.green(log)}`);
 			}
 		});
 	},
-	gitResetMaster(state) {
-		state.step = "gitResetMaster";
-		return command.resetBranch("master");
+	gitResetDefaultBranch(state) {
+		state.step = "gitResetDefaultBranch";
+		return command.resetBranch(state.defaultBranch);
 	},
 	gitResetDevelop(state) {
 		state.step = "gitResetDevelop";
@@ -743,7 +777,7 @@ ${chalk.green(log)}`);
 	},
 	gitGenerateRebaseCommitLog(state) {
 		state.step = "gitGenerateRebaseCommitLog";
-		return command.generateRebaseCommitLog();
+		return command.generateRebaseCommitLog({ branch: state.defaultBranch });
 	},
 	gitRemovePreReleaseCommits(state) {
 		state.step = "gitRemovePreReleaseCommits";
@@ -752,7 +786,10 @@ ${chalk.green(log)}`);
 			return () => retryRebase(err);
 		};
 
-		return command.removePreReleaseCommits({ onError });
+		return command.removePreReleaseCommits({
+			branch: state.defaultBranch,
+			onError
+		});
 	},
 	checkIfReOrderNeeded(state) {
 		state.step = "checkIfReOrderNeeded";
@@ -772,9 +809,11 @@ ${chalk.green(log)}`);
 			return Promise.resolve();
 		}
 
-		return command.reOrderLatestCommits().then(result => {
-			state.reOrder = result;
-		});
+		return command
+			.reOrderLatestCommits({ branch: state.defaultBranch })
+			.then(result => {
+				state.reOrder = result;
+			});
 	},
 	reOrderBumpCommit(state) {
 		state.step = "reOrderBumpCommit";
@@ -788,11 +827,16 @@ ${chalk.green(log)}`);
 			return Promise.reject();
 		};
 
-		return command.reOrderBumpCommit({ onError });
+		return command.reOrderBumpCommit({
+			branch: state.defaultBranch,
+			onError
+		});
 	},
-	gitRebaseUpstreamMaster(state) {
-		state.step = "gitRebaseUpstreamMaster";
-		return command.rebaseUpstreamMaster();
+	gitRebaseUpstreamDefaultBranch(state) {
+		state.step = "gitRebaseUpstreamDefaultBranch";
+		return command.rebaseUpstreamDefaultBranch({
+			branch: state.defaultBranch
+		});
 	},
 	gitRemovePromotionBranches(state) {
 		state.step = "gitRemovePromotionBranches";
@@ -1081,6 +1125,7 @@ ${chalk.green(log)}`);
 			github: {
 				upstream: { owner: repositoryOwner, name: repositoryName }
 			},
+			defaultBranch,
 			token,
 			branch,
 			bump,
@@ -1098,13 +1143,13 @@ ${chalk.green(log)}`);
 			options = {
 				title: reason,
 				head: `${repositoryOwner}:${branch}`,
-				base: hasDevelopBranch ? "develop" : "master"
+				base: hasDevelopBranch ? "develop" : defaultBranch
 			};
 		} else {
 			options = {
 				title: "Updating localization strings",
 				head: `${repositoryOwner}:${branch}`,
-				base: hasDevelopBranch ? "develop" : "master"
+				base: hasDevelopBranch ? "develop" : defaultBranch
 			};
 		}
 
@@ -1550,13 +1595,13 @@ ${chalk.green(log)}`);
 	gitCreateBranchUpstream(state) {
 		state.step = "gitCreateBranchUpstream";
 		let { branch } = state;
-		const { hasDevelopBranch, devBranch } = state;
+		const { defaultBranch, hasDevelopBranch, devBranch } = state;
 		branch = devBranch ? devBranch : branch;
 		const remote = "upstream";
 
 		return command.branchExistsRemote({ branch, remote }).then(exists => {
 			if (!exists) {
-				const base = hasDevelopBranch ? "develop" : "master";
+				const base = hasDevelopBranch ? "develop" : defaultBranch;
 				return command.createRemoteBranch({ branch, remote, base });
 			}
 		});
@@ -1656,13 +1701,13 @@ ${chalk.green(log)}`);
 	},
 	rebaseUpstreamBaseBranch(state) {
 		state.step = "rebaseUpstreamBaseBranch";
-		const { hasDevelopBranch } = state;
+		const { defaultBranch, hasDevelopBranch } = state;
 
 		if (hasDevelopBranch) {
 			return command.rebaseUpstreamDevelop();
 		}
 
-		return command.rebaseUpstreamMaster();
+		return command.rebaseUpstreamDefaultBranch({ branch: defaultBranch });
 	},
 	changeDirectory(state) {
 		state.step = "changeDirectory";
@@ -1709,14 +1754,14 @@ ${chalk.green(log)}`);
 			return command.checkoutBranch({ branch, spinner, repo });
 		});
 	},
-	diffWithUpstreamMaster(state) {
-		state.step = "diffWithUpstreamMaster";
-		const { maxbuffer, spinner, repo } = state;
+	diffWithUpstreamDefaultBranch(state) {
+		state.step = "diffWithUpstreamDefaultBranch";
+		const { defaultBranch, maxbuffer, spinner, repo } = state;
 
 		return git
 			.diff({
 				option: "--word-diff",
-				branch: "master",
+				branch: defaultBranch,
 				glob: "*.yaml",
 				maxBuffer: maxbuffer,
 				spinner,
@@ -1765,14 +1810,14 @@ ${chalk.green(log)}`);
 			});
 		});
 	},
-	commitDiffWithUpstreamMaster(state) {
-		state.step = "commitDiffWithUpstreamMaster";
-		const { branch, spinner, repo } = state;
+	commitDiffWithUpstreamDefaultBranch(state) {
+		state.step = "commitDiffWithUpstreamDefaultBranch";
+		const { defaultBranch, branch, spinner, repo } = state;
 		return git
 			.log({
 				option: "--no-merges --oneline",
 				branch,
-				remote: "upstream/master",
+				remote: `upstream/${defaultBranch}`,
 				spinner,
 				repo
 			})
@@ -1912,6 +1957,18 @@ ${chalk.green(log)}`);
 		};
 
 		return Promise.resolve();
+	},
+	checkIfPublished(state) {
+		state.step = "isPublished";
+		const onError = () => {
+			return () => Promise.resolve();
+		};
+
+		return command
+			.checkIfPublished({ name: state.repoName, onError })
+			.then(response => {
+				state.isPublished = !!response;
+			});
 	}
 };
 

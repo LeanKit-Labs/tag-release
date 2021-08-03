@@ -5,8 +5,8 @@ describe("default workflow", () => {
 	it("should have all of the required steps", () => {
 		expect(defaultWorkflow).toEqual([
 			run.fetchUpstream,
-			run.checkoutMaster,
-			run.gitMergeUpstreamMaster,
+			run.checkoutDefaultBranch,
+			run.gitMergeUpstreamDefaultBranch,
 			run.getCurrentBranchVersion,
 			run.gitMergeUpstreamDevelop,
 			run.gitShortLog,
@@ -20,12 +20,13 @@ describe("default workflow", () => {
 			run.gitAdd,
 			run.gitCommit,
 			run.gitTag,
-			run.gitPushUpstreamMaster,
+			run.gitPushUpstreamDefaultBranch,
+			run.checkIfPublished,
 			run.npmPublish,
 			run.checkoutDevelop,
-			run.gitMergeDevelopWithMaster,
+			run.gitMergeDevelopWithDefaultBranch,
 			run.gitPushUpstreamDevelop,
-			run.gitPushOriginMaster,
+			run.gitPushOriginDefaultBranch,
 			run.githubUpstream,
 			run.githubRelease
 		]);

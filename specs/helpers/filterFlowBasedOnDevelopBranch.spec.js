@@ -5,7 +5,7 @@ describe("filterFlowBasedOnDevelopBranch", () => {
 	beforeEach(() => {
 		workflow = [
 			{ name: "fetch" },
-			{ name: "master" },
+			{ name: "main" },
 			{ name: "getDevelop" },
 			{ name: "develop" },
 			{ name: "Develop" },
@@ -22,7 +22,7 @@ describe("filterFlowBasedOnDevelopBranch", () => {
 			);
 			expect(response).toEqual([
 				{ name: "fetch" },
-				{ name: "master" },
+				{ name: "main" },
 				{ name: "getDevelop" },
 				{ name: "develop" },
 				{ name: "Develop" },
@@ -40,7 +40,7 @@ describe("filterFlowBasedOnDevelopBranch", () => {
 			);
 			expect(response).toEqual([
 				{ name: "fetch" },
-				{ name: "master" },
+				{ name: "main" },
 				{ name: "checkout" },
 				{ name: "branch" }
 			]);

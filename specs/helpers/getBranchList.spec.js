@@ -5,7 +5,7 @@ jest.mock("../../src/git", () => ({
 	branch: jest.fn(() =>
 		Promise.resolve(`feature-branch
 promote-release-v1.1.1-feature.0
-* master
+* main
 develop
 promote-release-v1.1.1-feature.1`)
 	)
@@ -18,7 +18,7 @@ describe("getBranchList", () => {
 			expect(response).toEqual([
 				"feature-branch",
 				"promote-release-v1.1.1-feature.0",
-				"* master",
+				"* main",
 				"develop",
 				"promote-release-v1.1.1-feature.1"
 			]);

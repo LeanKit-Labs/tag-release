@@ -69,13 +69,15 @@ describe("conflict resolution workflow steps", () => {
 			});
 		});
 
-		it(`should call "command.rebaseUpstreamMaster"`, () => {
+		it(`should call "command.rebaseUpstreamDefaultBranch"`, () => {
 			state.hasDevelopBranch = false;
-			command.rebaseUpstreamMaster = jest.fn(() =>
+			command.rebaseUpstreamDefaultBranch = jest.fn(() =>
 				Promise.resolve({ conflict: false })
 			);
 			return run.gitRebaseUpstreamBaseWithConflictFlag(state).then(() => {
-				expect(command.rebaseUpstreamMaster).toHaveBeenCalledTimes(1);
+				expect(
+					command.rebaseUpstreamDefaultBranch
+				).toHaveBeenCalledTimes(1);
 				expect(state.conflict).toEqual(false);
 			});
 		});
