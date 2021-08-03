@@ -107,9 +107,9 @@ Coverage of language translations might be not accurate for the repository in qu
 	reOrderFail: `It appears something went wrong with the reordering of the bump commit.
 
 You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
-	defaultBranch: `Sorry, we were unable to read from your 'upstream' remote.
+	defaultBranch: `Sorry, we were unable to determine if 'master' or 'main' is your default branch.
 
-Please verify the 'upstream' remote exists and you have the correct access rights.`
+Please verify you have set either 'master' or 'main' as your repository's default branch. As well as, the 'upstream' remote exists and you have the correct access rights.`
 };
 
 const MAXIMUM_WIDTH = 50;

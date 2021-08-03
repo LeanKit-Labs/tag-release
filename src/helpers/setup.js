@@ -13,7 +13,7 @@ const utils = require("../utils");
 const setup = async options => {
 	await setFilePaths(options);
 	options.defaultBranch = await getDefaultBranch();
-	if (!options.defaultBranch.length) {
+	if (!options.defaultBranch) {
 		utils.advise("defaultBranch");
 		return Promise.reject();
 	}
