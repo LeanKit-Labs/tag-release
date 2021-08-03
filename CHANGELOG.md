@@ -1,5 +1,10 @@
 ## 7.x
 
+### 7.1.0
+
+* Updated to prompt when package hasn't been published before to npm
+* Updated to use default branch from repo
+
 ### 7.0.0
 
 * Fixed issue with scope and conflict resolution
