@@ -21,9 +21,16 @@ const questions = {
 			message: "What is your GitHub username"
 		},
 		{
-			type: "password",
-			name: "password",
-			message: "What is your GitHub password"
+			type: "confirm",
+			name: "hasToken",
+			message: "Do you have a GitHub personal access token?"
+		}
+	],
+	token: [
+		{
+			type: "input",
+			name: "token",
+			message: "What is your GitHub personal access token?"
 		}
 	]
 };
@@ -50,18 +57,23 @@ const bootstrap = options => {
 		})
 		.catch(() => {
 			utils.prompt(questions.github).then(answers => {
-				const { username, password } = answers;
-				utils
-					.createGitHubAuthToken(username, password)
-					.then(token => {
-						utils.setConfigs(username, token);
-						options = _.extend({}, options, {
-							username,
-							token
-						});
-						startTagRelease(options);
-					})
-					.catch(e => logger.log(chalk.red("error", e)));
+				const { username, hasToken } = answers;
+				if (hasToken) {
+					utils
+						.prompt(questions.token)
+						.then(response => {
+							const { token } = response;
+							utils.setConfigs(username, token);
+							options = _.extend({}, options, {
+								username,
+								token
+							});
+							startTagRelease(options);
+						})
+						.catch(e => logger.log(chalk.red("error", e)));
+				} else {
+					utils.advise("noAccessToken");
+				}
 			});
 		});
 };

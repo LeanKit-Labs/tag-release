@@ -109,7 +109,12 @@ Coverage of language translations might be not accurate for the repository in qu
 You really shouldn't be seeing this message, so, if you are, ping someone in engineering to see if they can help you figure out what went wrong.`,
 	defaultBranch: `Sorry, a 'main' or 'master' branch is needed.
 
-Please verify you have either a 'master' or 'main' on the repository you are working with. As well as, the 'upstream' remote exists and you have the correct access rights.`
+Please verify you have either a 'master' or 'main' on the repository you are working with. As well as, the 'upstream' remote exists and you have the correct access rights.`,
+	noAccessToken: `In order to use tag-release a GitHub personal access token is required.
+
+Please go to https://github.com/settings/tokens and generate a new token with no expiration and 'workflow' scope.
+
+If you need addition help, please checkout our README.md`
 };
 
 const MAXIMUM_WIDTH = 50;
