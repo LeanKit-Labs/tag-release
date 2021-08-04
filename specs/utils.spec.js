@@ -571,6 +571,26 @@ describe("utils", () => {
 		});
 	});
 
+	describe("getPackageName", () => {
+		it("should return name when 'name' is defined in config file", () => {
+			util.readJSONFile = jest.fn(() => {
+				return { name: "name" };
+			});
+
+			const name = util.getPackageName("test-package.json");
+			expect(name).toEqual("name");
+		});
+
+		it("should return undefined when `name` is not defined in the config file", () => {
+			util.readJSONFile = jest.fn(() => {
+				return { not: "defined" };
+			});
+
+			const name = util.getPackageName("test-package.json");
+			expect(name).toEqual(undefined);
+		});
+	});
+
 	describe("log", () => {
 		beforeEach(() => {
 			util.log.begin("monkey");
