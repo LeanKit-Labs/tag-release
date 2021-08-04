@@ -1,5 +1,9 @@
 ## 7.x
 
+### 7.1.1
+
+* Only use master and main for default branch
+
 ### 7.1.0
 
 * Updated to prompt when package hasn't been published before to npm
