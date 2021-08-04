@@ -1959,16 +1959,16 @@ ${chalk.green(log)}`);
 		return Promise.resolve();
 	},
 	checkIfPublished(state) {
-		state.step = "isPublished";
+		state.step = "checkIfPublished";
+		const { filePaths: { configPath } } = state;
+		const name = util.getPackageName(configPath);
 		const onError = () => {
 			return () => Promise.resolve();
 		};
 
-		return command
-			.checkIfPublished({ name: state.repoName, onError })
-			.then(response => {
-				state.isPublished = !!response;
-			});
+		return command.checkIfPublished({ name, onError }).then(response => {
+			state.isPublished = !!response;
+		});
 	}
 };
 

@@ -11,6 +11,7 @@ const { extend } = require("lodash");
 const automatedWorkflow = require("../src/workflows/automated");
 const setup = require("./helpers/setup");
 const runWorkflow = require("./helpers/runWorkflow");
+const getDefaultBranch = require("./helpers/getDefaultBranch");
 
 const questions = {
 	github: [
@@ -82,6 +83,10 @@ const api = {
 				workflow: automatedWorkflow
 			}
 		);
+		options.defaultBranch = await getDefaultBranch();
+		if (!options.defaultBranch) {
+			throw new Error("'main' or 'master' branch is needed.");
+		}
 
 		const result = await sequence(options.workflow, options)
 			.then(results => {

@@ -128,6 +128,10 @@ const api = {
 			: `npm get registry`;
 		return api.exec(command);
 	},
+	getPackageName(configPath) {
+		const pkg = api.readJSONFile(configPath);
+		return pkg.name;
+	},
 	log: {
 		lastLog: "",
 		begin(text) {
