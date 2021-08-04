@@ -5,15 +5,51 @@ jest.mock("../../src/helpers/runCommand", () =>
 	jest.fn(() => Promise.resolve("main"))
 );
 
-describe("getCurrentBranch", () => {
-	it("should return the current branch", () => {
-		return getDefaultBranch().then(response => {
-			expect(runCommand).toHaveBeenCalledTimes(1);
-			expect(runCommand).toHaveBeenCalledWith({
-				args: `remote show upstream | grep "HEAD branch" | sed 's/.*: //'`,
-				showOutput: false
+describe("getDefaultBranch", () => {
+	[
+		{
+			branches: `
+main
+test
+master`,
+			result: "main"
+		},
+		{
+			branches: `
+test
+master`,
+			result: "master"
+		},
+		{
+			branches: `
+test
+main`,
+			result: "main"
+		},
+		{
+			branches: `
+test
+main
+master`,
+			result: "main"
+		},
+		{
+			branches: `
+test
+again`,
+			result: undefined
+		}
+	].forEach(run => {
+		it("should return expected branch", () => {
+			runCommand.mockImplementation(() => Promise.resolve(run.branches));
+			return getDefaultBranch().then(response => {
+				expect(runCommand).toHaveBeenCalledTimes(1);
+				expect(runCommand).toHaveBeenCalledWith({
+					args: `branch -r | grep upstream | sed 's/^.*upstream\\///'`,
+					showOutput: false
+				});
+				expect(response).toEqual(run.result);
 			});
-			expect(response).toEqual("main");
 		});
 	});
 });
