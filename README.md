@@ -5,6 +5,32 @@
 $ npm install -g tag-release
 ```
 
+## GitHub Personal Access Token
+`tag-release` requires a GitHub personal access token in order to execute certain GitHub commands.
+
+In your root directory there should be a `.tag-releaserc.json` file that contains your GitHub username and access token.
+It should appear as following:
+```
+{
+   username: "myusername",
+   token: "token123"
+}
+```
+You can create, open, and edit this file by running `tag-release config`. Alternatively, you can simply run `tag-release` and follow the
+instructions provided if you don't already have one created.
+
+In order to create your GitHub personal access token you will need to visit `https://github.com/settings/tokens` and follow these steps:
+   1. From the link provided, click `Generate new token`
+   2. Set a note to your preference, maybe something like `tag-release token` to make it easy to remember what the token is used for.
+   3. Set `Expiration` to `No expiration`. It will complain about how that is scary, but you can always come in after and remove the token.
+   4. Check the `workflow` scope. This should also check all items in the `repo` scope as well. If it doesn't, please check them too.
+   5. Scroll to the bottom and click `Generate token`
+   6. Once successfully created, copy the token and enable SSO for the token if the repos you are working with require that.
+   7. Once the token is copied, either manually update the `.tag-releaserc.json` file or re-run the `tag-release` command you were running and
+enter when prompted if you didn't have a token before.
+
+> **Note**: Here is a GitHub link on how to create personal access tokens as well: https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token If you choose to follow these steps, please make sure the scope of your token is the same as described in the steps listed above.
+
 ## Usage
 
 ### Default
