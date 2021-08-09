@@ -1,3 +1,11 @@
+## 8.x
+
+### 8.0.0
+
+* Added use of GitHub personal access tokens
+* Added default branch to tag-release as library flow
+* Use config name instead of git file path name for package name
+
 ## 7.x
 
 ### 7.1.1
