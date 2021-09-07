@@ -47,7 +47,6 @@ const util = require("../../../src/utils");
 const git = require("../../../src/git");
 const command = require("../../../src/command");
 const conflictResolution = require("../../../src/workflows/steps/conflictResolution");
-const getContentsFromYAML = require("../../../src/helpers/getContentsFromYAML"); // eslint-disable-line no-unused-vars
 const getRootDirectory = require("../../../src/helpers/getRootDirectory"); // eslint-disable-line no-unused-vars
 
 jest.mock("../../../src/git");
@@ -65,10 +64,6 @@ jest.mock("../../../src/helpers/filterFlowBasedOnDevelopBranch", flow =>
 jest.mock("../../../src/workflows/steps/conflictResolution", () => ({
 	retryRebase: jest.fn(() => Promise.resolve())
 }));
-
-jest.mock("../../../src/helpers/getContentsFromYAML", () =>
-	jest.fn(() => ({ "first.key": "one", "second.key": "two" }))
-);
 
 jest.mock("../../../src/helpers/getRootDirectory", () =>
 	jest.fn(() => "/some/root/dir")
@@ -5051,60 +5046,6 @@ common.filter.savedFilters.new: "<New>"
 		});
 	});
 
-	describe("checkoutl10nBranch", () => {
-		beforeEach(() => {
-			command.branchExists = jest.fn(() => Promise.resolve(true));
-			command.checkoutAndCreateBranch = jest.fn(() => Promise.resolve());
-			command.checkoutBranch = jest.fn(() => Promise.resolve());
-
-			global.Date = jest.fn(() => ({
-				toLocaleString: () => "Feb",
-				getDate: () => "15"
-			}));
-		});
-
-		it("should set step on state", () => {
-			run.checkoutl10nBranch(state).then(() => {
-				expect(state).toHaveProperty("step");
-				expect(state.step).toEqual("checkoutl10nBranch");
-			});
-		});
-
-		describe("branch exists", () => {
-			it("should call command.checkoutBranch", () => {
-				run.checkoutl10nBranch(state).then(() => {
-					expect(command.checkoutBranch).toHaveBeenCalledTimes(1);
-					expect(command.checkoutBranch).toHaveBeenCalledWith({
-						branch: "feature-localization-feb-15"
-					});
-				});
-			});
-
-			it("should set status on state", () => {
-				run.checkoutl10nBranch(state).then(() => {
-					expect(state).toHaveProperty("status");
-					expect(state.status).toEqual("skipped");
-				});
-			});
-		});
-
-		describe("branch doesn't exist", () => {
-			it("should call command.checkoutAndCreateBranch", () => {
-				command.branchExists = jest.fn(() => Promise.resolve(false));
-				run.checkoutl10nBranch(state).then(() => {
-					expect(
-						command.checkoutAndCreateBranch
-					).toHaveBeenCalledTimes(1);
-					expect(
-						command.checkoutAndCreateBranch
-					).toHaveBeenCalledWith({
-						branch: "feature-localization-feb-15"
-					});
-				});
-			});
-		});
-	});
-
 	describe("commitDiffWithUpstreamDefaultBranch", () => {
 		beforeEach(() => {
 			git.log = jest.fn(() => Promise.resolve(""));
@@ -5279,75 +5220,6 @@ common.filter.savedFilters.new: "<New>"
 					expect(state.langCodes).toEqual([]);
 					expect(state).toHaveProperty("localePath");
 					expect(state.localePath).toEqual("./path/locale");
-				});
-			});
-		});
-	});
-
-	describe("getl10nCoverage", () => {
-		it("should set step on state", () => {
-			run.getl10nCoverage(state).then(() => {
-				expect(state).toHaveProperty("step");
-				expect(state.step).toEqual("getl10nCoverage");
-			});
-		});
-
-		describe("when there is no localePath", () => {
-			it("should set coverage on state to empty", () => {
-				run.getl10nCoverage(state).then(() => {
-					expect(state).toHaveProperty("coverage");
-					expect(state.coverage).toEqual({ keyCount: 0 });
-				});
-			});
-		});
-
-		describe("when handling yaml contents", () => {
-			it("should set coverage on state", () => {
-				state = {
-					repo: "test_repo",
-					localePath: "./path/locale",
-					langCodes: ["fr-FR"]
-				};
-				getContentsFromYAML
-					.mockReturnValueOnce({ first: "one", second: "two" })
-					.mockReturnValueOnce({ first: "une", second: "deux" });
-				run.getl10nCoverage(state).then(() => {
-					expect(state).toHaveProperty("coverage");
-					expect(state.coverage).toEqual({
-						"fr-FR": {
-							diff: [],
-							same: [],
-							percent: "100.0"
-						},
-						keyCount: 2
-					});
-				});
-			});
-
-			describe("when handling l10nKeyOverrides", () => {
-				state = {
-					repo: "test-repo",
-					localePath: "./path/locale",
-					langCodes: ["fr-FR"],
-					l10nKeyOverrides: {
-						"test-repo": {
-							"fr-FR": ["first"]
-						}
-					}
-				};
-				getContentsFromYAML
-					.mockReturnValueOnce({ first: "one", second: "two" })
-					.mockReturnValueOnce({ first: "one", second: "deux" });
-				run.getl10nCoverage(state).then(() => {
-					expect(state).toHaveProperty("coverage");
-					expect(state.coverage).toEqual({
-						"fr-FR": {
-							diff: [],
-							same: [],
-							percent: "100.0"
-						},
-						keyCount: 2
-					});
 				});
 			});
 		});
