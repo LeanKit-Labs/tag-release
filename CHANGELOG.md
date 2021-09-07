@@ -1,3 +1,9 @@
+## 9.x
+
+### 9.0.0
+
+* Removed l10n command and updated README.md
+
 ## 8.x
 
 ### 8.0.0
