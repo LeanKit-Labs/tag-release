@@ -8,13 +8,11 @@ const GitHub = require("github-api");
 const sequence = require("when/sequence");
 const path = require("path");
 const removeWords = require("remove-words");
-const { get, set, difference, union } = require("lodash");
+const { set, union } = require("lodash");
 const { retryRebase } = require("./conflictResolution");
 const getCurrentBranch = require("../../helpers/getCurrentBranch");
-const getContentsFromYAML = require("../../helpers/getContentsFromYAML");
 const getRootDirectory = require("../../helpers/getRootDirectory");
 
-const MAX_PERCENT = 100;
 const LOCKED_BRANCHES = ["develop", "master", "main"];
 
 const api = {
@@ -1791,25 +1789,6 @@ ${chalk.green(log)}`);
 				}
 			});
 	},
-	checkoutl10nBranch(state) {
-		state.step = "checkoutl10nBranch";
-		const today = new Date();
-		const currentMonth = today
-			.toLocaleString("en-us", { month: "short" })
-			.toLowerCase();
-		const branch = `feature-localization-${currentMonth}-${today.getDate()}`;
-
-		return command.branchExists(branch).then(exists => {
-			state.branch = branch;
-			if (!exists) {
-				return command.checkoutAndCreateBranch({ branch });
-			}
-			state.status = "skipped";
-			return command.checkoutBranch({ branch }).then(() => {
-				return Promise.resolve();
-			});
-		});
-	},
 	commitDiffWithUpstreamDefaultBranch(state) {
 		state.step = "commitDiffWithUpstreamDefaultBranch";
 		const { defaultBranch, branch, spinner, repo } = state;
@@ -1872,50 +1851,6 @@ ${chalk.green(log)}`);
 
 		state.langCodes = union(state.langCodes, codes);
 		state.localePath = localePath;
-		return Promise.resolve();
-	},
-	getl10nCoverage(state) {
-		state.step = "getl10nCoverage";
-		const { repo, langCodes, localePath, l10nKeyOverrides } = state;
-
-		if (!localePath) {
-			state.coverage = { keyCount: 0 };
-			return Promise.resolve();
-		}
-
-		const enUSContents = getContentsFromYAML(localePath, "en-US");
-		const enUSKeys = Object.keys(enUSContents);
-		const coverage = {};
-		langCodes.forEach(code => {
-			const contents = getContentsFromYAML(localePath, code);
-			const docKeys = Object.keys(contents);
-			const diff = difference(enUSKeys, docKeys);
-			let same;
-			if (get(l10nKeyOverrides, `${repo}.${code}`)) {
-				same = enUSKeys.filter(
-					k =>
-						!diff.includes(k) &&
-						!l10nKeyOverrides[repo][code].includes(k) &&
-						contents[k] === enUSContents[k]
-				);
-			} else {
-				same = enUSKeys.filter(
-					k => !diff.includes(k) && contents[k] === enUSContents[k]
-				);
-			}
-
-			coverage[code] = {
-				percent: (
-					MAX_PERCENT -
-					(diff.length + same.length) / enUSKeys.length * MAX_PERCENT
-				).toFixed(1),
-				diff,
-				same
-			};
-		});
-
-		coverage.keyCount = enUSKeys.length;
-		state.coverage = coverage;
 		return Promise.resolve();
 	},
 	runPreScript(state) {
