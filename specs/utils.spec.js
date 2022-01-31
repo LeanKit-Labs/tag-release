@@ -38,28 +38,6 @@ jest.mock("detect-indent", () => {
 	}));
 });
 
-jest.mock("request", () => ({
-	post: jest.fn((arg, cb) => {
-		cb(
-			null,
-			{
-				statusCode: 201,
-				headers: {
-					"x-github-otp": "required;"
-				},
-				body: {
-					token: "1234567890",
-					message: "it worked"
-				}
-			},
-			{
-				token: "1234567890",
-				message: "it worked"
-			}
-		);
-	})
-}));
-
 jest.mock("editor", () => {
 	return jest.fn((arg, cb) => cb(0));
 });
@@ -135,7 +113,6 @@ const editor = require("editor");
 const logUpdate = require("log-update");
 const logger = require("better-console");
 const chalk = require("chalk");
-const request = require("request");
 const npm = require("npm");
 const cowsay = require("cowsay");
 const advise = require("../src/advise.js"); // eslint-disable-line no-unused-vars
@@ -147,8 +124,6 @@ const pathUtils = require("path"); // eslint-disable-line no-unused-vars
 const yaml = require("js-yaml"); // eslint-disable-line no-unused-vars
 
 jest.mock("js-yaml");
-
-const originalGithubUnauthorizedFunction = util.githubUnauthorized;
 
 describe("utils", () => {
 	describe("readFile", () => {
@@ -970,168 +945,6 @@ describe("utils", () => {
 
 		it("should escape passwords that contain characters that need to be escaped", () => {
 			expect(util.escapeCurlPassword("we$rd")).toEqual("we\\$rd");
-		});
-	});
-
-	describe("createGitHubAuthToken", () => {
-		beforeEach(() => {
-			util.githubUnauthorized = jest.fn(() => Promise.resolve());
-		});
-
-		afterAll(() => {
-			util.githubUnauthorized = originalGithubUnauthorizedFunction;
-		});
-
-		it("should return a promise", () => {
-			const result = util.createGitHubAuthToken("username", "password");
-			expect(isPromise(result)).toBeTruthy();
-		});
-
-		it("should execute an http POST request to GitHub", () => {
-			return util
-				.createGitHubAuthToken("username", "password")
-				.then(() => {
-					expect(request.post).toHaveBeenCalledTimes(1);
-					const requestArgs = request.post.mock.calls[0][0];
-					expect(requestArgs.url).toEqual(
-						"https://api.github.com/authorizations"
-					);
-					expect(requestArgs.headers).toEqual({
-						"User-Agent": "request"
-					});
-					expect(requestArgs.auth).toEqual({
-						user: "username",
-						pass: "password"
-					});
-					expect(requestArgs.json.scopes).toEqual(["repo"]);
-					expect(requestArgs.json.note).toContain("tag-release-");
-				});
-		});
-
-		it("should return a token if the response statusCode is 201", () => {
-			return util
-				.createGitHubAuthToken("username", "password")
-				.then(token => {
-					expect(token).toEqual("1234567890");
-				});
-		});
-
-		it("should call `githubUnauthorized` if the response statusCode is 401", () => {
-			request.post = jest.fn((arg, cb) => {
-				cb(null, {
-					statusCode: 401
-				});
-			});
-
-			return util
-				.createGitHubAuthToken("username", "password")
-				.then(() => {
-					expect(util.githubUnauthorized).toHaveBeenCalledTimes(1);
-				});
-		});
-
-		it("should log a message and errors for any other response statusCode", () => {
-			request.post = jest.fn((arg, cb) => {
-				cb(
-					null,
-					{
-						statusCode: 422,
-						body: { message: "nope" },
-						errors: [{ message: "something bad happened" }]
-					},
-					{
-						message: "nope"
-					}
-				);
-			});
-
-			return util
-				.createGitHubAuthToken("username", "password")
-				.then(() => {
-					expect(logger.log).toHaveBeenCalledTimes(2);
-					expect(logger.log).toHaveBeenCalledWith("nope");
-					expect(logger.log).toHaveBeenCalledWith(
-						"something bad happened"
-					);
-				});
-		});
-
-		it("should log a message when the request throws an error", () => {
-			request.post = jest.fn((arg, cb) => {
-				cb("nope", null);
-			});
-
-			return util
-				.createGitHubAuthToken("username", "password")
-				.catch(err => {
-					expect(err).toEqual("nope");
-					expect(logger.log).toHaveBeenCalledTimes(1);
-					expect(logger.log).toHaveBeenCalledWith("error", "nope");
-				});
-		});
-	});
-
-	describe("githubUnauthorized", () => {
-		beforeEach(() => {
-			util.prompt = jest.fn(() =>
-				Promise.resolve({ authCode: "1234567890" })
-			);
-			util.createGitHubAuthToken = jest.fn(() =>
-				Promise.resolve("1234567890")
-			);
-		});
-
-		it("should prompt if two-factor auth is enabled for the user", () => {
-			const response = {
-				statusCode: 201,
-				headers: { "x-github-otp": "required;" }
-			};
-
-			return util
-				.githubUnauthorized("username", "password", response)
-				.then(() => {
-					expect(util.prompt).toHaveBeenCalledTimes(1);
-					expect(util.prompt).toHaveBeenCalledWith([
-						{
-							type: "input",
-							name: "authCode",
-							message:
-								"What is the GitHub authentication code on your device"
-						}
-					]);
-				});
-		});
-
-		it("should run `createGitHubAuthToken` if two-factor auth is enabled for the user", () => {
-			const response = {
-				statusCode: 201,
-				headers: { "x-github-otp": "required;" }
-			};
-
-			return util
-				.githubUnauthorized("username", "password", response)
-				.then(() => {
-					expect(util.createGitHubAuthToken).toHaveBeenCalledTimes(1);
-					expect(util.createGitHubAuthToken).toHaveBeenCalledWith(
-						"username",
-						"password",
-						{
-							"X-GitHub-OTP": "1234567890"
-						}
-					);
-				});
-		});
-
-		it("should log if two-factor auth is not enabled for the user", () => {
-			const response = {
-				statusCode: 201,
-				headers: {},
-				body: { message: "nope" }
-			};
-
-			util.githubUnauthorized("username", "password", response);
-			expect(logger.log).toHaveBeenCalledTimes(1);
-			expect(logger.log).toHaveBeenCalledWith("nope");
 		});
 	});
 

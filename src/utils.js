@@ -7,7 +7,6 @@ const detectIndent = require("detect-indent");
 const { get, uniqueId } = require("lodash");
 const chalk = require("chalk");
 const logger = require("better-console");
-const request = require("request");
 const sequence = require("when/sequence");
 const currentPackage = require("../package.json");
 const npm = require("npm");
@@ -216,71 +215,6 @@ const api = {
 	},
 	escapeCurlPassword(source) {
 		return source.replace(/([[\]$"\\])/g, "\\$1");
-	},
-	createGitHubAuthToken(username, password, headers = {}) {
-		const CREATED = 201;
-		const UNAUTHORIZED = 401;
-		const url = "https://api.github.com/authorizations";
-		const auth = { user: username, pass: password };
-		const json = {
-			scopes: ["repo"],
-			note: `tag-release-${new Date().toISOString()}`
-		};
-
-		headers = Object.assign({}, { "User-Agent": "request" }, headers);
-
-		return new Promise((resolve, reject) => {
-			request.post(
-				{ url, headers, auth, json },
-				(err, response, body) => {
-					if (err) {
-						api.logger.log("error", err);
-						reject(err);
-					}
-
-					const { statusCode, errors } = response;
-
-					if (statusCode === CREATED) {
-						resolve(body.token);
-					} else if (statusCode === UNAUTHORIZED) {
-						resolve(
-							api.githubUnauthorized(username, password, response)
-						);
-					} else {
-						// for any other HTTP status code...
-						api.logger.log(body.message);
-					}
-
-					if (errors && errors.length) {
-						errors.forEach(error => api.logger.log(error.message));
-					}
-
-					resolve();
-				}
-			);
-		});
-	},
-	githubUnauthorized(username, password, response) {
-		let twoFactorAuth = response.headers["x-github-otp"] || "";
-		twoFactorAuth = twoFactorAuth.includes("required;");
-
-		if (twoFactorAuth) {
-			return api
-				.prompt([
-					{
-						type: "input",
-						name: "authCode",
-						message:
-							"What is the GitHub authentication code on your device"
-					}
-				])
-				.then(answers => {
-					return api.createGitHubAuthToken(username, password, {
-						"X-GitHub-OTP": answers.authCode
-					});
-				});
-		}
-		api.logger.log(response.body.message);
 	},
 	getCurrentVersion() {
 		return currentPackage.version;

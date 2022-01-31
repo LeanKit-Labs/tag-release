@@ -56,7 +56,6 @@
     "ora": "^3.1.0",
     "rcfile": "^1.0.3",
     "remove-words": "^0.2.0",
-    "request": "^2.72.0",
     "semver": "^5.1.0",
     "when": "^3.7.7",
     "word-wrap": "^1.1.0"
