@@ -1,3 +1,4 @@
+import "regenerator-runtime/runtime";
 const setup = require("../../src/helpers/setup");
 const api = require("../../src/workflows/steps/index.js"); // eslint-disable-line no-unused-vars
 const getCurrentBranch = require("../../src/helpers/getCurrentBranch"); // eslint-disable-line no-unused-vars

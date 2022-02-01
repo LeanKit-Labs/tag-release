@@ -1,3 +1,4 @@
+import "regenerator-runtime/runtime";
 const git = require("../src/git");
 const runCommand = require("../src/helpers/runCommand");
 const getCurrentBranch = require("../src/helpers/getCurrentBranch");

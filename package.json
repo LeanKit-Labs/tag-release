@@ -36,7 +36,6 @@
   },
   "dependencies": {
     "babel-plugin-captains-log": "^0.6.0",
-    "babel-preset-env": "^1.7.0",
     "babel-register": "^6.11.6",
     "better-console": "^0.2.4",
     "chalk": "^2.0.0",
@@ -60,12 +59,14 @@
     "word-wrap": "^1.1.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.16.11",
     "eslint-config-leankit": "^4.3.0",
     "eslint-config-prettier": "^2.9.0",
     "husky": "^0.14.3",
-    "jest": "^20.0.4",
+    "jest": "^27.4.7",
     "lint-staged": "^4.2.3",
-    "prettier": "^1.7.4"
+    "prettier": "^1.7.4",
+    "regenerator-runtime": "^0.13.9"
   },
   "jest": {
     "testMatch": [

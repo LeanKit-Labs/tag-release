@@ -377,6 +377,7 @@ const api = {
 				.trim();
 		return run(GET_LK_REGISTRY_SCOPE) !== "undefined";
 	},
+	/* istanbul ignore next */
 	renderHelpContent(content) {
 		// mocking console.log is not awesome, and this function only exists
 		// for the purpose of avoiding having to mock console.log in tests,

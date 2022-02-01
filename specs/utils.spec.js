@@ -43,7 +43,7 @@ jest.mock("editor", () => {
 });
 
 jest.mock("lodash", () => {
-	const _ = require.requireActual("lodash");
+	const _ = jest.requireActual("lodash");
 	return {
 		identity: _.identity,
 		isObject: _.isObject,
@@ -104,6 +104,7 @@ jest.mock("rcfile", () => {
 	return jest.fn(() => ({ username: "rc@file.com", token: "token12345" }));
 });
 
+import "regenerator-runtime/runtime";
 const cp = require("child_process");
 const fs = require("fs");
 const { get } = require("lodash");
