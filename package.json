@@ -36,8 +36,7 @@
   },
   "dependencies": {
     "babel-plugin-captains-log": "^0.6.0",
-    "babel-preset-env": "^1.6.0",
-    "babel-preset-stage-0": "^6.3.13",
+    "babel-preset-env": "^1.7.0",
     "babel-register": "^6.11.6",
     "better-console": "^0.2.4",
     "chalk": "^2.0.0",
