@@ -9,7 +9,6 @@ const chalk = require("chalk");
 const logger = require("better-console");
 const sequence = require("when/sequence");
 const currentPackage = require("../package.json");
-const npm = require("npm");
 const semver = require("semver");
 const cowsay = require("cowsay");
 const advise = require("./advise.js");
@@ -220,53 +219,25 @@ const api = {
 		return currentPackage.version;
 	},
 	getAvailableVersionInfo() {
-		const packageName = "tag-release";
-		const versionsLimit = 10;
-
 		return new Promise((resolve, reject) => {
-			npm.load({ name: packageName, loglevel: "silent" }, loadErr => {
-				if (loadErr) {
-					reject(loadErr);
-				}
-
-				npm.commands.show(
-					[packageName, "versions"],
-					true,
-					(versionsErr, data) => {
-						if (versionsErr) {
-							reject(versionsErr);
-						}
-
-						const tagReleaseVersions =
-							data[Object.keys(data)[0]].versions;
-						const fullVersions = tagReleaseVersions
-							.filter(f => !f.includes("-"))
-							.slice(-versionsLimit);
-						const prereleaseVersions = tagReleaseVersions
-							.filter(f => f.includes("-"))
-							.slice(-versionsLimit);
-
-						const latestFullVersion = fullVersions.reduce(
-							(memo, v) => {
-								return semver.gt(v, memo) ? v : memo;
-							},
-							fullVersions[0]
-						);
-
-						const latestPrereleaseVersion = prereleaseVersions.reduce(
-							(memo, prv) => {
-								return semver.gt(prv, memo) ? prv : memo;
-							},
-							prereleaseVersions[0]
-						);
-
-						resolve({
-							latestFullVersion,
-							latestPrereleaseVersion
-						});
-					}
-				);
-			});
+			const command = `npm show tag-release versions --json`;
+			return api
+				.exec(command)
+				.then(result => {
+					const parsedResult = JSON.parse(result);
+					resolve({
+						latestFullVersion: parsedResult
+							.filter(i => !i.includes("-"))
+							.slice(-1)[0],
+						latestPrereleaseVersion: parsedResult
+							.filter(i => i.includes("-"))
+							.slice(-1)[0]
+					});
+				})
+				.catch(e => {
+					api.advise("availableVersions", { exit: false });
+					reject(e);
+				});
 		});
 	},
 	detectVersion() {
