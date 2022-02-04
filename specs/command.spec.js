@@ -263,7 +263,7 @@ v17.11.2`)
 					expect(runCommand).toHaveBeenCalledTimes(1);
 					expect(runCommand).toHaveBeenCalledWith({
 						args:
-							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i -p upstream/main',
+							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i --rebase-merges upstream/main',
 						failHelpKey: "gitRebaseInteractive",
 						fullCommand: true,
 						logMessage: "Removing pre-release commit history",
@@ -279,7 +279,7 @@ v17.11.2`)
 					expect(runCommand).toHaveBeenCalledTimes(1);
 					expect(runCommand).toHaveBeenCalledWith({
 						args:
-							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i -p upstream/main',
+							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i --rebase-merges upstream/main',
 						failHelpKey: "gitRebaseInteractive",
 						fullCommand: true,
 						logMessage: "Removing pre-release commit history",
