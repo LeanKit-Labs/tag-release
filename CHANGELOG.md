@@ -1,3 +1,16 @@
+## 10.x
+
+### 10.0.0
+
+* updated shorthand deprecated -p to --rebase-merges
+* removed npm dep and updated some failing workflows
+* ran npm audit fix --force and put npm to v7.x.x
+* updated cli-table2 to cli-table3
+* upgrade jest to 27 and fixed issues with tests
+* removed babel stage preset 0
+* after npm audit fix
+* remove some unused code and request package
+
 ## 9.x
 
 ### 9.0.0
