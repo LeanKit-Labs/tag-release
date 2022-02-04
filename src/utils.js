@@ -7,10 +7,8 @@ const detectIndent = require("detect-indent");
 const { get, uniqueId } = require("lodash");
 const chalk = require("chalk");
 const logger = require("better-console");
-const request = require("request");
 const sequence = require("when/sequence");
 const currentPackage = require("../package.json");
-const npm = require("npm");
 const semver = require("semver");
 const cowsay = require("cowsay");
 const advise = require("./advise.js");
@@ -217,122 +215,29 @@ const api = {
 	escapeCurlPassword(source) {
 		return source.replace(/([[\]$"\\])/g, "\\$1");
 	},
-	createGitHubAuthToken(username, password, headers = {}) {
-		const CREATED = 201;
-		const UNAUTHORIZED = 401;
-		const url = "https://api.github.com/authorizations";
-		const auth = { user: username, pass: password };
-		const json = {
-			scopes: ["repo"],
-			note: `tag-release-${new Date().toISOString()}`
-		};
-
-		headers = Object.assign({}, { "User-Agent": "request" }, headers);
-
-		return new Promise((resolve, reject) => {
-			request.post(
-				{ url, headers, auth, json },
-				(err, response, body) => {
-					if (err) {
-						api.logger.log("error", err);
-						reject(err);
-					}
-
-					const { statusCode, errors } = response;
-
-					if (statusCode === CREATED) {
-						resolve(body.token);
-					} else if (statusCode === UNAUTHORIZED) {
-						resolve(
-							api.githubUnauthorized(username, password, response)
-						);
-					} else {
-						// for any other HTTP status code...
-						api.logger.log(body.message);
-					}
-
-					if (errors && errors.length) {
-						errors.forEach(error => api.logger.log(error.message));
-					}
-
-					resolve();
-				}
-			);
-		});
-	},
-	githubUnauthorized(username, password, response) {
-		let twoFactorAuth = response.headers["x-github-otp"] || "";
-		twoFactorAuth = twoFactorAuth.includes("required;");
-
-		if (twoFactorAuth) {
-			return api
-				.prompt([
-					{
-						type: "input",
-						name: "authCode",
-						message:
-							"What is the GitHub authentication code on your device"
-					}
-				])
-				.then(answers => {
-					return api.createGitHubAuthToken(username, password, {
-						"X-GitHub-OTP": answers.authCode
-					});
-				});
-		}
-		api.logger.log(response.body.message);
-	},
 	getCurrentVersion() {
 		return currentPackage.version;
 	},
 	getAvailableVersionInfo() {
-		const packageName = "tag-release";
-		const versionsLimit = 10;
-
 		return new Promise((resolve, reject) => {
-			npm.load({ name: packageName, loglevel: "silent" }, loadErr => {
-				if (loadErr) {
-					reject(loadErr);
-				}
-
-				npm.commands.show(
-					[packageName, "versions"],
-					true,
-					(versionsErr, data) => {
-						if (versionsErr) {
-							reject(versionsErr);
-						}
-
-						const tagReleaseVersions =
-							data[Object.keys(data)[0]].versions;
-						const fullVersions = tagReleaseVersions
-							.filter(f => !f.includes("-"))
-							.slice(-versionsLimit);
-						const prereleaseVersions = tagReleaseVersions
-							.filter(f => f.includes("-"))
-							.slice(-versionsLimit);
-
-						const latestFullVersion = fullVersions.reduce(
-							(memo, v) => {
-								return semver.gt(v, memo) ? v : memo;
-							},
-							fullVersions[0]
-						);
-
-						const latestPrereleaseVersion = prereleaseVersions.reduce(
-							(memo, prv) => {
-								return semver.gt(prv, memo) ? prv : memo;
-							},
-							prereleaseVersions[0]
-						);
-
-						resolve({
-							latestFullVersion,
-							latestPrereleaseVersion
-						});
-					}
-				);
-			});
+			const command = `npm show tag-release versions --json`;
+			return api
+				.exec(command)
+				.then(result => {
+					const parsedResult = JSON.parse(result);
+					resolve({
+						latestFullVersion: parsedResult
+							.filter(i => !i.includes("-"))
+							.slice(-1)[0],
+						latestPrereleaseVersion: parsedResult
+							.filter(i => i.includes("-"))
+							.slice(-1)[0]
+					});
+				})
+				.catch(e => {
+					api.advise("availableVersions", { exit: false });
+					reject(e);
+				});
 		});
 	},
 	detectVersion() {
@@ -443,6 +348,7 @@ const api = {
 				.trim();
 		return run(GET_LK_REGISTRY_SCOPE) !== "undefined";
 	},
+	/* istanbul ignore next */
 	renderHelpContent(content) {
 		// mocking console.log is not awesome, and this function only exists
 		// for the purpose of avoiding having to mock console.log in tests,

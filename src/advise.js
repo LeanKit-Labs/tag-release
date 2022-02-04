@@ -114,7 +114,10 @@ Please verify you have either a 'master' or 'main' on the repository you are wor
 
 Please go to https://github.com/settings/tokens and generate a new token with no expiration and 'workflow' scope.
 
-If you need addition help, please checkout our README.md`
+If you need addition help, please checkout our README.md`,
+	availableVersions: `It appears something went wrong when attempting to get the latest versions of tag-release.
+
+Please report an issue, as you really shouldn't be seeing this message.`
 };
 
 const MAXIMUM_WIDTH = 50;

@@ -38,34 +38,12 @@ jest.mock("detect-indent", () => {
 	}));
 });
 
-jest.mock("request", () => ({
-	post: jest.fn((arg, cb) => {
-		cb(
-			null,
-			{
-				statusCode: 201,
-				headers: {
-					"x-github-otp": "required;"
-				},
-				body: {
-					token: "1234567890",
-					message: "it worked"
-				}
-			},
-			{
-				token: "1234567890",
-				message: "it worked"
-			}
-		);
-	})
-}));
-
 jest.mock("editor", () => {
 	return jest.fn((arg, cb) => cb(0));
 });
 
 jest.mock("lodash", () => {
-	const _ = require.requireActual("lodash");
+	const _ = jest.requireActual("lodash");
 	return {
 		identity: _.identity,
 		isObject: _.isObject,
@@ -90,21 +68,6 @@ jest.mock("better-console", () => ({
 	log: jest.fn()
 }));
 
-jest.mock("npm", () => ({
-	load: jest.fn((arg, cb) => {
-		cb(null, { name: "tag-release", version: "1.2.3" });
-	}),
-	commands: {
-		show: jest.fn((arg1, arg2, cb) => {
-			cb(null, {
-				"1.2.3": {
-					versions: []
-				}
-			});
-		})
-	}
-}));
-
 jest.mock("cowsay", () => ({
 	say: jest.fn(arg => arg)
 }));
@@ -126,6 +89,7 @@ jest.mock("rcfile", () => {
 	return jest.fn(() => ({ username: "rc@file.com", token: "token12345" }));
 });
 
+import "regenerator-runtime/runtime";
 const cp = require("child_process");
 const fs = require("fs");
 const { get } = require("lodash");
@@ -135,8 +99,6 @@ const editor = require("editor");
 const logUpdate = require("log-update");
 const logger = require("better-console");
 const chalk = require("chalk");
-const request = require("request");
-const npm = require("npm");
 const cowsay = require("cowsay");
 const advise = require("../src/advise.js"); // eslint-disable-line no-unused-vars
 const currentPackage = require("../package.json");
@@ -147,8 +109,6 @@ const pathUtils = require("path"); // eslint-disable-line no-unused-vars
 const yaml = require("js-yaml"); // eslint-disable-line no-unused-vars
 
 jest.mock("js-yaml");
-
-const originalGithubUnauthorizedFunction = util.githubUnauthorized;
 
 describe("utils", () => {
 	describe("readFile", () => {
@@ -312,7 +272,7 @@ describe("utils", () => {
 		});
 
 		it("should return a default indent of 2 spaces when `detectIndent` fails to return an indent value", () => {
-			JSON.stringify = jest.fn();
+			const jsonSpy = jest.spyOn(JSON, "stringify");
 			detectIndent.mockImplementation(() => {
 				return jest.fn(() => ({
 					indent: null
@@ -320,8 +280,8 @@ describe("utils", () => {
 			});
 
 			util.writeJSONFile(file, contents);
-			expect(JSON.stringify).toHaveBeenCalledTimes(1);
-			expect(JSON.stringify).toHaveBeenCalledWith(
+			expect(jsonSpy).toHaveBeenCalledTimes(1);
+			expect(jsonSpy).toHaveBeenCalledWith(
 				{ one: "1", two: "2", three: "3" },
 				null,
 				"  "
@@ -329,12 +289,12 @@ describe("utils", () => {
 		});
 
 		it("should use default indent of 2 spaces when JSON files doesn't exist to read from", () => {
-			JSON.stringify = jest.fn();
+			const jsonSpy = jest.spyOn(JSON, "stringify");
 			fs.existsSync = jest.fn().mockReturnValue(false);
 
 			util.writeJSONFile(file, contents);
-			expect(JSON.stringify).toHaveBeenCalledTimes(1);
-			expect(JSON.stringify).toHaveBeenCalledWith(
+			expect(jsonSpy).toHaveBeenCalledTimes(1);
+			expect(jsonSpy).toHaveBeenCalledWith(
 				{ one: "1", two: "2", three: "3" },
 				null,
 				"  "
@@ -973,168 +933,6 @@ describe("utils", () => {
 		});
 	});
 
-	describe("createGitHubAuthToken", () => {
-		beforeEach(() => {
-			util.githubUnauthorized = jest.fn(() => Promise.resolve());
-		});
-
-		afterAll(() => {
-			util.githubUnauthorized = originalGithubUnauthorizedFunction;
-		});
-
-		it("should return a promise", () => {
-			const result = util.createGitHubAuthToken("username", "password");
-			expect(isPromise(result)).toBeTruthy();
-		});
-
-		it("should execute an http POST request to GitHub", () => {
-			return util
-				.createGitHubAuthToken("username", "password")
-				.then(() => {
-					expect(request.post).toHaveBeenCalledTimes(1);
-					const requestArgs = request.post.mock.calls[0][0];
-					expect(requestArgs.url).toEqual(
-						"https://api.github.com/authorizations"
-					);
-					expect(requestArgs.headers).toEqual({
-						"User-Agent": "request"
-					});
-					expect(requestArgs.auth).toEqual({
-						user: "username",
-						pass: "password"
-					});
-					expect(requestArgs.json.scopes).toEqual(["repo"]);
-					expect(requestArgs.json.note).toContain("tag-release-");
-				});
-		});
-
-		it("should return a token if the response statusCode is 201", () => {
-			return util
-				.createGitHubAuthToken("username", "password")
-				.then(token => {
-					expect(token).toEqual("1234567890");
-				});
-		});
-
-		it("should call `githubUnauthorized` if the response statusCode is 401", () => {
-			request.post = jest.fn((arg, cb) => {
-				cb(null, {
-					statusCode: 401
-				});
-			});
-
-			return util
-				.createGitHubAuthToken("username", "password")
-				.then(() => {
-					expect(util.githubUnauthorized).toHaveBeenCalledTimes(1);
-				});
-		});
-
-		it("should log a message and errors for any other response statusCode", () => {
-			request.post = jest.fn((arg, cb) => {
-				cb(
-					null,
-					{
-						statusCode: 422,
-						body: { message: "nope" },
-						errors: [{ message: "something bad happened" }]
-					},
-					{
-						message: "nope"
-					}
-				);
-			});
-
-			return util
-				.createGitHubAuthToken("username", "password")
-				.then(() => {
-					expect(logger.log).toHaveBeenCalledTimes(2);
-					expect(logger.log).toHaveBeenCalledWith("nope");
-					expect(logger.log).toHaveBeenCalledWith(
-						"something bad happened"
-					);
-				});
-		});
-
-		it("should log a message when the request throws an error", () => {
-			request.post = jest.fn((arg, cb) => {
-				cb("nope", null);
-			});
-
-			return util
-				.createGitHubAuthToken("username", "password")
-				.catch(err => {
-					expect(err).toEqual("nope");
-					expect(logger.log).toHaveBeenCalledTimes(1);
-					expect(logger.log).toHaveBeenCalledWith("error", "nope");
-				});
-		});
-	});
-
-	describe("githubUnauthorized", () => {
-		beforeEach(() => {
-			util.prompt = jest.fn(() =>
-				Promise.resolve({ authCode: "1234567890" })
-			);
-			util.createGitHubAuthToken = jest.fn(() =>
-				Promise.resolve("1234567890")
-			);
-		});
-
-		it("should prompt if two-factor auth is enabled for the user", () => {
-			const response = {
-				statusCode: 201,
-				headers: { "x-github-otp": "required;" }
-			};
-
-			return util
-				.githubUnauthorized("username", "password", response)
-				.then(() => {
-					expect(util.prompt).toHaveBeenCalledTimes(1);
-					expect(util.prompt).toHaveBeenCalledWith([
-						{
-							type: "input",
-							name: "authCode",
-							message:
-								"What is the GitHub authentication code on your device"
-						}
-					]);
-				});
-		});
-
-		it("should run `createGitHubAuthToken` if two-factor auth is enabled for the user", () => {
-			const response = {
-				statusCode: 201,
-				headers: { "x-github-otp": "required;" }
-			};
-
-			return util
-				.githubUnauthorized("username", "password", response)
-				.then(() => {
-					expect(util.createGitHubAuthToken).toHaveBeenCalledTimes(1);
-					expect(util.createGitHubAuthToken).toHaveBeenCalledWith(
-						"username",
-						"password",
-						{
-							"X-GitHub-OTP": "1234567890"
-						}
-					);
-				});
-		});
-
-		it("should log if two-factor auth is not enabled for the user", () => {
-			const response = {
-				statusCode: 201,
-				headers: {},
-				body: { message: "nope" }
-			};
-
-			util.githubUnauthorized("username", "password", response);
-			expect(logger.log).toHaveBeenCalledTimes(1);
-			expect(logger.log).toHaveBeenCalledWith("nope");
-		});
-	});
-
 	describe("getCurrentVersion", () => {
 		it("should return the package.json `version`", () => {
 			expect(util.getCurrentVersion()).toEqual("1.1.1");
@@ -1143,77 +941,61 @@ describe("utils", () => {
 
 	describe("getAvailableVersionInfo", () => {
 		beforeEach(() => {
-			npm.commands.show = jest.fn((arg1, arg2, cb) => {
-				cb(null, {
-					"4.5.0": {
-						versions: [
-							"0.0.1",
-							"0.0.2",
-							"1.0.0",
-							"2.0.0",
-							"3.0.0",
-							"3.0.1",
-							"3.1.0",
-							"3.2.0",
-							"3.3.0",
-							"3.4.0-trying-something.0",
-							"3.3.1",
-							"4.0.0",
-							"4.0.1",
-							"4.1.0",
-							"4.2.0",
-							"4.2.1",
-							"4.3.0",
-							"4.4.0",
-							"4.3.1",
-							"4.5.0",
-							"5.0.0-refactor-and-jest.0",
-							"5.2.0-another-prerelease.1",
-							"5.2.0-another-prerelease.0"
-						]
-					}
+			util.exec = jest.fn(() =>
+				Promise.resolve(
+					JSON.stringify([
+						"0.0.1",
+						"0.0.2",
+						"1.0.0",
+						"2.0.0",
+						"3.0.0",
+						"3.0.1",
+						"3.1.0",
+						"3.2.0",
+						"3.3.0",
+						"3.4.0-trying-something.0",
+						"3.3.1",
+						"4.0.0",
+						"4.0.1",
+						"4.1.0",
+						"4.2.0",
+						"4.2.1",
+						"4.3.0",
+						"4.4.0",
+						"4.3.1",
+						"4.5.0",
+						"5.0.0-refactor-and-jest.0",
+						"5.2.0-another-prerelease.1",
+						"5.2.0-another-prerelease.0"
+					])
+				)
+			);
+		});
+
+		it("should call exec with appropriate command", () => {
+			return util.getAvailableVersionInfo().then(() => {
+				expect(util.exec).toHaveBeenCalledTimes(1);
+				expect(util.exec).toHaveBeenCalledWith(
+					"npm show tag-release versions --json"
+				);
+			});
+		});
+
+		it("should return latest full and pre-release version", () => {
+			return util.getAvailableVersionInfo().then(result => {
+				expect(result).toEqual({
+					latestFullVersion: "4.5.0",
+					latestPrereleaseVersion: "5.2.0-another-prerelease.0"
 				});
 			});
 		});
 
-		it("should load npm package info for tag-release", () => {
-			return util.getAvailableVersionInfo().then(() => {
-				expect(npm.load).toHaveBeenCalledTimes(1);
-				expect(npm.load).toHaveBeenCalledWith(
-					{ name: "tag-release", loglevel: "silent" },
-					expect.any(Function)
-				);
-			});
-		});
+		it("should reject when command throws an error", () => {
+			util.exec = jest.fn(() => Promise.reject());
 
-		it("should fetch available npm versions for tag-release", () => {
-			return util.getAvailableVersionInfo().then(() => {
-				expect(npm.commands.show).toHaveBeenCalledTimes(1);
-				expect(npm.commands.show).toHaveBeenCalledWith(
-					["tag-release", "versions"],
-					true,
-					expect.any(Function)
-				);
-			});
-		});
-
-		it("should reject when `npm.load` throws an error", () => {
-			npm.load = jest.fn((arg, cb) => {
-				cb("nope", null);
-			});
-
-			return util.getAvailableVersionInfo().catch(err => {
-				expect(err).toEqual("nope");
-			});
-		});
-
-		it("should reject when `npm.commands.show` throws an error", () => {
-			npm.commands.show = jest.fn((arg1, arg2, cb) => {
-				cb("nope", null);
-			});
-
-			return util.getAvailableVersionInfo().catch(err => {
-				expect(err).toEqual("nope");
+			return util.getAvailableVersionInfo().catch(() => {
+				expect(advise).toHaveBeenCalledTimes(1);
+				expect(advise).toHaveBeenCalledWith("availableVersions");
 			});
 		});
 	});

@@ -1,5 +1,5 @@
 const sequence = require("when/sequence");
-const Table = require("cli-table2");
+const Table = require("cli-table3");
 const path = require("path");
 const fs = require("fs");
 const { get } = require("lodash");

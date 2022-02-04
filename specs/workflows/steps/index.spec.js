@@ -43,6 +43,7 @@ import GitHub from "github-api";
 import * as run from "../../../src/workflows/steps/index";
 import sequence from "when/sequence";
 import path from "path";
+import "regenerator-runtime/runtime";
 const util = require("../../../src/utils");
 const git = require("../../../src/git");
 const command = require("../../../src/command");

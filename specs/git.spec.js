@@ -1,3 +1,4 @@
+import "regenerator-runtime/runtime";
 const git = require("../src/git");
 const runCommand = require("../src/helpers/runCommand");
 const getCurrentBranch = require("../src/helpers/getCurrentBranch");
@@ -489,7 +490,7 @@ describe("git", () => {
 			git.rebase({});
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "rebase upstream/undefined --preserve-merges",
+				args: "rebase upstream/undefined --rebase-merges",
 				exitOnFail: true
 			});
 		});
@@ -498,7 +499,7 @@ describe("git", () => {
 			git.rebase({ branch });
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "rebase upstream/feature-branch --preserve-merges",
+				args: "rebase upstream/feature-branch --rebase-merges",
 				exitOnFail: true
 			});
 		});
@@ -507,7 +508,7 @@ describe("git", () => {
 			git.rebase({ remote: "origin" });
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "rebase origin/undefined --preserve-merges",
+				args: "rebase origin/undefined --rebase-merges",
 				exitOnFail: true
 			});
 		});
@@ -522,7 +523,7 @@ describe("git", () => {
 			});
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "rebase origin/feature-branch --preserve-merges",
+				args: "rebase origin/feature-branch --rebase-merges",
 				failHelpKey: "failureKey",
 				exitOnFail: false,
 				onError
