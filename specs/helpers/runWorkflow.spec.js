@@ -54,7 +54,7 @@ describe("runWorkflow", () => {
 		it("should output error", () => {
 			return runWorkflow(workflow, state).then(() => {
 				expect(console.log).toHaveBeenCalledTimes(2);
-				expect(console.log.mock.calls[0][2]).toBe(`
+				expect(console.log.mock.calls[0][1]).toBe(`
 Tag-release encountered a problem:`);
 			});
 		});
