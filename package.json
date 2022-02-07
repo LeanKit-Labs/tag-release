@@ -35,8 +35,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "babel-plugin-captains-log": "^0.6.0",
-    "babel-register": "^6.11.6",
     "better-console": "^0.2.4",
     "chalk": "^2.0.0",
     "cli-table3": "^0.6.1",
@@ -58,6 +56,8 @@
     "word-wrap": "^1.1.0"
   },
   "devDependencies": {
+    "babel-plugin-captains-log": "^0.6.0",
+    "babel-register": "^6.11.6",
     "@babel/preset-env": "^7.16.11",
     "eslint-config-leankit": "^6.0.0",
     "eslint-config-prettier": "^2.9.0",
