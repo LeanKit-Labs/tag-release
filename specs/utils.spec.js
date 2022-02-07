@@ -106,9 +106,6 @@ const util = require("../src/utils");
 const { isPromise } = require("./helpers");
 const rcfile = require("rcfile"); // eslint-disable-line no-unused-vars
 const pathUtils = require("path"); // eslint-disable-line no-unused-vars
-const yaml = require("js-yaml"); // eslint-disable-line no-unused-vars
-
-jest.mock("js-yaml");
 
 describe("utils", () => {
 	describe("readFile", () => {
@@ -159,61 +156,6 @@ describe("utils", () => {
 			util.readFile = jest.fn(() => null);
 			const contents = util.readJSONFile(null);
 			expect(contents).toEqual({});
-		});
-	});
-
-	describe("readYAMLFile", () => {
-		beforeEach(() => {
-			fs.readFileSync = jest.fn(args => args);
-		});
-
-		it("should read the yaml file contents", () => {
-			util.readYAMLFile("./data/read-test.yaml");
-			expect(yaml.safeLoad).toHaveBeenCalledTimes(1);
-			expect(fs.readFileSync).toHaveBeenCalledTimes(1);
-			expect(fs.readFileSync).toHaveBeenCalledWith(
-				"./data/read-test.yaml",
-				"utf-8"
-			);
-		});
-
-		it("should return null if the file doesn't exist", () => {
-			yaml.safeLoad = jest.fn(() => {
-				throw new Error("nope");
-			});
-
-			const result = util.readYAMLFile("nope.yaml");
-			expect(yaml.safeLoad).toHaveBeenCalledTimes(1);
-			expect(fs.readFileSync).toHaveBeenCalledTimes(1);
-			expect(result).toEqual(null);
-		});
-
-		it("should return null when given an empty path", () => {
-			const result = util.readYAMLFile(null);
-			expect(result).toBeNull();
-		});
-	});
-
-	describe("readDirFileNames", () => {
-		it("should read the directory contents", () => {
-			util.readDirFileNames("./data/");
-			expect(fs.readdirSync).toHaveBeenCalledTimes(1);
-			expect(fs.readdirSync).toHaveBeenCalledWith("./data/");
-		});
-
-		it("should return null if the directory doesn't exist", () => {
-			fs.readdirSync = jest.fn(() => {
-				throw new Error("nope");
-			});
-
-			const result = util.readDirFileNames("./data/");
-			expect(fs.readdirSync).toHaveBeenCalledTimes(1);
-			expect(result).toEqual(null);
-		});
-
-		it("should return null when given an empty path", () => {
-			const result = util.readDirFileNames(null);
-			expect(result).toBeNull();
 		});
 	});
 

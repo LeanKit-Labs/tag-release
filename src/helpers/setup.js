@@ -11,6 +11,7 @@ const filterFlowBasedOnDevelopBranch = require("./filterFlowBasedOnDevelopBranch
 const utils = require("../utils");
 
 const setup = async options => {
+	console.log( "hello from setup" );
 	await setFilePaths(options);
 	options.defaultBranch = await getDefaultBranch();
 	if (!options.defaultBranch) {
