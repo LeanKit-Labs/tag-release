@@ -27,9 +27,7 @@ jest.mock("fs", () => ({
 }));
 
 jest.mock("inquirer", () => ({
-	prompt: jest.fn((arg, cb) => {
-		cb("answers");
-	})
+	prompt: jest.fn().mockResolvedValue("answers")
 }));
 
 jest.mock("detect-indent", () => {
@@ -334,8 +332,7 @@ describe("utils", () => {
 			return util.prompt(questions).then(() => {
 				expect(inquirer.prompt).toHaveBeenCalledTimes(1);
 				expect(inquirer.prompt).toHaveBeenCalledWith(
-					[{ type: "confirm", message: "proceed", name: "proceed" }],
-					expect.any(Function)
+					[{ type: "confirm", message: "proceed", name: "proceed" }]
 				);
 			});
 		});

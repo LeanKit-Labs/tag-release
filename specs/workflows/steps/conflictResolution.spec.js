@@ -7,11 +7,11 @@ jest.mock("chalk", () => ({
 	}
 }));
 
-import chalk from "chalk"; // eslint-disable-line no-unused-vars
-import logger from "better-console";
-import util from "../../../src/utils";
 import command from "../../../src/command";
 import git from "../../../src/git";
+import util from "../../../src/utils";
+import logger from "better-console";
+import chalk from "chalk"; // eslint-disable-line no-unused-vars
 import * as run from "../../../src/workflows/steps/conflictResolution";
 
 describe("conflict resolution workflow steps", () => {

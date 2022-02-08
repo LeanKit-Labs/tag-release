@@ -73,7 +73,7 @@ const api = {
 	},
 	prompt(questions) {
 		return new Promise(resolve =>
-			inquirer.prompt(questions, answers => {
+			inquirer.prompt(questions).then( answers => {
 				resolve(answers);
 			})
 		);
