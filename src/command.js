@@ -327,7 +327,7 @@ const command = {
 		const args = `GIT_SEQUENCE_EDITOR="cat ${path.join(
 			__dirname,
 			".commits-to-rebase.txt"
-		)} >" git rebase -i --rebase-merges upstream/${branch}`;
+		)} >" git rebase -i --preserve-merges upstream/${branch}`;
 		return runCommand({
 			args,
 			logMessage: "Removing pre-release commit history",

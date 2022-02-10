@@ -490,7 +490,7 @@ describe("git", () => {
 			git.rebase({});
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "rebase upstream/undefined --rebase-merges",
+				args: "rebase upstream/undefined --preserve-merges",
 				exitOnFail: true
 			});
 		});
@@ -499,7 +499,7 @@ describe("git", () => {
 			git.rebase({ branch });
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "rebase upstream/feature-branch --rebase-merges",
+				args: "rebase upstream/feature-branch --preserve-merges",
 				exitOnFail: true
 			});
 		});
@@ -508,7 +508,7 @@ describe("git", () => {
 			git.rebase({ remote: "origin" });
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "rebase origin/undefined --rebase-merges",
+				args: "rebase origin/undefined --preserve-merges",
 				exitOnFail: true
 			});
 		});
@@ -523,7 +523,7 @@ describe("git", () => {
 			});
 			expect(runCommand).toHaveBeenCalledTimes(1);
 			expect(runCommand).toHaveBeenCalledWith({
-				args: "rebase origin/feature-branch --rebase-merges",
+				args: "rebase origin/feature-branch --preserve-merges",
 				failHelpKey: "failureKey",
 				exitOnFail: false,
 				onError

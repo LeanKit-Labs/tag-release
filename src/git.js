@@ -159,7 +159,7 @@ const git = {
 		exitOnFail = true,
 		onError
 	}) {
-		const args = `rebase ${remote}/${branch} --rebase-merges`;
+		const args = `rebase ${remote}/${branch} --preserve-merges`;
 		return runCommand(
 			failHelpKey && failHelpKey.length
 				? { args, failHelpKey, exitOnFail, onError }
