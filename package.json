@@ -50,17 +50,15 @@
     "rcfile": "^1.0.3",
     "remove-words": "^0.9.0",
     "semver": "^7.3.5",
-    "when": "^3.7.7",
-    "word-wrap": "^1.1.0"
+    "when": "^3.7.8",
+    "word-wrap": "^1.2.3"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.16.11",
-    "babel-plugin-captains-log": "^1.3.2",
-    "babel-register": "^6.11.6",
     "eslint-config-leankit": "^6.0.0",
     "eslint-config-prettier": "^8.3.0",
     "jest": "^27.5.1",
-    "lint-staged": "^12.3.3",
+    "lint-staged": "^12.3.4",
     "prettier": "^2.5.1",
     "regenerator-runtime": "^0.13.9"
   },
