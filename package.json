@@ -39,7 +39,7 @@
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.1",
     "commander": "^9.0.0",
-    "cowsay": "^1.5.0",
+    "cowsay2": "^2.0.4",
     "detect-indent": "^6.1.0",
     "editor": "^1.0.0",
     "fmt": "^2.0.0",

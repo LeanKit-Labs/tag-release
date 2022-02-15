@@ -10,7 +10,8 @@ const logger = require("better-console");
 const sequence = require("when/sequence");
 const currentPackage = require("../package.json");
 const semver = require("semver");
-const cowsay = require("cowsay");
+const cowsay = require("cowsay2");
+const { clippy } = require("cowsay2/cows");
 const advise = require("./advise.js");
 const rcfile = require("rcfile");
 const pathUtils = require("path");
@@ -306,10 +307,7 @@ const api = {
 	advise(text, { exit = true } = {}) {
 		try {
 			api.logger.log(
-				cowsay.say({
-					text: advise(text),
-					f: pathUtils.resolve(__dirname, "clippy.cow") // eslint-disable-line
-				})
+				cowsay.say( advise(text), { cow: clippy } )
 			);
 		} catch (error) {
 			console.log(error); // eslint-disable-line no-console

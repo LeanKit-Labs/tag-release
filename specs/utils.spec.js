@@ -66,7 +66,7 @@ jest.mock("better-console", () => ({
 	log: jest.fn()
 }));
 
-jest.mock("cowsay", () => ({
+jest.mock("cowsay2", () => ({
 	say: jest.fn(arg => arg)
 }));
 
@@ -79,8 +79,7 @@ jest.mock("../package.json", () => ({
 }));
 
 jest.mock("path", () => ({
-	join: jest.fn(() => "some/path"),
-	resolve: jest.fn(() => "clippy.cow")
+	join: jest.fn(() => "some/path")
 }));
 
 jest.mock("rcfile", () => {
@@ -97,7 +96,7 @@ const editor = require("editor");
 const logUpdate = require("log-update");
 const logger = require("better-console");
 const chalk = require("chalk");
-const cowsay = require("cowsay");
+const cowsay = require("cowsay2");
 const advise = require("../src/advise.js"); // eslint-disable-line no-unused-vars
 const currentPackage = require("../package.json");
 const util = require("../src/utils");
@@ -1118,9 +1117,8 @@ describe("utils", () => {
 			util.advise("hello world", { exit: false });
 			expect(cowsay.say).toHaveBeenCalledTimes(1);
 			expect(cowsay.say).toHaveBeenCalledWith(
-				expect.objectContaining({
-					text: "hello world"
-				})
+				"hello world",
+				{ cow: expect.any(Function) }
 			);
 		});
 
