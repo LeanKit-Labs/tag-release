@@ -331,7 +331,7 @@ const command = {
 		return runCommand({
 			args,
 			logMessage: "Removing pre-release commit history",
-			failHelpKey: "gitRebaseInteractive",
+			failHelpKey: "gitRebaseInteractivePromote",
 			exitOnFail: true,
 			fullCommand: true,
 			onError
