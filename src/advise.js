@@ -66,6 +66,13 @@ will handle adding the conflicting files and continuing with the rebase.`,
 
 Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
 will handle adding the conflicting files and continuing with the rebase.`,
+	gitRebaseInteractivePromote: `It looks like there were some conflict(s) while trying to rebase with upstream default branch.
+
+Unfortunately, tag-release can't auto-magically fix them. Please fix the conflict at hand and then run 'tag-release continue'. Tag-release
+will handle adding the conflicting files and continuing with the rebase.
+
+MOTE: If you are using git v2.34 and higher you will need to downgrade your git in order to use the promote command as it still uses the
+deprecated '--preserve-merges' flag during the rebase.`,
 	gitCheckConflictMarkers: `We detected the presence of conflict markers: '<<<<<<<', '=======', and/or '>>>>>>>'
 
 Please fix all conflict markers with the current conflict and then run 'tag-release continue'.`,

@@ -8,7 +8,7 @@ const GitHub = require("github-api");
 const sequence = require("when/sequence");
 const path = require("path");
 const removeWords = require("remove-words");
-const { set, union } = require("lodash");
+const { set } = require("lodash");
 const { retryRebase } = require("./conflictResolution");
 const getCurrentBranch = require("../../helpers/getCurrentBranch");
 const getRootDirectory = require("../../helpers/getRootDirectory");
@@ -1819,38 +1819,6 @@ ${chalk.green(log)}`);
 				.then(() => util.log.end())
 				.catch(() => util.advise("buildLocale", { exit: false }));
 		}
-		return Promise.resolve();
-	},
-	getLangCodes(state) {
-		state.step = "getLangCodes";
-		const { cwd } = state;
-
-		// Find path to translation files
-		let localePath;
-		if (util.fileExists(`${cwd}/locale/en-US.yaml`)) {
-			localePath = `${cwd}/locale`;
-		} else if (util.fileExists(`${cwd}/client/js/locale/en-US.yaml`)) {
-			localePath = `${cwd}/client/js/locale`;
-		} else {
-			return Promise.resolve();
-		}
-
-		let files = util.readDirFileNames(localePath);
-		files = files.filter(
-			file =>
-				!file.includes("spec") &&
-				!file.includes("all") &&
-				!file.includes("en-US") &&
-				file.includes("yaml")
-		);
-		const langRegex = /^(.*-?[A-Z]?).yaml/;
-		const codes = files.map(file => {
-			const [, code] = langRegex.exec(file);
-			return code;
-		});
-
-		state.langCodes = union(state.langCodes, codes);
-		state.localePath = localePath;
 		return Promise.resolve();
 	},
 	runPreScript(state) {

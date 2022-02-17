@@ -27,9 +27,7 @@ jest.mock("fs", () => ({
 }));
 
 jest.mock("inquirer", () => ({
-	prompt: jest.fn((arg, cb) => {
-		cb("answers");
-	})
+	prompt: jest.fn().mockResolvedValue("answers")
 }));
 
 jest.mock("detect-indent", () => {
@@ -68,7 +66,7 @@ jest.mock("better-console", () => ({
 	log: jest.fn()
 }));
 
-jest.mock("cowsay", () => ({
+jest.mock("cowsay2", () => ({
 	say: jest.fn(arg => arg)
 }));
 
@@ -81,8 +79,7 @@ jest.mock("../package.json", () => ({
 }));
 
 jest.mock("path", () => ({
-	join: jest.fn(() => "some/path"),
-	resolve: jest.fn(() => "clippy.cow")
+	join: jest.fn(() => "some/path")
 }));
 
 jest.mock("rcfile", () => {
@@ -99,16 +96,13 @@ const editor = require("editor");
 const logUpdate = require("log-update");
 const logger = require("better-console");
 const chalk = require("chalk");
-const cowsay = require("cowsay");
+const cowsay = require("cowsay2");
 const advise = require("../src/advise.js"); // eslint-disable-line no-unused-vars
 const currentPackage = require("../package.json");
 const util = require("../src/utils");
 const { isPromise } = require("./helpers");
 const rcfile = require("rcfile"); // eslint-disable-line no-unused-vars
 const pathUtils = require("path"); // eslint-disable-line no-unused-vars
-const yaml = require("js-yaml"); // eslint-disable-line no-unused-vars
-
-jest.mock("js-yaml");
 
 describe("utils", () => {
 	describe("readFile", () => {
@@ -159,61 +153,6 @@ describe("utils", () => {
 			util.readFile = jest.fn(() => null);
 			const contents = util.readJSONFile(null);
 			expect(contents).toEqual({});
-		});
-	});
-
-	describe("readYAMLFile", () => {
-		beforeEach(() => {
-			fs.readFileSync = jest.fn(args => args);
-		});
-
-		it("should read the yaml file contents", () => {
-			util.readYAMLFile("./data/read-test.yaml");
-			expect(yaml.safeLoad).toHaveBeenCalledTimes(1);
-			expect(fs.readFileSync).toHaveBeenCalledTimes(1);
-			expect(fs.readFileSync).toHaveBeenCalledWith(
-				"./data/read-test.yaml",
-				"utf-8"
-			);
-		});
-
-		it("should return null if the file doesn't exist", () => {
-			yaml.safeLoad = jest.fn(() => {
-				throw new Error("nope");
-			});
-
-			const result = util.readYAMLFile("nope.yaml");
-			expect(yaml.safeLoad).toHaveBeenCalledTimes(1);
-			expect(fs.readFileSync).toHaveBeenCalledTimes(1);
-			expect(result).toEqual(null);
-		});
-
-		it("should return null when given an empty path", () => {
-			const result = util.readYAMLFile(null);
-			expect(result).toBeNull();
-		});
-	});
-
-	describe("readDirFileNames", () => {
-		it("should read the directory contents", () => {
-			util.readDirFileNames("./data/");
-			expect(fs.readdirSync).toHaveBeenCalledTimes(1);
-			expect(fs.readdirSync).toHaveBeenCalledWith("./data/");
-		});
-
-		it("should return null if the directory doesn't exist", () => {
-			fs.readdirSync = jest.fn(() => {
-				throw new Error("nope");
-			});
-
-			const result = util.readDirFileNames("./data/");
-			expect(fs.readdirSync).toHaveBeenCalledTimes(1);
-			expect(result).toEqual(null);
-		});
-
-		it("should return null when given an empty path", () => {
-			const result = util.readDirFileNames(null);
-			expect(result).toBeNull();
 		});
 	});
 
@@ -392,8 +331,7 @@ describe("utils", () => {
 			return util.prompt(questions).then(() => {
 				expect(inquirer.prompt).toHaveBeenCalledTimes(1);
 				expect(inquirer.prompt).toHaveBeenCalledWith(
-					[{ type: "confirm", message: "proceed", name: "proceed" }],
-					expect.any(Function)
+					[{ type: "confirm", message: "proceed", name: "proceed" }]
 				);
 			});
 		});
@@ -1179,9 +1117,8 @@ describe("utils", () => {
 			util.advise("hello world", { exit: false });
 			expect(cowsay.say).toHaveBeenCalledTimes(1);
 			expect(cowsay.say).toHaveBeenCalledWith(
-				expect.objectContaining({
-					text: "hello world"
-				})
+				"hello world",
+				{ cow: expect.any(Function) }
 			);
 		});
 

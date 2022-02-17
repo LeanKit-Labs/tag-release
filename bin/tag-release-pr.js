@@ -39,7 +39,8 @@ const callback = options => {
 };
 
 let options = {};
-const { verbose, maxbuffer, args, bump } = commander;
+const { bump, maxbuffer, verbose } = commander.opts();
+const { args } = commander;
 const pr = args.length ? args[0] : true;
 if (bump) {
 	options = {

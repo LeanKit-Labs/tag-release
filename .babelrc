@@ -2,8 +2,6 @@
   "presets": [ "@babel/preset-env" ],
   "sourceMaps": "inline",
   "env": {
-    "test": {
-      "plugins": [ "captains-log" ]
-    }
+    "test": {}
   }
 }

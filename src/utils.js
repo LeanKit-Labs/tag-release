@@ -10,11 +10,11 @@ const logger = require("better-console");
 const sequence = require("when/sequence");
 const currentPackage = require("../package.json");
 const semver = require("semver");
-const cowsay = require("cowsay");
+const cowsay = require("cowsay2");
+const { clippy } = require("cowsay2/cows");
 const advise = require("./advise.js");
 const rcfile = require("rcfile");
 const pathUtils = require("path");
-const yaml = require("js-yaml");
 
 const GIT_CONFIG_COMMAND = "git config --global";
 const GIT_CONFIG_UNSET_COMMAND = "git config --global --unset";
@@ -41,20 +41,6 @@ const api = {
 	readJSONFile(path) {
 		const content = api.readFile(path) || "{}";
 		return JSON.parse(content);
-	},
-	readYAMLFile(path) {
-		try {
-			return yaml.safeLoad(fs.readFileSync(path, "utf-8"));
-		} catch (e) {
-			return null;
-		}
-	},
-	readDirFileNames(path) {
-		try {
-			return fs.readdirSync(path);
-		} catch (e) {
-			return null;
-		}
 	},
 	writeFile(path, content) {
 		return fs.writeFileSync(path, content, "utf-8");
@@ -88,7 +74,7 @@ const api = {
 	},
 	prompt(questions) {
 		return new Promise(resolve =>
-			inquirer.prompt(questions, answers => {
+			inquirer.prompt(questions).then( answers => {
 				resolve(answers);
 			})
 		);
@@ -321,10 +307,7 @@ const api = {
 	advise(text, { exit = true } = {}) {
 		try {
 			api.logger.log(
-				cowsay.say({
-					text: advise(text),
-					f: pathUtils.resolve(__dirname, "clippy.cow") // eslint-disable-line
-				})
+				cowsay.say( advise(text), { cow: clippy } )
 			);
 		} catch (error) {
 			console.log(error); // eslint-disable-line no-console
