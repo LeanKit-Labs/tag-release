@@ -40,7 +40,8 @@ const callback = options => {
 };
 
 let options = {};
-const { verbose, maxbuffer, args } = commander;
+const { maxbuffer, verbose } = commander.opts();
+const { args } = commander;
 const qa = args.length ? args[0] : true;
 options = { qa, verbose, maxbuffer, callback, workflow, command: "qa" };
 

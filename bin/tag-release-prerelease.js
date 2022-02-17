@@ -9,7 +9,8 @@ utils.applyCommanderOptions(commander);
 commander.parse(process.argv);
 
 let options = {};
-const { verbose, maxbuffer, args } = commander;
+const { maxbuffer, verbose } = commander.opts();
+const { args } = commander;
 const prerelease = args.length ? args[0] : true;
 options = { prerelease, verbose, maxbuffer, workflow, command: "prerelease" };
 

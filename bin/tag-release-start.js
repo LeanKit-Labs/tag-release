@@ -8,7 +8,7 @@ utils.applyCommanderOptions(commander);
 
 commander.parse(process.argv);
 
-const { verbose, maxbuffer } = commander;
+const { maxbuffer, verbose } = commander.opts();
 const options = { verbose, maxbuffer, workflow, command: "start" };
 
 api.cli(options);

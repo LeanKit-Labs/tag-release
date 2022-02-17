@@ -40,7 +40,8 @@ commander
 commander.on("--help", () => {
 	help(commander);
 
-	if (commander.verbose) {
+	const { verbose } = commander.opts();
+	if (verbose) {
 		const diagramPath = path.resolve(__dirname, "../src/workflow.txt");
 		console.log(utils.readFile(diagramPath));
 	} else {

@@ -9,7 +9,8 @@ utils.applyCommanderOptions(commander);
 commander.parse(process.argv);
 
 let options = {};
-const { verbose, maxbuffer, args } = commander;
+const { maxbuffer, verbose } = commander.opts();
+const { args } = commander;
 const promote = args.length ? args[0] : true;
 options = { promote, verbose, maxbuffer, workflow, command: "promote" };
 

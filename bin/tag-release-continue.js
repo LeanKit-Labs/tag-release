@@ -43,7 +43,7 @@ const callback = async options => {
 	return runWorkflow(flow, options);
 };
 
-const { verbose, maxbuffer } = commander;
+const { maxbuffer, verbose } = commander.opts();
 const options = {
 	continue: true,
 	verbose,

@@ -8,7 +8,8 @@ utils.applyCommanderOptions(commander);
 
 commander.parse(process.argv);
 
-const { verbose, maxbuffer, args } = commander;
+const { maxbuffer, verbose } = commander.opts();
+const { args } = commander;
 const devBranch = args.length ? args[0].trim() : undefined;
 const options = {
 	devBranch,
