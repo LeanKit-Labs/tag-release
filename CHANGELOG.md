@@ -1,5 +1,19 @@
 ## 10.x
 
+### 10.0.1
+
+* addressed commander change for options
+* updated to use rebase-merges outside of the pro command
+* final sweep of dep updates
+* changed out cowsay for cowsay2 to get rid of last vulnerability
+* fixed one vulnerability
+* reverted back to --preserve-merges instead of --rebase-merges
+* updated commander to 9.0.0
+* updated most deps to closest to latest without es6
+* Added some dep upgrades and removed more l10n command related methods
+* updated dev deps to latest
+* moved babel to dev deps
+
 ### 10.0.0
 
 * updated shorthand deprecated -p to --rebase-merges
