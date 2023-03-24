@@ -1111,7 +1111,8 @@ ${chalk.green(log)}`);
 			token,
 			branch,
 			bump,
-			hasDevelopBranch
+			hasDevelopBranch,
+			pullRequest: { title }
 		} = state;
 		const github = new GitHub({ token });
 		util.log.begin("creating pull request to github");
@@ -1129,7 +1130,7 @@ ${chalk.green(log)}`);
 			};
 		} else {
 			options = {
-				title: "Updating localization strings",
+				title: title ? title : "Updating localization strings",
 				head: `${repositoryOwner}:${branch}`,
 				base: hasDevelopBranch ? "develop" : defaultBranch
 			};

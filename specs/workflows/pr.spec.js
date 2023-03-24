@@ -39,7 +39,6 @@ describe("pr workflows", () => {
 				run.gitRebaseUpstreamBranch,
 				run.githubUpstream,
 				run.updatePullRequestTitle,
-				run.updatePullRequestBody,
 				run.createGithubPullRequestAganistBase
 			]);
 		});

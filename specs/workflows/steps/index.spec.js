@@ -3005,7 +3005,8 @@ describe("shared workflow steps", () => {
 					bump: true,
 					branch: "feature-branch",
 					bumpComment:
-						"Bumped my-package to 1.1.1: This is my reason for the change"
+						"Bumped my-package to 1.1.1: This is my reason for the change",
+					pullRequest: { title: "pull request title" }
 				},
 				state
 			);
@@ -3111,6 +3112,23 @@ describe("shared workflow steps", () => {
 						});
 					});
 			});
+
+			describe( "when there is no pull request title", () => {
+				it("should call `createPullRequest` with default title and options", () => {
+					state.pullRequest = {};
+					state.bump = false;
+					return run
+						.createGithubPullRequestAganistBase(state)
+						.then(() => {
+							expect(createPullRequest).toHaveBeenCalledTimes(1);
+							expect(createPullRequest).toHaveBeenCalledWith( {
+								base: "main",
+								head: "someone-awesome:feature-branch",
+								title: "Updating localization strings"
+							});
+						});
+				});
+			} );
 
 			describe("when there is a develop branch", () => {
 				it("should call `editIssue` with issue number and label", () => {
