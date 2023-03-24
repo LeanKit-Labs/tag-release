@@ -2022,37 +2022,6 @@ describe("shared workflow steps", () => {
 		});
 	});
 
-	describe("gitGenerateRebaseCommitLog", () => {
-		it("should call `command.generateRebaseCommitLog`", () => {
-			command.generateRebaseCommitLog = jest.fn(() => Promise.resolve());
-			return run.gitGenerateRebaseCommitLog(state).then(() => {
-				expect(command.generateRebaseCommitLog).toHaveBeenCalledTimes(
-					1
-				);
-			});
-		});
-	});
-
-	describe("gitRemovePreReleaseCommits", () => {
-		it("should call `command.removePreReleaseCommits`", () => {
-			command.removePreReleaseCommits = jest.fn(() => Promise.resolve());
-			return run.gitRemovePreReleaseCommits(state).then(() => {
-				expect(command.removePreReleaseCommits).toHaveBeenCalledTimes(
-					1
-				);
-			});
-		});
-
-		it("should call onError when `command.removePreReleaseCommits` fails", () => {
-			command.removePreReleaseCommits = jest.fn(args => {
-				return args.onError()();
-			});
-			return run.gitRemovePreReleaseCommits(state).then(() => {
-				expect(conflictResolution.retryRebase).toHaveBeenCalledTimes(1);
-			});
-		});
-	});
-
 	describe("checkIfReOrderNeeded", () => {
 		beforeEach(() => {
 			command.getLatestCommitMessage = jest.fn(() => {

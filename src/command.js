@@ -122,32 +122,6 @@ const command = {
 		return git.fetch({ spinner, repo, failHelpKey: "fetchUpstream" });
 	},
 
-	generateRebaseCommitLog({ branch }) {
-		const preReleaseRegEx = /^v?\d+\.\d+\.\d+-.+\.\d+$/;
-		const gitLogMsgRegEx = /^[0-9a-f]{5,40} (.*)/;
-
-		const args = `log upstream/${branch}..HEAD --pretty=format:"%h %s"`;
-		return runCommand({ args }).then(result => {
-			let commits = result.split("\n");
-
-			commits = commits.reduce((memo, commit) => {
-				const [, commitMsg] = gitLogMsgRegEx.exec(commit) || [];
-
-				if (!preReleaseRegEx.test(commitMsg)) {
-					memo.push(`pick ${commit}`.trim());
-				}
-				return memo;
-			}, []);
-
-			// adding a '\n' at the end of the .reverse().join() statement is required as the rebase -i file requires it to be there or
-			// it will remove the last line in the file, which would be a whole commit potentially.
-			util.writeFile(
-				path.join(__dirname, ".commits-to-rebase.txt"),
-				`${commits.reverse().join("\n")}\n`
-			);
-		});
-	},
-
 	reOrderLatestCommits({ branch }) {
 		const bumpedRegEx = /Bumped (.*): (.*)/;
 		const gitLogMsgRegEx = /^[0-9a-f]{5,40} (.*)/;
@@ -321,21 +295,6 @@ const command = {
 	resetBranch(branch) {
 		const args = `reset --hard upstream/${branch}`;
 		return runCommand({ args });
-	},
-
-	removePreReleaseCommits({ branch, onError }) {
-		const args = `GIT_SEQUENCE_EDITOR="cat ${path.join(
-			__dirname,
-			".commits-to-rebase.txt"
-		)} >" git rebase -i --preserve-merges upstream/${branch}`;
-		return runCommand({
-			args,
-			logMessage: "Removing pre-release commit history",
-			failHelpKey: "gitRebaseInteractivePromote",
-			exitOnFail: true,
-			fullCommand: true,
-			onError
-		});
 	},
 
 	reOrderBumpCommit({ branch, onError }) {

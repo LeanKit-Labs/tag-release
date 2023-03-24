@@ -773,22 +773,6 @@ ${chalk.green(log)}`);
 		}
 		return Promise.resolve();
 	},
-	gitGenerateRebaseCommitLog(state) {
-		state.step = "gitGenerateRebaseCommitLog";
-		return command.generateRebaseCommitLog({ branch: state.defaultBranch });
-	},
-	gitRemovePreReleaseCommits(state) {
-		state.step = "gitRemovePreReleaseCommits";
-
-		const onError = err => {
-			return () => retryRebase(err);
-		};
-
-		return command.removePreReleaseCommits({
-			branch: state.defaultBranch,
-			onError
-		});
-	},
 	checkIfReOrderNeeded(state) {
 		state.step = "checkIfReOrderNeeded";
 		state.reOrder = true;
