@@ -1,5 +1,11 @@
 ## 10.x
 
+### 10.0.2
+
+* updated .nvmrc to latest node version
+* Fixed issue when creating a pr with no-bump flag and using provided title
+* Remove pro command commit reorder/removal
+
 ### 10.0.1
 
 * addressed commander change for options

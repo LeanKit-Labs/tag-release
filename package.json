@@ -1,6 +1,6 @@
 {
   "name": "tag-release",
-  "version": "10.0.1",
+  "version": "10.0.2",
   "description": "Automatically Tag and Release Repositories",
   "main": "./src/index.js",
   "bin": {
