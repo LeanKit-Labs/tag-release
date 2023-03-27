@@ -773,22 +773,6 @@ ${chalk.green(log)}`);
 		}
 		return Promise.resolve();
 	},
-	gitGenerateRebaseCommitLog(state) {
-		state.step = "gitGenerateRebaseCommitLog";
-		return command.generateRebaseCommitLog({ branch: state.defaultBranch });
-	},
-	gitRemovePreReleaseCommits(state) {
-		state.step = "gitRemovePreReleaseCommits";
-
-		const onError = err => {
-			return () => retryRebase(err);
-		};
-
-		return command.removePreReleaseCommits({
-			branch: state.defaultBranch,
-			onError
-		});
-	},
 	checkIfReOrderNeeded(state) {
 		state.step = "checkIfReOrderNeeded";
 		state.reOrder = true;
@@ -1127,7 +1111,8 @@ ${chalk.green(log)}`);
 			token,
 			branch,
 			bump,
-			hasDevelopBranch
+			hasDevelopBranch,
+			pullRequest: { title }
 		} = state;
 		const github = new GitHub({ token });
 		util.log.begin("creating pull request to github");
@@ -1145,7 +1130,7 @@ ${chalk.green(log)}`);
 			};
 		} else {
 			options = {
-				title: "Updating localization strings",
+				title: title ? title : "Updating localization strings",
 				head: `${repositoryOwner}:${branch}`,
 				base: hasDevelopBranch ? "develop" : defaultBranch
 			};

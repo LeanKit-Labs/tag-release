@@ -121,64 +121,6 @@ describe("command", () => {
 		});
 	});
 
-	describe("generateRebaseCommitLog", () => {
-		let writeSpy;
-		beforeEach(() => {
-			writeSpy = jest
-				.spyOn(util, "writeFile")
-				.mockImplementation(() => "");
-		});
-
-		it("should remove all pre-release commits", () => {
-			runCommand.mockImplementation(() =>
-				Promise.resolve(`0987654 1.1.1-feature.1
-et768df this is commit 2
-23fe4e3 1.1.1-feature.0
-0dda789 this is commit 1`)
-			);
-			return command
-				.generateRebaseCommitLog({ branch: "main" })
-				.then(() => {
-					expect(writeSpy.mock.calls[0][1])
-						.toEqual(`pick 0dda789 this is commit 1
-pick et768df this is commit 2
-`);
-				});
-		});
-
-		it("should remove all pre-release commits part 2", () => {
-			runCommand.mockImplementation(() =>
-				Promise.resolve(`eabc473 1.1.1-feature.1
-2f3e4a5 v1.1.1-fancy.9
-23ae89c this is commit 2
-e7a8e93 1.1.1-feature.0
-098abc7 this is commit 1
-3eabc56 something random
-987abc6 1.0.0-new.0
-9b8a76c 0.0.9-new-thing.18
-0a9b8c7 another commit
-abcd9e8 0.1.1-feature.1 should also be left
-e8d9f00 should leave this 0.1.1-feature.0`)
-			);
-			return command
-				.generateRebaseCommitLog({ branch: "main" })
-				.then(() => {
-					expect(writeSpy.mock.calls[0][1])
-						.toEqual(`pick e8d9f00 should leave this 0.1.1-feature.0
-pick abcd9e8 0.1.1-feature.1 should also be left
-pick 0a9b8c7 another commit
-pick 3eabc56 something random
-pick 098abc7 this is commit 1
-pick 23ae89c this is commit 2
-`);
-				});
-		});
-
-		afterEach(() => {
-			writeSpy.mockRestore();
-		});
-	});
-
 	describe("reOrderLatestCommits", () => {
 		let writeSpy;
 		beforeEach(() => {
@@ -245,52 +187,6 @@ v17.11.2`)
 					"v17.12.0-break.1"
 				]);
 			});
-		});
-	});
-
-	describe("removePreReleaseCommits", () => {
-		let joinSpy;
-		beforeEach(() => {
-			joinSpy = jest
-				.spyOn(path, "join")
-				.mockImplementation(() => "my_path/");
-		});
-
-		it("should call 'runCommand' with appropriate arguments", () => {
-			return command
-				.removePreReleaseCommits({ branch: "main" })
-				.then(() => {
-					expect(runCommand).toHaveBeenCalledTimes(1);
-					expect(runCommand).toHaveBeenCalledWith({
-						args:
-							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i --preserve-merges upstream/main',
-						failHelpKey: "gitRebaseInteractivePromote",
-						fullCommand: true,
-						logMessage: "Removing pre-release commit history",
-						exitOnFail: true
-					});
-				});
-		});
-
-		it("should pass onError to 'runCommand'", () => {
-			return command
-				.removePreReleaseCommits({ branch: "main", onError })
-				.then(() => {
-					expect(runCommand).toHaveBeenCalledTimes(1);
-					expect(runCommand).toHaveBeenCalledWith({
-						args:
-							'GIT_SEQUENCE_EDITOR="cat my_path/ >" git rebase -i --preserve-merges upstream/main',
-						failHelpKey: "gitRebaseInteractivePromote",
-						fullCommand: true,
-						logMessage: "Removing pre-release commit history",
-						exitOnFail: true,
-						onError
-					});
-				});
-		});
-
-		afterEach(() => {
-			joinSpy.mockRestore();
 		});
 	});
 

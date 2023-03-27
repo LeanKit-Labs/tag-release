@@ -6,8 +6,6 @@ module.exports = {
 		run.fetchUpstream,
 		run.selectPrereleaseToPromote,
 		run.checkoutTag,
-		run.gitGenerateRebaseCommitLog,
-		run.gitRemovePreReleaseCommits,
 		run.gitRebaseUpstreamDefaultBranch,
 		run.checkoutDefaultBranch,
 		run.gitMergeUpstreamDefaultBranch,

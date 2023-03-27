@@ -2022,37 +2022,6 @@ describe("shared workflow steps", () => {
 		});
 	});
 
-	describe("gitGenerateRebaseCommitLog", () => {
-		it("should call `command.generateRebaseCommitLog`", () => {
-			command.generateRebaseCommitLog = jest.fn(() => Promise.resolve());
-			return run.gitGenerateRebaseCommitLog(state).then(() => {
-				expect(command.generateRebaseCommitLog).toHaveBeenCalledTimes(
-					1
-				);
-			});
-		});
-	});
-
-	describe("gitRemovePreReleaseCommits", () => {
-		it("should call `command.removePreReleaseCommits`", () => {
-			command.removePreReleaseCommits = jest.fn(() => Promise.resolve());
-			return run.gitRemovePreReleaseCommits(state).then(() => {
-				expect(command.removePreReleaseCommits).toHaveBeenCalledTimes(
-					1
-				);
-			});
-		});
-
-		it("should call onError when `command.removePreReleaseCommits` fails", () => {
-			command.removePreReleaseCommits = jest.fn(args => {
-				return args.onError()();
-			});
-			return run.gitRemovePreReleaseCommits(state).then(() => {
-				expect(conflictResolution.retryRebase).toHaveBeenCalledTimes(1);
-			});
-		});
-	});
-
 	describe("checkIfReOrderNeeded", () => {
 		beforeEach(() => {
 			command.getLatestCommitMessage = jest.fn(() => {
@@ -3036,7 +3005,8 @@ describe("shared workflow steps", () => {
 					bump: true,
 					branch: "feature-branch",
 					bumpComment:
-						"Bumped my-package to 1.1.1: This is my reason for the change"
+						"Bumped my-package to 1.1.1: This is my reason for the change",
+					pullRequest: { title: "pull request title" }
 				},
 				state
 			);
@@ -3142,6 +3112,23 @@ describe("shared workflow steps", () => {
 						});
 					});
 			});
+
+			describe( "when there is no pull request title", () => {
+				it("should call `createPullRequest` with default title and options", () => {
+					state.pullRequest = {};
+					state.bump = false;
+					return run
+						.createGithubPullRequestAganistBase(state)
+						.then(() => {
+							expect(createPullRequest).toHaveBeenCalledTimes(1);
+							expect(createPullRequest).toHaveBeenCalledWith( {
+								base: "main",
+								head: "someone-awesome:feature-branch",
+								title: "Updating localization strings"
+							});
+						});
+				});
+			} );
 
 			describe("when there is a develop branch", () => {
 				it("should call `editIssue` with issue number and label", () => {

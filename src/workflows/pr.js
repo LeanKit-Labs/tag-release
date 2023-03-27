@@ -26,7 +26,6 @@ module.exports = {
 		run.gitRebaseUpstreamBranch,
 		run.githubUpstream,
 		run.updatePullRequestTitle,
-		run.updatePullRequestBody,
 		run.createGithubPullRequestAganistBase
 	],
 	prRebaseConflict: [
