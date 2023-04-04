@@ -82,10 +82,6 @@ jest.mock("path", () => ({
 	join: jest.fn(() => "some/path")
 }));
 
-jest.mock("rcfile", () => {
-	return jest.fn(() => ({ username: "rc@file.com", token: "token12345" }));
-});
-
 import "regenerator-runtime/runtime";
 const cp = require("child_process");
 const fs = require("fs");
@@ -101,7 +97,6 @@ const advise = require("../src/advise.js"); // eslint-disable-line no-unused-var
 const currentPackage = require("../package.json");
 const util = require("../src/utils");
 const { isPromise } = require("./helpers");
-const rcfile = require("rcfile"); // eslint-disable-line no-unused-vars
 const pathUtils = require("path"); // eslint-disable-line no-unused-vars
 
 describe("utils", () => {
@@ -1214,34 +1209,49 @@ describe("utils", () => {
 	});
 
 	describe("getScripts", () => {
-		beforeEach(() => {
-			rcfile.mockReturnValue({
-				preqa: "node ./preqa.js",
-				prepr: "node ./prepr.js",
-				postpr: "node ./postpr.js"
+		describe( "when package.json has scripts", () => {
+			beforeEach(() => {
+				util.readJSONFile = jest.fn(() => ({
+					"tag-release": {
+						preqa: "node ./preqa.js",
+						prepr: "node ./prepr.js",
+						postpr: "node ./postpr.js"
+					}
+				}));
 			});
-		});
 
-		it("should read from rcfile", () => {
-			util.getScripts("pr");
-			expect(rcfile).toHaveBeenCalledTimes(1);
-		});
+			it("should read from package.json", () => {
+				util.getScripts("pr");
+				expect(util.readJSONFile).toHaveBeenCalledTimes(1);
+			});
 
-		describe("has scripts for command", () => {
-			it("should return scripts", () => {
-				const scripts = util.getScripts("pr");
-				expect(scripts).toEqual({
-					prepr: "node ./prepr.js",
-					postpr: "node ./postpr.js"
+			describe("has scripts for command", () => {
+				it("should return scripts", () => {
+					const scripts = util.getScripts("pr");
+					expect(scripts).toEqual({
+						prepr: "node ./prepr.js",
+						postpr: "node ./postpr.js"
+					});
 				});
 			});
-		});
 
-		describe("no scripts for command", () => {
+			describe("no scripts for command", () => {
+				it("should return empty object for scripts", () => {
+					const scripts = util.getScripts("start");
+					expect(scripts).toEqual({});
+				});
+			});
+		} );
+
+		describe( "when package.json doesn't have scripts", () => {
+			beforeEach( () => {
+				util.readJSONFile = jest.fn(() => ({}));
+			} );
+
 			it("should return empty object for scripts", () => {
-				const scripts = util.getScripts("start");
+				const scripts = util.getScripts("pr");
 				expect(scripts).toEqual({});
 			});
-		});
+		} );
 	});
 });
