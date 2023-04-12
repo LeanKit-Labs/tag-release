@@ -9,10 +9,30 @@ jest.mock("chalk", () => ({
 
 import command from "../../../src/command";
 import git from "../../../src/git";
-import util from "../../../src/utils";
+import { advise, readFile, writeFile } from "../../../src/utils";
 import logger from "better-console";
 import chalk from "chalk"; // eslint-disable-line no-unused-vars
 import * as run from "../../../src/workflows/steps/conflictResolution";
+
+jest.mock( "../../../src/utils", () => ( {
+	advise: jest.fn(() => Promise.resolve()),
+	readFile: jest.fn(() => (
+			`{
+	"devDependencies": {
+		"@banditsoftware/some-package": "2.5.0",
+	<<<<<<< HEAD
+		"@banditsoftware/my-package": "14.14.0",
+		"@banditsoftware/my-other-package": "2.0.0",
+	=======
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/my-other-package": "1.0.0",
+	>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
+		"@banditsoftware/some-other-package": "1.3.0",
+	}
+}`
+	)),
+	writeFile: jest.fn(arg => arg)
+}) );
 
 describe("conflict resolution workflow steps", () => {
 	let state = {};
@@ -29,24 +49,6 @@ describe("conflict resolution workflow steps", () => {
 			}
 		};
 		logger.log = jest.fn(arg => arg);
-		util.writeFile = jest.fn(arg => arg);
-		util.readFile = jest.fn(
-			() =>
-				`{
-	"devDependencies": {
-		"@banditsoftware/some-package": "2.5.0",
-	<<<<<<< HEAD
-		"@banditsoftware/my-package": "14.14.0",
-		"@banditsoftware/my-other-package": "2.0.0",
-	=======
-		"@banditsoftware/my-package": "14.14.2-filterror.0",
-		"@banditsoftware/my-other-package": "1.0.0",
-	>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
-		"@banditsoftware/some-other-package": "1.3.0",
-	}
-}`
-		);
-		util.advise = jest.fn(() => Promise.resolve());
 	});
 
 	describe("gitRebaseUpstreamBaseWithConflictFlag", () => {
@@ -106,8 +108,8 @@ describe("conflict resolution workflow steps", () => {
 					expect(command.rebaseUpstreamDevelop).toHaveBeenCalledTimes(
 						1
 					);
-					expect(util.advise).toHaveBeenCalledTimes(1);
-					expect(util.advise).toHaveBeenCalledWith(
+					expect(jest.mocked(advise)).toHaveBeenCalledTimes(1);
+					expect(jest.mocked(advise)).toHaveBeenCalledWith(
 						"gitRebaseUpstreamBase"
 					);
 					expect(state.conflict).toEqual(undefined);
@@ -214,8 +216,7 @@ describe("conflict resolution workflow steps", () => {
 				state
 			);
 
-			util.readFile = jest.fn(
-				() =>
+			readFile.mockReturnValue(
 					`{
 	"devDependencies": {
 		"@banditsoftware/some-package": "2.5.0",
@@ -424,8 +425,8 @@ describe("conflict resolution workflow steps", () => {
 				state
 			);
 			run.writeChunksToPackageJSON(state);
-			expect(util.writeFile).toHaveBeenCalledTimes(1);
-			expect(util.writeFile).toHaveBeenCalledWith(
+			expect(jest.mocked(writeFile)).toHaveBeenCalledTimes(1);
+			expect(jest.mocked(writeFile)).toHaveBeenCalledWith(
 				"/some/root/path/package.json",
 				`{
 	"devDependencies": {
@@ -452,6 +453,22 @@ describe("conflict resolution workflow steps", () => {
 					]
 				},
 				state
+			);
+
+			readFile.mockReturnValue(
+					`{
+	"devDependencies": {
+		"@banditsoftware/some-package": "2.5.0",
+	<<<<<<< HEAD
+		"@banditsoftware/my-package": "14.14.0",
+		"@banditsoftware/my-other-package": "2.0.0",
+	=======
+		"@banditsoftware/my-package": "14.14.2-filterror.0",
+		"@banditsoftware/my-other-package": "1.0.0",
+	>>>>>>> f07c714... Bumped my-package to 14.14.2-filterror.0: conflicting change
+		"@banditsoftware/some-other-package": "1.3.0",
+	}
+}`
 			);
 
 			run.resolvePackageJSONConflicts(state);
@@ -487,8 +504,8 @@ describe("conflict resolution workflow steps", () => {
 		"@banditsoftware/some-other-package": "1.3.0",
 	}
 }`);
-			expect(util.writeFile).toHaveBeenCalledTimes(1);
-			expect(util.writeFile).toHaveBeenCalledWith(
+			expect(jest.mocked(writeFile)).toHaveBeenCalledTimes(1);
+			expect(jest.mocked(writeFile)).toHaveBeenCalledWith(
 				"/some/root/path/package.json",
 				`{
 	"devDependencies": {
@@ -522,7 +539,7 @@ describe("conflict resolution workflow steps", () => {
 						"/some/root/path/.github/PULL_REQUEST_TEMPLATE.md"
 				}
 			});
-			expect(util.writeFile).toHaveBeenCalledTimes(0);
+			expect(jest.mocked(writeFile)).toHaveBeenCalledTimes(0);
 		});
 	});
 

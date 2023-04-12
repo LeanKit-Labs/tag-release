@@ -13,7 +13,6 @@ const semver = require("semver");
 const cowsay = require("cowsay2");
 const { clippy } = require("cowsay2/cows");
 const advise = require("./advise.js");
-const rcfile = require("rcfile");
 const pathUtils = require("path");
 
 const GIT_CONFIG_COMMAND = "git config --global";
@@ -349,11 +348,12 @@ const api = {
 		);
 	},
 	getScripts(command) {
-		const content = rcfile("tag-release");
-		return Object.keys(content)
+		const path = pathUtils.join(process.cwd(), "package.json");
+		const content = api.readJSONFile(path);
+		return Object.keys(content[ "tag-release" ] || {} )
 			.filter(key => key === `pre${command}` || key === `post${command}`)
 			.reduce(
-				(res, key) => Object.assign(res, { [key]: content[key] }),
+				(res, key) => Object.assign(res, { [key]: content[ "tag-release" ][key] }),
 				{}
 			);
 	}

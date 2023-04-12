@@ -1,10 +1,7 @@
 /* eslint max-lines: off, max-statements: off */
 
-jest.mock("editor", () => {
-	return jest.fn((arg, cb) => cb(0));
-});
-
 jest.mock("chalk", () => ({
+	blue: jest.fn(arg => arg),
 	bold: jest.fn(arg => arg),
 	red: jest.fn(arg => arg),
 	gray: jest.fn(arg => arg),
@@ -37,7 +34,6 @@ jest.mock("when/sequence", () => {
 });
 
 import chalk from "chalk"; // eslint-disable-line no-unused-vars
-import editor from "editor"; // eslint-disable-line no-unused-vars
 import semver from "semver";
 import GitHub from "github-api";
 import * as run from "../../../src/workflows/steps/index";
