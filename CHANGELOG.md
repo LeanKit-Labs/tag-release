@@ -1,5 +1,10 @@
 ## 10.x
 
+### 10.0.3
+
+* Updated dependencies
+* One-time fixup of old lockfile
+
 ### 10.0.2
 
 * updated .nvmrc to latest node version
